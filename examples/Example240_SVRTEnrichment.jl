@@ -1,3 +1,35 @@
+#= 
+
+# 224 : Stokes ``SV + RT enrichment``
+([source code](SOURCE_URL))
+
+This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem
+```math
+\begin{aligned}
+- \mu \Delta \mathbf{u} + \nabla p & = \mathbf{f}\\
+\mathrm{div}(u) & = 0
+\end{aligned}
+```
+with exterior force ``\mathbf{f}`` and some parameter ``\mu`` and inhomogeneous Dirichlet boundary data.
+
+The problem will be solved by a ``(P_k \oplus RTenrichment) \times P_{k-1}`` scheme, which can be seen as an inf-sup stabilized Scott-Vogelius variant, see references below.
+Therein, the velocity space employs continuous Pk functions plus certain (only H(div)-conforming) Raviart-Thomas functions and a discontinuous Pk-1 pressure space
+leading to an exactly divergence-free discrete velocity. In a reduction step (that can be triggered with the reduce switch) all higher order pressure dofs and the
+enrichment dofs can be eliminated from the system.
+
+!!! reference
+
+    "A low-order divergence-free H(div)-conforming finite element method for Stokes flows",\
+    X. Li, H. Rui,\
+    IMA Journal of Numerical Analysis (2021),\
+    [>Journal-Link<](https://doi.org/10.1093/imanum/drab080)
+    [>Preprint-Link<](https://arxiv.org/abs/2012.01689)
+
+    "Inf-sup stabilized Scott--Vogelius pairs on general simplicial grids by Raviart--Thomas enrichment",\
+    V. John, X. Li, C. Merdon, H. Rui,\
+    [>Preprint-Link<](https://arxiv.org/abs/2206.01242)
+=#
+
 module Example240_StokesSVRTEnrichment
 
 using ExtendableFEM
@@ -170,7 +202,7 @@ function main(; nrefs = 4, order = 2, Plotter = nothing, enrich = true, reduce =
 
     ## move integral mean of pressure
     pintegrate = ItemIntegrator([id(p)])
-    pmean = sum(evaluate!(pintegrate, sol)) / sum(xgrid[CellVolumes])
+    pmean = sum(evaluate(pintegrate, sol)) / sum(xgrid[CellVolumes])
     view(sol[p]) .-= pmean
 
     ## postprocess
@@ -187,7 +219,7 @@ function main(; nrefs = 4, order = 2, Plotter = nothing, enrich = true, reduce =
 
     ## error calculation
     ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u), id(p)]; quadorder = 2*(order+1), kwargs...)
-    error = evaluate!(ErrorIntegratorExact, sol; time = time)
+    error = evaluate(ErrorIntegratorExact, sol; time = time)
     L2errorU = sqrt(sum(view(error,1,:)) + sum(view(error,2,:)))
     H1errorU = sqrt(sum(view(error,3,:)) + sum(view(error,4,:)) + sum(view(error,5,:)) + sum(view(error,6,:)))
     L2errorP = sqrt(sum(view(error,7,:)))

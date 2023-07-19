@@ -1,3 +1,18 @@
+#= 
+
+# 210 : Poisson L-shape Adaptive Mesh Refinement
+([source code](SOURCE_URL))
+
+This example computes the standard-residual error estimator for the $H^1$ error ``e = u - u_h`` of some $H^1$-conforming
+approximation ``u_h`` to the solution ``u`` of some Poisson problem ``-\Delta u = f`` on an L-shaped domain, i.e.
+```math
+\eta^2(u_h) := \sum_{T \in \mathcal{T}} \lvert T \rvert \| f + \Delta u_h \|^2_{L^2(T)}
++ \sum_{F \in \mathcal{F}} \lvert F \rvert \| [[\nabla u_h \cdot \mathbf{n}]] \|^2_{L^2(F)}
+```
+This example script showcases the evaluation of 2nd order derivatives like the Laplacian and adaptive mesh refinement.
+
+=#
+
 module Example210_LshapeAdaptivePoissonProblem
 
 using ExtendableFEM
@@ -63,7 +78,6 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
     u = Unknown("u"; name = "u")
     assign_unknown!(PD, u)
     assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, kwargs...))
-    #assign_operator!(PD, LinearOperator(rhs!, [id(u)]; kwargs...))
     assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = 2:7, bonus_quadorder = 4, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1,8]))
 

@@ -4,8 +4,6 @@ using ExtendableFEM
 using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
-using LinearSolve
-using Krylov
 
 const μ = 1.0
 const ϵ = 1.0
@@ -57,7 +55,7 @@ function main(; nrefs = 5, Plotter = nothing, kwargs...)
 
     ## solve by Ra embedding
 	extra_params = Array{Float64,1}([min(Ra_final, 4000)])
-    sol, SC = ExtendableFEM.solve!(PD, FES; return_config = true, target_residual = 1e-6, params = extra_params, maxiterations = 20, kwargs...)
+    sol, SC = solve!(PD, FES; return_config = true, target_residual = 1e-6, params = extra_params, maxiterations = 20, kwargs...)
 	step = 0
 	while (true)
 		if extra_params[1] >= Ra_final

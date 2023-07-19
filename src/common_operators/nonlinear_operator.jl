@@ -294,7 +294,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                     tempV .*= factor * weights[qp] * itemvolumes[item] 
                     for idt = 1 : ntest
                         for j = 1 : ndofs_test[idt]
-                            dof = itemdofs_test[idt][j, item]::Ti + offsets_test[idt]
+                            dof = itemdofs_test[idt][j, item] + offsets_test[idt]
                             for d = 1 : op_lengths_test[idt]
                                 b[dof] += tempV[d + op_offsets_test[idt]] * BE_test[idt].cvals[d,j,qp]
                             end
@@ -306,9 +306,9 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                 for id = 1 : nargs, idt = 1 : ntest
                     Aloc[idt,id] .*= factor * itemvolumes[item]
                     for j = 1 : ndofs_test[idt]
-                        dof_j = itemdofs_test[idt][j, item]::Ti + offsets_test[idt]
+                        dof_j = itemdofs_test[idt][j, item] + offsets_test[idt]
                         for k = 1 : ndofs_args[id]
-                            dof_k = itemdofs_args[id][k, item]::Ti + offsets_args[id]
+                            dof_k = itemdofs_args[id][k, item] + offsets_args[id]
                             if abs(Aloc[idt,id][j,k]) > entry_tol
                                 rawupdateindex!(A, +, Aloc[idt,id][j,k], dof_j, dof_k)
                             end

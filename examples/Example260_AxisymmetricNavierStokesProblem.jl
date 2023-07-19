@@ -1,3 +1,51 @@
+#= 
+
+# 260 : Axisymmetric Stokes (2.5D)
+([source code](SOURCE_URL))
+
+This example solves the 3D stagnation point flow via 
+the 2.5D axisymmetric formulation of the Navier--Stokes problem that seeks a velocity ``\mathbf{u} = (u_z, u_r)``
+and pressure ``p`` such that
+```math
+\begin{aligned}
+- \mu\left(\partial^2_r + r^{-1} \partial_r + \partial^2_z - r^{-2} \right) u_r
++ (u_r \partial_r + u_z \partial_z) u_r + \partial_r p & = \mathbf{f}_r\\
+- \mu\left(\partial^2_r + r^{-1} \partial_r + \partial^2_z \right) u_z
++ (u_r \partial_r + u_z \partial_z) u_z + \partial_z p & = \mathbf{f}_z\\
+(\partial_r + r^{-1})u_r + \partial_z u_z & = 0
+\end{aligned}
+```
+with exterior force ``\mathbf{f}`` and some viscosity parameter ``\mu``.
+
+The axisymmetric formulation assumes that the velocity in some
+3D-domain, that is obtained by rotation of a 2D domain ``\Omega``,
+only depends on the distance ``r`` to the rotation axis and the
+``z``-coordinate tangential to the x-axis, but not on the angular coordinate
+of the cylindric coordinates.
+The implementation employs ``r``-dependent bilinear forms and a
+Cartesian grid for the 2D ``(z,r)`` domain that is assumed to be rotated
+around the ``r=0``-axis.
+
+This leads to the weak formulation
+```math
+\begin{aligned}
+a(u,v) + b(p,v) & = (f,v) \\
+         b(q,u) & = 0
+\end{aligned}
+```
+with the bilinear forms
+```math
+\begin{aligned}
+a(u,v) := \int_{\Omega} \left( \nabla u : \nabla v + r^{-2} u_r v_r \right) r dr dz\\
+b(q,v) := \int_{\Omega} q \left( \mathrm{div}(v) + r^{-1} u_r \right) r dr dz
+\end{aligned}
+```
+where the usual Cartesian differential operators can be used. The factor ``2\pi`` from the
+integral over the rotation angle drops out on both sides.
+
+
+=#
+
 module Example260_AxisymmetricNavierStokesProblem
 
 using ExtendableFEM

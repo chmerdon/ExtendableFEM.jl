@@ -1,7 +1,7 @@
 module Example250_NavierStokesProblem
 
 using ExtendableFEM
-using ExtendableFEMLowLevel
+using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
 
@@ -36,7 +36,7 @@ function initialgrid_cone()
     return xgrid
 end
 
-function main(; μ_final = 0.0005, nrefs = 6, Plotter = nothing, kwargs...)
+function main(; μ_final = 0.001, nrefs = 6, Plotter = nothing, kwargs...)
 
     ## prepare parameter field
 	extra_params = Array{Float64,1}([max(μ_final, 0.01)])
@@ -65,12 +65,16 @@ function main(; μ_final = 0.0005, nrefs = 6, Plotter = nothing, kwargs...)
 	step = 0
     sol = nothing
     SC = nothing
+    PE = PointEvaluator([id(1)])
 	while (true)
 		step += 1
 		@info "Step $step : solving for μ=$(extra_params[1])"
         sol, SC = ExtendableFEM.solve!(PD, FES, SC; return_config = true, target_residual = 1e-10, maxiterations = 20, kwargs...)
+        if step == 1
+            initialize!(PE, sol)
+        end
         scalarplot!(p[1,1], xgrid, nodevalues(sol[1]; abs = true)[1,:]; title = "μ = $(extra_params[1])", Plotter = Plotter)
-		vectorplot!(p[1,1], xgrid, evaluate(PointEvaluator(sol[1], Identity)), spacing = 0.05, clear = false)
+		vectorplot!(p[1,1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
         
         if extra_params[1] <= μ_final
 			break
@@ -81,7 +85,7 @@ function main(; μ_final = 0.0005, nrefs = 6, Plotter = nothing, kwargs...)
 
     @info sol
     scalarplot!(p[1,1], xgrid, nodevalues(sol[1]; abs = true)[1,:]; title = "μ = $(extra_params[1])", Plotter = Plotter)
-    vectorplot!(p[1,1], xgrid, evaluate(PointEvaluator(sol[1], Identity)), spacing = 0.05, clear = false)
+    vectorplot!(p[1,1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
     
     writeVTK("Example250_output.vtu", xgrid; velocity = nodevalues(sol[1]), pressure = nodevalues(sol[2]), cellregions = xgrid[CellRegions])
 end

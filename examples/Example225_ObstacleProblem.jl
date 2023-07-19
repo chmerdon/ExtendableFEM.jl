@@ -63,6 +63,6 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
     p = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (1000,500))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], levels = 6, title = "u_h")
     scalarplot!(p[1,2], xgrid, view(nodevalues(sol[u], Gradient; abs = true),1,:), levels = 0, colorbarticks = 8, title = "∇u_h (abs + quiver)")
-    vectorplot!(p[1,2], xgrid, evaluate(PointEvaluator(sol[u], Gradient)), spacing = 0.1, clear = false)
+    vectorplot!(p[1,2], xgrid, eval_func(PointEvaluator([grad(u)], sol)), spacing = 0.1, clear = false)
 end
 end

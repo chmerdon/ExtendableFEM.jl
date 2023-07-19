@@ -1,3 +1,21 @@
+#= 
+
+# 202 : Poisson-Problem (Mixed)
+([source code](SOURCE_URL))
+
+This example computes the solution ``u`` of the two-dimensional Poisson problem
+in the mixed form
+```math
+\begin{aligned}
+\sigma + \mu \nabla u = 0
+\mathrm{div} \sigma & = f \quad \text{in } \Omega
+\end{aligned}
+```
+with right-hand side ``f(x,y) \equiv xy`` and homogeneous Dirichlet boundary conditions
+on the unit square domain ``\Omega`` on a given grid.
+
+=#
+
 module Example202_MixedPoissonProblem
 
 using ExtendableFEM
@@ -15,21 +33,19 @@ function blf!(result, u_ops, qpinfo)
     σ, divσ, u = view(u_ops, 1:2), view(u_ops, 3), view(u_ops, 4)
     result[1] = σ[1]/μ
     result[2] = σ[2]/μ
-    result[3] = u[1]
+    result[3] = -u[1]
     result[4] = divσ[1]
     return nothing
 end
 
-const f = x -> 1.0      # data for right-hand side
-function rhs!(result, qpinfo)
-    result[1] = f(qpinfo.x)
+function f!(fval, qpinfo)
+    fval[1] = qpinfo.x[1] * qpinfo.x[2]
     return nothing
 end
 
 ## boundary data
 function boundarydata!(result, qpinfo)
-    x = qpinfo.x
-    result[1] = x[1]
+    result[1] = 0
     return nothing
 end
 
@@ -49,8 +65,9 @@ function main(; nrefs = 5, Plotter = nothing, hdivdg = true, kwargs...)
     end
     assign_operator!(PD, BilinearOperator(blf!, [id(σ), div(σ), id(u)]; kwargs...))
     assign_operator!(PD, LinearOperator(boundarydata!, [normalflux(σ)]; entities = ON_BFACES, regions = 1:4, kwargs...))
-    assign_operator!(PD, LinearOperator(rhs!, [id(u)]; kwargs...))
+    assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
     assign_operator!(PD, FixDofs(u; dofs = [1], vals = [0]))
+    @info PD
     
     ## discretize
     xgrid = uniform_refine(grid_unitsquare_mixedgeometries(), nrefs)
@@ -60,7 +77,6 @@ function main(; nrefs = 5, Plotter = nothing, hdivdg = true, kwargs...)
 
     ## solve
     sol = ExtendableFEM.solve!(PD, FES; kwargs...)
-    @info PD
 
     ## plot
     p=GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (1000,500))
