@@ -49,11 +49,6 @@ export Jump, Average, Left, Right
 export jump, average
 export is_discontinuous
 
-
-include("common_operators/derivatives.jl")
-export KernelEvaluator
-export ∇_x
-
 include("common_operators/item_integrator.jl")
 export ItemIntegrator
 export evaluate, evaluate!
