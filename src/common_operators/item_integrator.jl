@@ -201,7 +201,7 @@ function evaluate!(b, O::ItemIntegrator, sol::FEVector; time = 0, kwargs...)
     O.assembler(b, [sol[j] for j in ind_args]; time = time)
 end
 
-function evaluate(O::ItemIntegrator{Tv,UT}, sol::FEVector; time = 0, kwargs...) where {Tv,UT}
+function evaluate(O::ItemIntegrator{Tv,UT}, sol; time = 0, kwargs...) where {Tv,UT}
     if UT <: Integer
         ind_args = O.u_args
     elseif UT <: Unknown
@@ -221,7 +221,7 @@ function evaluate(O::ItemIntegrator{Tv,UT}, sol::FEVector; time = 0, kwargs...) 
     elseif AT <: ON_BEDGES
         nitems = size(grid[BEdgeNodes],2)
     end
-    b = zeros(eltype(sol.entries), O.parameters[:resultdim], nitems)
+    b = zeros(eltype(sol[1].entries), O.parameters[:resultdim], nitems)
     O.assembler(b, [sol[j] for j in ind_args]; time = time)
     return b
 end

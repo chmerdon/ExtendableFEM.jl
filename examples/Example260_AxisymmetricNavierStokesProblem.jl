@@ -109,7 +109,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     p = Unknown("p"; name = "pressure")
     assign_unknown!(PD, u)
     assign_unknown!(PD, p)
-    assign_operator!(PD, BilinearOperator(kernel_stokes_axisymmetric!, [id(u),grad(u),id(p)]; bonus_quadorder = 1, params = [μ], kwargs...))#; jacobian = kernel_jacobian!)) 
+    assign_operator!(PD, BilinearOperator(kernel_stokes_axisymmetric!, [id(u),grad(u),id(p)]; bonus_quadorder = 0, params = [μ], kwargs...))#; jacobian = kernel_jacobian!)) 
     if nonlinear
         assign_operator!(PD, NonlinearOperator(kernel_convection!, [id(u)], [id(u),grad(u)]; bonus_quadorder = 2, kwargs...))#; jacobian = kernel_jacobian!)) 
     end
@@ -139,9 +139,30 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 8, resultdim = 1)
     @info "||div(u)|| = $(sqrt(sum(evaluate(DivIntegrator, sol))))"
 
+
+    function multiply_r_kernel!(result, input, qpinfo)
+        r = qpinfo.x[1]
+        result .= r * input
+    end
+
+    FES_reconst = FESpace{HDIVRT0{2}}(xgrid)
+    R = FEVector(FES_reconst)
+    lazy_interpolate!(R[1], sol, [id(u)]; postprocess = multiply_r_kernel!, bonus_quadorder = 2)
+
+
+    facenodes = xgrid[FaceNodes]
+    coords = xgrid[Coordinates]
+    num_faces = size(facenodes, 2)
+    for j = 1 : num_faces
+        rmid4face = (coords[1, facenodes[1,j]] + coords[1, facenodes[2,j]])/2
+        if rmid4face > 1e-15
+           R.entries[j] /= rmid4face
+        end
+    end
+
     ## compute normafluxes
-    FluxIntegrator = ItemIntegrator(kernel_normalflux, [normalflux(u)]; entities = ON_FACES, resultdim = 1)
-    flux4faces = evaluate(FluxIntegrator, sol)
+    FluxIntegrator = ItemIntegrator(kernel_normalflux, [normalflux(1)]; entities = ON_FACES, resultdim = 1)
+    flux4faces = evaluate(FluxIntegrator, [R[1]])
     div4cells = zeros(Float64, num_cells(xgrid))
     cellfacesigns = xgrid[CellFaceSigns]
     facecells = xgrid[FaceCells]
@@ -155,8 +176,8 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     @info extrema(div4cells)
 
     ## again by segment integrator
-    SI = SegmentIntegrator(Edge1D, kernel_flux, [id(u)]; kwargs...)
-    initialize!(SI, sol)
+    SI = SegmentIntegrator(Edge1D, kernel_flux, [id(1)]; kwargs...)
+    initialize!(SI, [R[1]])
     fill!(div4cells, 0)
     flux = zeros(Float64, 2)
     for cell in 1:num_cells(xgrid)
@@ -173,7 +194,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     @info extrema(div4cells)
 
     ## again by matrix mode of segment integrator
-    initialize!(SI, sol; matrix_mode = true)
+    initialize!(SI, sol; matrix_mode = true, bonus_quadorder = 1)
     fill!(div4cells, 0)
     num_faces = size(facenormals,2)
     A = ExtendableSparseMatrix{Float64,Int}(2*num_faces, sol[1].FES.ndofs)

@@ -76,6 +76,10 @@ export SegmentIntegrator, initialize!, integrate_segment!
 include("common_operators/point_evaluator.jl")
 export PointEvaluator, evaluate!, eval_func
 
+
+include("lazy_interpolate.jl")
+export lazy_interpolate!
+
 include("plots.jl")
 export plot_convergencehistory!
 

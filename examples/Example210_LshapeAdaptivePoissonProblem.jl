@@ -24,7 +24,6 @@ using LinearSolve
 using Krylov
 using Symbolics
 
-
 ## exact solution u for the Poisson problem
 function u!(result, qpinfo)
     x = qpinfo.x
@@ -36,6 +35,7 @@ function u!(result, qpinfo)
     result[1] = r2^(1/3) * sin(2*φ/3)
 end
 
+## gradient of exact solution
 function ∇u!(result, qpinfo)
     x = qpinfo.x
     φ = atan(x[2], x[1])
@@ -49,6 +49,7 @@ function ∇u!(result, qpinfo)
     result[2] = sin(φ) * ∂r + cos(φ) * ∂φ
 end
 
+## kernel for exact error calculation
 function exact_error!(result, u, qpinfo)
     u!(result, qpinfo)
     ∇u!(view(result,2:3), qpinfo)
@@ -56,20 +57,22 @@ function exact_error!(result, u, qpinfo)
     result .= result.^2
 end
 
+## kernel for face interpolation of normal jumps of gradient
 function gradnormalflux!(result, ∇u, qpinfo)
     item = qpinfo.item
     normal = view(qpinfo.params,:,item)
     result[1] = dot(∇u, normal)
 end
 
+## kernel for face refinement indicator
 function η_face!(result, gradjump, qpinfo)
     result .= qpinfo.volume * gradjump.^2
 end
 
+## kernel for cell refinement indicator
 function η_cell!(result, Δu, qpinfo)
     result .= qpinfo.volume * Δu.^2
 end
-
 
 function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotter = nothing, kwargs...)
 
@@ -84,11 +87,10 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
     ## discretize
     xgrid = uniform_refine(grid_lshape(Triangle2D), nrefs)
 
-    ## define integrators
+    ## define item integrators for estimation and error calculation
     ErrorIntegratorFace = ItemIntegrator(η_face!, [id(1)]; quadorder = 2*order, entities = ON_IFACES, kwargs...)
     ErrorIntegratorCell = ItemIntegrator(η_cell!, [Δ(1)]; quadorder = 2*(order-2), entities = ON_CELLS, kwargs...)
     ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(1), grad(1)]; quadorder = 2*order, kwargs...)
-
 
     NDofs = zeros(Int, 0)
     ResultsL2 = zeros(Float64, 0)
@@ -100,7 +102,7 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
     while ndofs < maxdofs
         level += 1
 
-        ## create a solution vector and solve the problem
+        ## SOLVE : create a solution vector and solve the problem
         println("------- LEVEL $level")
         @time begin
             ## solve
@@ -112,7 +114,7 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
             print("@time  solver =")
         end 
     
-        ## calculate local error estimator contributions
+        ## ESTIMATE : calculate local error estimator contributions
         @time begin
             ## calculate error estimator
             JumpInterpolator = FaceInterpolator(gradnormalflux!, [jump(grad(u))]; resultdim = 1, order = order - 1, params = xgrid[FaceNormals], kwargs...)
@@ -135,7 +137,6 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 
         ## calculate exact L2 error, H1 error 
         @time begin
-            ## calculate L2 error
             error = evaluate(ErrorIntegratorExact, sol)
             push!(ResultsL2, sqrt(sum(view(error,1,:))))
             push!(ResultsH1, sqrt(sum(view(error,2,:)) + sum(view(error,3,:))))
@@ -146,7 +147,7 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
             break;
         end
 
-        ## mesh refinement
+        ## MARK+REFINE : mesh refinement
         @time begin
             if θ >= 1 ## uniform mesh refinement
                 xgrid = uniform_refine(xgrid)

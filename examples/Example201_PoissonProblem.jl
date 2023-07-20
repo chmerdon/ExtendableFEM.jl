@@ -40,7 +40,7 @@ function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, kwargs...)
     FES = FESpace{H1Pk{1, 2, order}}(xgrid)
 
     ## solve
-    sol = ExtendableFEM.solve!(PD, [FES]; kwargs...)
+    sol = solve!(PD, [FES]; kwargs...)
        
     ## plot
     p=GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (600,600))
