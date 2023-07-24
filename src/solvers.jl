@@ -3,14 +3,39 @@ function get_unknown_id(SC::SolverConfiguration, u::Unknown)
 end
 
 
-function CommonSolve.solve!(PD::ProblemDescription, FES::Dict{<:Unknown}, SC = nothing; unknowns = PD.unknowns, kwargs...)
-    return solve!(PD, [FES[u] for u in unknowns], SC; unknowns = unknowns, kwargs...)
+"""
+````
+function solve(
+    PD::ProblemDescription,
+    FES,
+    SC = nothing;
+    unknowns = PD.unknowns,
+    kwargs...)
+````
+
+Returns a solution of the PDE as an FEVector for the provided FESpace(s) FES (to be used to discretised the unknowns of the PDEs).
+To provide nonzero initial values (for nonlinear problems) the solve function must be used.
+
+This function extends the CommonSolve.solve interface and the PDEDescription takes the role of
+the ProblemType and FES takes the role of the SolverType.
+
+Keyword arguments:
+$(_myprint(default_solver_kwargs()))
+
+Depending on the subiterations and detected/configured nonlinearities the whole system is
+either solved directly in one step or via a fixed-point iteration.
+
+"""
+function CommonSolve.solve(PD::ProblemDescription, FES::Dict{<:Unknown}, SC = nothing; unknowns = PD.unknowns, kwargs...)
+    return solve(PD, [FES[u] for u in unknowns], SC; unknowns = unknowns, kwargs...)
 end
 
-function CommonSolve.solve!(PD::ProblemDescription, FES::Array, SC = nothing; unknowns = PD.unknowns, kwargs...)
+
+function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unknowns = PD.unknowns, kwargs...)
 
     @info "SOLVING PROBLEM $(PD.name)
         unknowns = $([u.name for u in unknowns])
+         fetypes = $(["$(get_FEType(FES[j]))" for j = 1 : length(unknowns)])
            ndofs = $([FES[j].ndofs for j = 1 : length(unknowns)])"
     if typeof(SC) <: SolverConfiguration
         _update_params!(SC.parameters, kwargs)
@@ -58,13 +83,13 @@ function CommonSolve.solve!(PD::ProblemDescription, FES::Array, SC = nothing; un
         end
     end
     if SC.parameters[:verbosity] > -1
-        @info ".... problem seems to be $(nonlinear ? "nonlinear" : "linear")\n" 
+        @info " nonlinear = $(nonlinear ? "true" : "false")\n" 
     end
     if is_linear == "auto"
         is_linear = !nonlinear
     end
     if is_linear && nonlinear
-        @warn "problem seems nonlinear, but is_linear = true (results may be wrong)!!"
+        @warn "problem seems nonlinear, but user set is_linear = true (results may be wrong)!!"
     end
     if is_linear
         maxits = 0
@@ -207,7 +232,7 @@ function CommonSolve.solve!(PD::ProblemDescription, FES::Array, SC = nothing; un
                 linsolve.b = b.entries
 
                 ## solve
-                x = LinearSolve.solve!(linsolve)
+                x = LinearSolve.solve(linsolve)
 
                 fill!(residual.entries, 0)
                 mul!(residual.entries, A.entries.cscmatrix, x.u)

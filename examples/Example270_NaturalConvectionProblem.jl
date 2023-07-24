@@ -55,7 +55,7 @@ function main(; nrefs = 5, Plotter = nothing, kwargs...)
 
     ## solve by Ra embedding
 	extra_params = Array{Float64,1}([min(Ra_final, 4000)])
-    sol, SC = solve!(PD, FES; return_config = true, target_residual = 1e-6, params = extra_params, maxiterations = 20, kwargs...)
+    sol, SC = solve(PD, FES; return_config = true, target_residual = 1e-6, params = extra_params, maxiterations = 20, kwargs...)
 	step = 0
 	while (true)
 		if extra_params[1] >= Ra_final
@@ -65,7 +65,7 @@ function main(; nrefs = 5, Plotter = nothing, kwargs...)
 		step += 1
 		@info "Step $step : solving for Ra=$(extra_params[1])"
         
-        sol, SC = ExtendableFEM.solve!(PD, FES, SC; init = sol, return_config = true, target_residual = 1e-7, params = extra_params, kwargs...)
+        sol, SC = ExtendableFEM.solve(PD, FES, SC; init = sol, return_config = true, target_residual = 1e-7, params = extra_params, kwargs...)
         scalarplot(xgrid, nodevalues(sol[T])[1,:]; Plotter = Plotter)
 	end
 end

@@ -40,7 +40,7 @@ include("solver_config.jl")
 export SolverConfiguration
 
 include("solvers.jl")
-export solve!
+export solve
 export get_unknown_id
 
 include("jump_operators.jl")

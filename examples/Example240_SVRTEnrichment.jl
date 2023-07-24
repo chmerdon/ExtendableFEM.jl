@@ -198,7 +198,7 @@ function main(; nrefs = 4, order = 2, Plotter = nothing, enrich = true, reduce =
     assign_operator!(PD, FixDofs(p; dofs = [1], vals = [0]))
 
     ## solve
-	sol = solve!(PD, FES; time = time, kwargs...)
+	sol = solve(PD, FES; time = time, kwargs...)
 
     ## move integral mean of pressure
     pintegrate = ItemIntegrator([id(p)])

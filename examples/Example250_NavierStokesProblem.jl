@@ -69,7 +69,7 @@ function main(; μ_final = 0.001, nrefs = 6, Plotter = nothing, kwargs...)
 	while (true)
 		step += 1
 		@info "Step $step : solving for μ=$(extra_params[1])"
-        sol, SC = ExtendableFEM.solve!(PD, FES, SC; return_config = true, target_residual = 1e-10, maxiterations = 20, kwargs...)
+        sol, SC = ExtendableFEM.solve(PD, FES, SC; return_config = true, target_residual = 1e-10, maxiterations = 20, kwargs...)
         if step == 1
             initialize!(PE, sol)
         end

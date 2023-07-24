@@ -23,6 +23,7 @@ default_segint_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :factor => (1, "factor that should be multiplied during assembly"),
     :quadorder => ("auto", "quadrature order"),
+    :bonus_quadorder => (0, "quadrature order added to quadorder"),
     :verbosity => (0, "verbosity level")
 )
 
@@ -66,12 +67,17 @@ function initialize!(O::SegmentIntegrator{T, UT}, sol; time = 0, kwargs...) wher
     EG = xgrid[UniqueCellGeometries][1]
     dimfill = dim_element(EG) - dim_element(SG)
     @assert dimfill >= 0
+    bonus_quadorder = O.parameters[:bonus_quadorder]
     if O.parameters[:quadorder] == "auto"
         polyorder = maximum([get_polynomialorder(FE, EG) for FE in FETypes_args])
         minderiv = minimum([ExtendableFEMBase.NeededDerivative4Operator(op) for op in O.ops_args])
-        qf_SG = QuadratureRule{T, SG}(polyorder - minderiv)
+        quadorder = polyorder - minderiv + bonus_quadorder
     else
-        qf_SG = QuadratureRule{T, SG}(O.parameters[:quadorder])
+        quadorder = O.parameters[:quadorder] + bonus_quadorder
+    end
+    qf_SG = QuadratureRule{T, SG}(quadorder)
+    if O.parameters[:verbosity] > 1
+        @info "...... integrating on $SG with quadrature order $quadorder"
     end
     if dimfill > 0
         new_xref = Array{Array{T,1},1}(undef,length(qf_SG.xref))

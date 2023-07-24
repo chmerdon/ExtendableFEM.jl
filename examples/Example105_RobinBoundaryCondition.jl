@@ -73,7 +73,7 @@ function main(; Plotter = nothing, h = 1e-1, h_fine = 1e-3, order = 2, kwargs...
     FES = FESpace{FEType}(xgrid)
 
     ## generate a solution vector and solve
-    sol = solve!(PD, [FES]; kwargs...)
+    sol = solve(PD, [FES]; kwargs...)
 
     ## compute L2 error
     L2error = ItemIntegrator(exact_error!, [id(u)]; quadorder = 2*order, kwargs...)

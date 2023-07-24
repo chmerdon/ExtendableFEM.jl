@@ -123,7 +123,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
 
     ## solve
     FES = [FESpace{H1P2{2,2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
-    sol = ExtendableFEM.solve!(PD, FES; kwargs...)
+    sol = ExtendableFEM.solve(PD, FES; kwargs...)
 
     ## compute divergence in cylindrical coordinates by volume integrals
     DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 2, resultdim = 1)

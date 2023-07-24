@@ -76,7 +76,7 @@ function main(; nrefs = 5, Plotter = nothing, hdivdg = true, kwargs...)
                p => hdivdg ? FESpace{L2P0{1}, ON_FACES}(xgrid) : nothing)
 
     ## solve
-    sol = ExtendableFEM.solve!(PD, FES; kwargs...)
+    sol = ExtendableFEM.solve(PD, FES; kwargs...)
 
     ## plot
     p=GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (1000,500))

@@ -42,7 +42,7 @@ function main(; nrefs = 5, Plotter = nothing, kwargs...)
 
     ## solve
     FES = FESpace{H1Q2{1,2}}(xgrid)
-    sol = ExtendableFEM.solve!(PD, [FES]; kwargs...)
+    sol = ExtendableFEM.solve(PD, [FES]; kwargs...)
 
     @info sol
     scalarplot(split_grid_into(xgrid, Triangle2D), nodevalues(sol[1])[:]; Plotter = Plotter)
