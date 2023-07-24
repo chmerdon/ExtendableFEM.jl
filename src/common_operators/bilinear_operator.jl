@@ -36,6 +36,7 @@ default_blfop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :lump => (false, "lump the operator (= only assemble the diagonal)"),
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :entry_tolerance => (0, "threshold to add entry to sparse matrix"),
+    :use_sparsity_pattern => ("auto", "read sparsity pattern of jacobian of kernel to find out which components couple"),
     :parallel_assembly => (true, "assemble operator in parallel using CellAssemblyGroups"),
     :store => (false, "store matrix separately (and copy from there when reassembly is triggered)"),
     :quadorder => ("auto", "quadrature order"),
@@ -159,12 +160,15 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
         O.L2G = []
         for EG in EGs
             ## quadrature formula for EG
+            polyorder_ansatz = maximum([get_polynomialorder(FETypes_ansatz[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_ansatz[j]) for j = 1 : nansatz])
+            polyorder_test = maximum([get_polynomialorder(FETypes_test[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_test[j]) for j = 1 : ntest])
             if O.parameters[:quadorder] == "auto"
-                polyorder = max(maximum([get_polynomialorder(FE, EG) for FE in FETypes_ansatz]), maximum([get_polynomialorder(FE, EG) for FE in FETypes_test]))
-                minderiv = min(minimum([ExtendableFEMBase.NeededDerivative4Operator(op) for op in O.ops_ansatz]), minimum([ExtendableFEMBase.NeededDerivative4Operator(op) for op in O.ops_test]))
-                push!(O.QF, QuadratureRule{Tv, EG}(2*polyorder - minderiv + O.parameters[:bonus_quadorder]))
+                quadorder = polyorder_ansatz + polyorder_test + O.parameters[:bonus_quadorder]
             else
-                push!(O.QF, QuadratureRule{Tv, EG}(O.parameters[:quadorder] + O.parameters[:bonus_quadorder]))
+                quadorder = O.parameters[:quadorder] + O.parameters[:bonus_quadorder]
+            end
+            if O.parameters[:verbosity] > 1
+                @info "...... integrating on $EG with quadrature order $quadorder"
             end
         
             ## FE basis evaluator for EG
@@ -201,6 +205,33 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
         append!(op_offsets_args, cumsum(op_lengths_args))
         offsets_test = [FE_test[j].offset for j in 1 : length(FES_test)]
         offsets_ansatz = [FE_ansatz[j].offset for j in 1 : length(FES_ansatz)]
+
+        ## prepare sparsity pattern
+        use_sparsity_pattern = O.parameters[:use_sparsity_pattern]
+         if use_sparsity_pattern == "auto"
+             use_sparsity_pattern = ntest > 1
+        end
+        coupling_matrix::Matrix{Bool} = ones(Bool, nansatz, ntest)
+        if use_sparsity_pattern
+            kernel_params = (result, input) -> (O.kernel(result, input, O.QP_infos[1]);)
+            sparsity_pattern = SparseMatrixCSC{Float64,Int}(Symbolics.jacobian_sparsity(kernel_params, zeros(Tv, op_offsets_test[end]), zeros(Tv, op_offsets_ansatz[end])))
+
+            ## find out which test and ansatz functions couple
+            for id = 1 : nansatz
+                for idt = 1 : ntest
+                    couple = false
+                    for j = 1 : op_lengths_ansatz[id]
+                        for k = 1 : op_lengths_test[idt]
+                            if sparsity_pattern[j + op_offsets_ansatz[id], k + op_offsets_test[idt]] > 0
+                                couple = true
+                            end
+                        end
+                    end
+                    coupling_matrix[id, idt] = couple
+                end
+            end
+        end
+        couples_with::Vector{Vector{Int}} = [findall(==(true), view(coupling_matrix,j,:)) for j = 1 : nansatz]
 
         ## prepare parallel assembly
         if O.parameters[:parallel_assembly]
@@ -297,7 +328,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
                                     Aloc[id,id][j,j] += result_kernel[d + op_offsets_test[id]] * BE_test[id].cvals[d,j,qp]
                                 end
                             else
-                                for idt = 1 : ntest
+                                for idt in couples_with[id]
                                     for k = 1 : ndofs_test[idt]
                                         for d = 1 : op_lengths_test[idt]
                                             Aloc[idt,id][k,j] += result_kernel[d + op_offsets_test[idt]] * BE_test[idt].cvals[d,k,qp]
@@ -405,13 +436,17 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
         O.L2G = []
         for EG in EGs
             ## quadrature formula for EG
+            polyorder_ansatz = maximum([get_polynomialorder(FETypes_ansatz[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_ansatz[j]) for j = 1 : nansatz])
+            polyorder_test = maximum([get_polynomialorder(FETypes_test[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_test[j]) for j = 1 : ntest])
             if O.parameters[:quadorder] == "auto"
-                polyorder = max(maximum([get_polynomialorder(FE, EG) for FE in FETypes_ansatz]), maximum([get_polynomialorder(FE, EG) for FE in FETypes_test]))
-                minderiv = min(minimum([ExtendableFEMBase.NeededDerivative4Operator(op) for op in O.ops_ansatz]), minimum([ExtendableFEMBase.NeededDerivative4Operator(op) for op in O.ops_test]))
-                push!(O.QF, QuadratureRule{Tv, EG}(2*(polyorder - minderiv + O.parameters[:bonus_quadorder])))
+                quadorder = polyorder_ansatz + polyorder_test + O.parameters[:bonus_quadorder]
             else
-                push!(O.QF, QuadratureRule{Tv, EG}(O.parameters[:quadorder] + O.parameters[:bonus_quadorder]))
+                quadorder = O.parameters[:quadorder] + O.parameters[:bonus_quadorder]
             end
+            if O.parameters[:verbosity] > 1
+                @info "...... integrating on $EG with quadrature order $quadorder"
+            end
+            push!(O.QF, QuadratureRule{Tv, EG}(quadorder))
         
             ## FE basis evaluator for EG
             push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT) for j in 1 : ntest])
@@ -421,7 +456,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
             push!(O.L2G, L2GTransformer(EG, xgrid, gridAT))
 
             ## parameter structure
-            push!(O.QP_infos, QPInfos(0,0, Tv(0), time,zeros(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params]))
+            push!(O.QP_infos, QPInfos(0,0, Tv(0), time, ones(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params]))
         end
 
         ## prepare regions
@@ -443,6 +478,33 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
         append!(op_offsets_ansatz, cumsum(op_lengths_ansatz))
         offsets_test = [FE_test[j].offset for j in 1 : length(FES_test)]
         offsets_ansatz = [FE_ansatz[j].offset for j in 1 : length(FES_ansatz)]
+
+        ## prepare sparsity pattern
+        use_sparsity_pattern = O.parameters[:use_sparsity_pattern]
+         if use_sparsity_pattern == "auto"
+             use_sparsity_pattern = ntest > 1
+        end
+        coupling_matrix::Matrix{Bool} = ones(Bool, nansatz, ntest)
+        if use_sparsity_pattern
+            kernel_params = (result, input) -> (O.kernel(result, input, O.QP_infos[1]);)
+            sparsity_pattern = SparseMatrixCSC{Float64,Int}(Symbolics.jacobian_sparsity(kernel_params, zeros(Tv, op_offsets_test[end]), zeros(Tv, op_offsets_ansatz[end])))
+
+            ## find out which test and ansatz functions couple
+            for id = 1 : nansatz
+                for idt = 1 : ntest
+                    couple = false
+                    for j = 1 : op_lengths_ansatz[id]
+                        for k = 1 : op_lengths_test[idt]
+                            if sparsity_pattern[j + op_offsets_ansatz[id], k + op_offsets_test[idt]] > 0
+                                couple = true
+                            end
+                        end
+                    end
+                    coupling_matrix[id, idt] = couple
+                end
+            end
+        end
+        couples_with::Vector{Vector{Int}} = [findall(==(true), view(coupling_matrix,j,:)) for j = 1 : nansatz]
 
         ## prepare parallel assembly
         if O.parameters[:parallel_assembly]
@@ -491,10 +553,12 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 
                 ## update FE basis evaluators
                 for j = 1 : ntest
-                    update_basis!(BE_test[j], item) 
+                    BE_test[j].citem[] = item
+                    update_basis!(BE_test[j]) 
                 end
                 for j = 1 : nansatz
-                    update_basis!(BE_ansatz[j], item) 
+                    BE_ansatz[j].citem[] = item
+                    update_basis!(BE_ansatz[j]) 
                 end
 	            update_trafo!(L2G, item)
 
@@ -510,7 +574,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                             # evaluat kernel for ansatz basis function
                             fill!(input_ansatz, 0)
                             for d = 1 : op_lengths_ansatz[id]
-                                input_ansatz[d + op_offsets_ansatz[id]] += BE_ansatz[id].cvals[d,j,qp]
+                                input_ansatz[d + op_offsets_ansatz[id]] = BE_ansatz[id].cvals[d,j,qp]
                             end
 
                             # evaluate kernel
@@ -524,7 +588,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                                     Aloc[id,id][j,j] += result_kernel[d + op_offsets_test[id]] * BE_test[id].cvals[d,j,qp]
                                 end
                             else
-                                for idt = 1 : ntest
+                                for idt in couples_with[id]
                                     for k = 1 : ndofs_test[idt]
                                         for d = 1 : op_lengths_test[idt]
                                             Aloc[idt,id][k,j] += result_kernel[d + op_offsets_test[idt]] * BE_test[idt].cvals[d,k,qp]

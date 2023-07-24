@@ -133,13 +133,17 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
         O.L2G = []
         for EG in EGs
             ## quadrature formula for EG
+            polyorder_args = maximum([get_polynomialorder(FETypes_args[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_args[j]) for j = 1 : nargs])
+            polyorder_test = maximum([get_polynomialorder(FETypes_test[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_test[j]) for j = 1 : ntest])
             if O.parameters[:quadorder] == "auto"
-                polyorder = maximum([get_polynomialorder(FE, EG) for FE in FETypes_test])
-                minderiv = minimum([ExtendableFEMBase.NeededDerivative4Operator(op) for op in O.ops_test])
-                push!(O.QF, QuadratureRule{Tv, EG}(polyorder - minderiv + O.parameters[:bonus_quadorder]))
+                quadorder = polyorder_args + polyorder_test + O.parameters[:bonus_quadorder]
             else
-                push!(O.QF, QuadratureRule{Tv, EG}(O.parameters[:quadorder] + O.parameters[:bonus_quadorder]))
+                quadorder = O.parameters[:quadorder] + O.parameters[:bonus_quadorder]
             end
+            if O.parameters[:verbosity] > 1
+                @info "...... integrating on $EG with quadrature order $quadorder"
+            end
+            push!(O.QF, QuadratureRule{Tv, EG}(quadorder))
         
             ## FE basis evaluator for EG
             push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT) for j in 1 : ntest])
@@ -305,13 +309,16 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
         O.L2G = []
         for EG in EGs
             ## quadrature formula for EG
+            polyorder_test = maximum([get_polynomialorder(FETypes_test[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_test[j]) for j = 1 : ntest])
             if O.parameters[:quadorder] == "auto"
-                polyorder = maximum([get_polynomialorder(FE, EG) for FE in FETypes_test])
-                minderiv = minimum([ExtendableFEMBase.NeededDerivative4Operator(op) for op in O.ops_test])
-                push!(O.QF, QuadratureRule{Tv, EG}(polyorder - minderiv + O.parameters[:bonus_quadorder]))
+                quadorder = polyorder_test + O.parameters[:bonus_quadorder]
             else
-                push!(O.QF, QuadratureRule{Tv, EG}(O.parameters[:quadorder] + O.parameters[:bonus_quadorder]))
+                quadorder = O.parameters[:quadorder] + O.parameters[:bonus_quadorder]
             end
+            if O.parameters[:verbosity] > 1
+                @info "...... integrating on $EG with quadrature order $quadorder"
+            end
+            push!(O.QF, QuadratureRule{Tv, EG}(quadorder))
         
             ## FE basis evaluator for EG
             push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT) for j in 1 : ntest])

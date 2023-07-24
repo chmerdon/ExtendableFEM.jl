@@ -34,10 +34,11 @@ default_nlop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :name => ("NonlinearOperator", "name for operator used in printouts"),
     :parallel_assembly => (true, "assemble operator in parallel using CellAssemblyGroups"),
     :factor => (1, "factor that should be multiplied during assembly"),
-    :sparse_jacobians => (false, "use sparse jacobians"),
+    :sparse_jacobians => (true, "use sparse jacobians"),
     :entry_tolerance => (0, "threshold to add entry to sparse matrix"),
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
-    :quadorder => (2, "quadrature order"),
+    :quadorder => ("auto", "quadrature order"),
+    :bonus_quadorder => (0, "quadrature order added to quadorder"),
     :verbosity => (0, "verbosity level"),
     :regions => ([], "subset of regions where operator should be assembly only")
 )
@@ -105,8 +106,17 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
         O.L2G = []
         for EG in EGs
             ## quadrature formula for EG
-            #polyorder = max(maximum([get_polynomialorder(FE, EG) for FE in FETypes_args]), maximum([get_polynomialorder(FE, EG) for FE in FETypes_test]))
-            push!(O.QF, QuadratureRule{Tv, EG}(O.parameters[:quadorder]))
+            polyorder_args = maximum([get_polynomialorder(FETypes_args[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_args[j]) for j = 1 : nargs])
+            polyorder_test = maximum([get_polynomialorder(FETypes_test[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_test[j]) for j = 1 : ntest])
+            if O.parameters[:quadorder] == "auto"
+                quadorder = polyorder_args + polyorder_test + O.parameters[:bonus_quadorder]
+            else
+                quadorder = O.parameters[:quadorder] + O.parameters[:bonus_quadorder]
+            end
+            if O.parameters[:verbosity] > 1
+                @info "...... integrating on $EG with quadrature order $quadorder"
+            end
+            push!(O.QF, QuadratureRule{Tv, EG}(quadorder))
         
             ## FE basis evaluator for EG
             push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]) for j in 1 : ntest])

@@ -91,15 +91,6 @@ function kernel_l2div(result, u_ops, qpinfo)
     result[1] = (qpinfo.x[1]*divu[1] + u[1])^2
 end
 
-function kernel_normalflux(result, un, qpinfo)
-    result[1] = qpinfo.x[1]*un[1]
-end
-
-function kernel_flux(result, un, qpinfo)
-    result[1] = qpinfo.x[1]*un[1]
-    result[2] = qpinfo.x[1]*un[2]
-end
-
 
 function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter = nothing, kwargs...)
 
@@ -109,9 +100,9 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     p = Unknown("p"; name = "pressure")
     assign_unknown!(PD, u)
     assign_unknown!(PD, p)
-    assign_operator!(PD, BilinearOperator(kernel_stokes_axisymmetric!, [id(u),grad(u),id(p)]; bonus_quadorder = 0, params = [μ], kwargs...))#; jacobian = kernel_jacobian!)) 
+    assign_operator!(PD, BilinearOperator(kernel_stokes_axisymmetric!, [id(u),grad(u),id(p)]; params = [μ], kwargs...))#; jacobian = kernel_jacobian!)) 
     if nonlinear
-        assign_operator!(PD, NonlinearOperator(kernel_convection!, [id(u)], [id(u),grad(u)]; bonus_quadorder = 2, kwargs...))#; jacobian = kernel_jacobian!)) 
+        assign_operator!(PD, NonlinearOperator(kernel_convection!, [id(u)], [id(u),grad(u)]; bonus_quadorder = 1, kwargs...))#; jacobian = kernel_jacobian!)) 
     end
     assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = 1:2))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [4], mask = (1,0,1)))
@@ -131,94 +122,14 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     end
 
     ## solve
-    #FES = [FESpace{H1P2{2,2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
-    FES = [FESpace{H1BR{2}}(xgrid), FESpace{L2P0{1}}(xgrid)]
+    FES = [FESpace{H1P2{2,2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
     sol = ExtendableFEM.solve!(PD, FES; kwargs...)
 
     ## compute divergence in cylindrical coordinates by volume integrals
-    DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 8, resultdim = 1)
+    DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 2, resultdim = 1)
     @info "||div(u)|| = $(sqrt(sum(evaluate(DivIntegrator, sol))))"
 
-
-    function multiply_r_kernel!(result, input, qpinfo)
-        r = qpinfo.x[1]
-        result .= r * input
-    end
-
-    FES_reconst = FESpace{HDIVRT0{2}}(xgrid)
-    R = FEVector(FES_reconst)
-    lazy_interpolate!(R[1], sol, [id(u)]; postprocess = multiply_r_kernel!, bonus_quadorder = 2)
-
-
-    facenodes = xgrid[FaceNodes]
-    coords = xgrid[Coordinates]
-    num_faces = size(facenodes, 2)
-    for j = 1 : num_faces
-        rmid4face = (coords[1, facenodes[1,j]] + coords[1, facenodes[2,j]])/2
-        if rmid4face > 1e-15
-           R.entries[j] /= rmid4face
-        end
-    end
-
-    ## compute normafluxes
-    FluxIntegrator = ItemIntegrator(kernel_normalflux, [normalflux(1)]; entities = ON_FACES, resultdim = 1)
-    flux4faces = evaluate(FluxIntegrator, [R[1]])
-    div4cells = zeros(Float64, num_cells(xgrid))
-    cellfacesigns = xgrid[CellFaceSigns]
-    facecells = xgrid[FaceCells]
-    facenormals = xgrid[FaceNormals]
-    cellfaces = xgrid[CellFaces]
-    for cell in 1:num_cells(xgrid)
-        for j = 1 : 3
-            div4cells[cell] += cellfacesigns[j,cell] * flux4faces[cellfaces[j,cell]]
-        end
-    end
-    @info extrema(div4cells)
-
-    ## again by segment integrator
-    SI = SegmentIntegrator(Edge1D, kernel_flux, [id(1)]; kwargs...)
-    initialize!(SI, [R[1]])
-    fill!(div4cells, 0)
-    flux = zeros(Float64, 2)
-    for cell in 1:num_cells(xgrid)
-        face = cellfaces[1,cell]
-        SI.integrator(flux, [xgrid[Coordinates][:,j] for j in xgrid[FaceNodes][:,face]], [[0,0.0], [1.0,0]], cell)
-        div4cells[cell] += cellfacesigns[1,cell] * dot(flux, facenormals[:,face])
-        face = cellfaces[2,cell]
-        SI.integrator(flux, [xgrid[Coordinates][:,j] for j in xgrid[FaceNodes][:,face]], [[1,0.0], [0,1.0]], cell)
-        div4cells[cell] += cellfacesigns[2,cell] * dot(flux, facenormals[:,face])
-        face = cellfaces[3,cell]
-        SI.integrator(flux, [xgrid[Coordinates][:,j] for j in xgrid[FaceNodes][:,face]], [[0,1.0], [0,0.0]], cell)
-        div4cells[cell] += cellfacesigns[3,cell] * dot(flux, facenormals[:,face])
-    end
-    @info extrema(div4cells)
-
-    ## again by matrix mode of segment integrator
-    initialize!(SI, sol; matrix_mode = true, bonus_quadorder = 1)
-    fill!(div4cells, 0)
-    num_faces = size(facenormals,2)
-    A = ExtendableSparseMatrix{Float64,Int}(2*num_faces, sol[1].FES.ndofs)
-    cell::Int = 0
-    for face = 1 : num_faces
-        cell = facecells[1,face]
-        if cellfaces[1,cell] == face
-            SI.integrator(A, [xgrid[Coordinates][:,j] for j in xgrid[FaceNodes][:,face]], [[0,0.0], [1.0,0]], cell, face)
-        elseif cellfaces[2,cell] == face
-            SI.integrator(A, [xgrid[Coordinates][:,j] for j in xgrid[FaceNodes][:,face]], [[1,0.0], [0,1.0]], cell, face)
-        elseif cellfaces[3,cell] == face
-            SI.integrator(A, [xgrid[Coordinates][:,j] for j in xgrid[FaceNodes][:,face]], [[0,1.0], [0,0.0]], cell, face)
-        end
-    end
-    fluxes = A * view(sol[1])
-    for cell in 1:num_cells(xgrid)
-        for j = 1 : 3
-            face = cellfaces[j,cell]
-            div4cells[cell] += cellfacesigns[j,cell] * dot(fluxes[(face-1)*2+1:face*2], facenormals[:,face])
-        end
-    end
-
-    @info extrema(div4cells)
-
+    ## plot
     pl=GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, resolution = (1200,1200))
     scalarplot!(pl[1,1], xgrid, nodevalues_view(sol[u])[1]; Plotter = Plotter)
     scalarplot!(pl[1,2], xgrid, nodevalues_view(sol[u])[2]; Plotter = Plotter)
