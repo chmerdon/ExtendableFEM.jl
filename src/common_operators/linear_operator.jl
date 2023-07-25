@@ -36,18 +36,24 @@ default_linop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::LinearOperator, u::Unknown)
-    return u in O.u_args
+function ExtendableFEM.depends_nonlinearly_on(O::LinearOperator)
+    return unique(O.u_args)
 end
 
 # informs solver in which blocks the operator assembles to
 function ExtendableFEM.dependencies_when_linearized(O::LinearOperator)
-    return [O.u_test]
+    return [unique(O.u_test)]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
 function ExtendableFEM.is_timedependent(O::LinearOperator)
     return false
+end
+
+function Base.show(io::IO, O::LinearOperator)
+    dependencies = dependencies_when_linearized(O)
+    print(io, "$(O.parameters[:name])($([test_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]))")
+    return nothing
 end
 
 function LinearOperator(kernel, u_test, ops_test, u_args, ops_args; Tv = Float64, kwargs...)

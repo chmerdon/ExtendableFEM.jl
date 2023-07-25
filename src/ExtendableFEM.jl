@@ -14,6 +14,7 @@ using SparseDiffTools
 using DiffResults
 using UnicodePlots
 using Printf
+using DocStringExtensions
 
 include("unknowns.jl")
 export Unknown
@@ -34,6 +35,8 @@ export ProblemDescription
 export assign_unknown!
 export assign_operator!
 export assign_reduction!
+
+include("helper_functions.jl")
 export get_periodic_coupling_info
 
 include("solver_config.jl")

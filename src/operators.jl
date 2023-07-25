@@ -1,12 +1,17 @@
 abstract type AbstractOperator end
 
 # informs solver when operator needs reassembly
-function depends_nonlinearly_on(O::AbstractOperator, unknown::Unknown)
+function depends_nonlinearly_on(O::AbstractOperator)
     return false
 end
 
 # informs solver in which blocks the operator assembles to
 function dependencies_when_linearized(O::AbstractOperator)
+    return nothing # Array{Symbol,1} (linear forms) or Array{Array{Symbol,1},1} (bilinearform)
+end
+
+function Base.show(io::IO, O::AbstractOperator)
+    print(io, "AbstractOperator")
     return nothing # Array{Symbol,1} (linear forms) or Array{Array{Symbol,1},1} (bilinearform)
 end
 

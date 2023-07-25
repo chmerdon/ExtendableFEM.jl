@@ -38,6 +38,7 @@ default_blfop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :entry_tolerance => (0, "threshold to add entry to sparse matrix"),
     :use_sparsity_pattern => ("auto", "read sparsity pattern of jacobian of kernel to find out which components couple"),
     :parallel_assembly => (true, "assemble operator in parallel using CellAssemblyGroups"),
+    :time_dependent => (false, "operator is time-dependent ?"),
     :store => (false, "store matrix separately (and copy from there when reassembly is triggered)"),
     :quadorder => ("auto", "quadrature order"),
     :bonus_quadorder => (0, "quadrature order added to quadorder"),
@@ -51,19 +52,26 @@ getFEStest(FMB::FEMatrixBlock) = FMB.FES
 getFESansatz(FMB::FEMatrixBlock) = FMB.FESY
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::BilinearOperator, u::Unknown)
-    return u in O.u_args
+function ExtendableFEM.depends_nonlinearly_on(O::BilinearOperator)
+    return unique(O.u_args)
 end
 
 # informs solver in which blocks the operator assembles to
 function ExtendableFEM.dependencies_when_linearized(O::BilinearOperator)
-    return [O.u_test, O.u_ansatz]
+    return [unique(O.u_ansatz), unique(O.u_test)]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
 function ExtendableFEM.is_timedependent(O::BilinearOperator)
-    return false
+    return O.parameters[:time_dependent]
 end
+
+function Base.show(io::IO, O::BilinearOperator)
+    dependencies = dependencies_when_linearized(O)
+    print(io, "$(O.parameters[:name])($([ansatz_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]), $([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]))")
+    return nothing
+end
+
 
 function BilinearOperator(A::AbstractMatrix, u_test, u_ansatz = u_test; Tv = Float64, kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_blfop_kwargs())
@@ -107,6 +115,37 @@ function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown
     return BilinearOperator(kernel, u_test, ops_test, u_ansatz, ops_ansatz; kwargs...)
 end
 
+
+"""
+````
+function BilinearOperator(
+    [kernel::Function],
+    oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1},
+    oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1} = oa_test;
+    kwargs...)
+````
+
+Generates a bilinear form that evaluates the vector product of the
+operator evaluation(s) of the test function(s) with the operator evaluation(s)
+of the ansatz function(s). If a function is provided in the first argument,
+the ansatz function evaluations can be customized by the kerne function
+and its result vector is then used in a dot product with the test function evaluations.
+In this case the header of the kernel functions needs to be conform
+to the interface
+
+    kernel!(result, eval_ansatz, qpinfo)
+
+where qpinfo allows to access information at the current quadrature point.
+
+Operator evaluations are tuples that pair an unknown identifier or integer
+with a Function operator.
+
+Example: BilinearOperator([grad(1)], [grad(1)]; kwargs...) generates a weak Laplace operator.
+
+Keyword arguments:
+$(_myprint(default_blfop_kwargs()))
+
+"""
 function BilinearOperator(oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1} = oa_test; kwargs...)
     u_test = [oa[1] for oa in oa_test]
     u_ansatz = [oa[1] for oa in oa_ansatz]
@@ -115,6 +154,38 @@ function BilinearOperator(oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1
     return BilinearOperator(standard_kernel, u_test, ops_test, u_ansatz, ops_ansatz; kwargs...)
 end
 
+
+"""
+````
+function BilinearOperator(
+    kernel::Function,
+    oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1},
+    oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1},
+    oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1};
+    kwargs...)
+````
+
+Generates a nonlinear bilinear form that evaluates a kernel function
+that depends on the operator evaluation(s) of the ansatz function(s)
+and the operator evaluations of the current solution. The result of the
+kernel function is used in a vector product with the operator evaluation(s)
+of the test function(s). Hence, this can be used as a linearization of a
+nonlinear operator. The header of the kernel functions needs to be conform
+to the interface
+
+    kernel!(result, eval_ansatz, eval_args, qpinfo)
+
+where qpinfo allows to access information at the current quadrature point.
+
+Operator evaluations are tuples that pair an unknown identifier or integer
+with a Function operator.
+
+Example: BilinearOperator([grad(1)], [grad(1)]; kwargs...) generates a weak Laplace operator.
+
+Keyword arguments:
+$(_myprint(default_blfop_kwargs()))
+
+"""
 function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
     u_test = [oa[1] for oa in oa_test]
     u_ansatz = [oa[1] for oa in oa_ansatz]

@@ -29,11 +29,12 @@ function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, kwargs...)
 
     ## problem description
     PD = ProblemDescription()
-    u = Unknown("u"; name = "u")
+    u = Unknown("u"; name = "potential")
     assign_unknown!(PD, u)
     assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, kwargs...))
     assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
+    @show PD
 
     ## discretize
     xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)

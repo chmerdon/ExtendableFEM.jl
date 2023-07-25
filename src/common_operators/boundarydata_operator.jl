@@ -39,6 +39,12 @@ function ExtendableFEM.fixed_dofs(O::InterpolateBoundaryData)
     return O.bdofs
 end
 
+function Base.show(io::IO, O::InterpolateBoundaryData)
+    dependencies = dependencies_when_linearized(O)
+    print(io, "$(O.parameters[:name])($(ansatz_function(dependencies)))")
+    return nothing
+end
+
 function InterpolateBoundaryData(u, data = nothing; kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_bndop_kwargs())
     _update_params!(parameters, kwargs)
@@ -115,6 +121,13 @@ function ExtendableFEM.fixed_dofs(O::HomogeneousData)
     ## assembles operator to full matrix A and b
     return O.bdofs
 end
+
+function Base.show(io::IO, O::HomogeneousData)
+    dependencies = dependencies_when_linearized(O)
+    print(io, "$(O.parameters[:name])($(ansatz_function(dependencies)), regions = $(O.parameters[:regions]))")
+    return nothing
+end
+
 
 function HomogeneousData(u; entities = ON_CELLS, kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_bndop_kwargs())
@@ -241,6 +254,12 @@ end
 function ExtendableFEM.fixed_dofs(O::FixDofs)
     ## assembles operator to full matrix A and b
     return O.dofs .+ O.offset
+end
+
+function Base.show(io::IO, O::FixDofs)
+    dependencies = dependencies_when_linearized(O)
+    print(io, "$(O.parameters[:name])($(ansatz_function(dependencies)), regions = $(O.parameters[:regions]))")
+    return nothing
 end
 
 function FixDofs(u; vals = [], dofs =[], kwargs...)

@@ -107,6 +107,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = 1:2))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [4], mask = (1,0,1)))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1], mask = (0,1,1)))
+    @show PD
 
     ## grid
     if uniform

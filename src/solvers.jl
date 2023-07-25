@@ -76,10 +76,13 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
 
     ## check if problem is (non)linear
     nonlinear = false
-    for op in PD.operators, u in unknowns
-        nonlinear = depends_nonlinearly_on(op, u)
-        if nonlinear
-            break
+    for op in PD.operators
+        nl_dependencies = depends_nonlinearly_on(op)
+        for u in unknowns
+            nonlinear = u in nl_dependencies
+            if nonlinear
+                break
+            end
         end
     end
     if SC.parameters[:verbosity] > -1

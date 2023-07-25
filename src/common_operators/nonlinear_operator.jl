@@ -44,18 +44,25 @@ default_nlop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::NonlinearOperator, u::Unknown)
-    return u in O.u_args
+function ExtendableFEM.depends_nonlinearly_on(O::NonlinearOperator)
+    return unique(O.u_args)
 end
 
 # informs solver in which blocks the operator assembles to
 function ExtendableFEM.dependencies_when_linearized(O::NonlinearOperator)
-    return [O.u_test, O.u_args]
+    return [unique(O.u_test), unique(O.u_args)]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
 function ExtendableFEM.is_timedependent(O::NonlinearOperator)
     return false
+end
+
+function Base.show(io::IO, O::NonlinearOperator)
+    nl_dependencies = depends_nonlinearly_on(O)
+    dependencies = dependencies_when_linearized(O)
+    print(io, "$(O.parameters[:name])($([ansatz_function(nl_dependencies[j]) for j = 1 : length(nl_dependencies)]); $([ansatz_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]), $([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]))")
+    return nothing
 end
 
 function NonlinearOperator(kernel, u_test, ops_test, u_args = u_test, ops_args = ops_test; Tv = Float64, jacobian = nothing, kwargs...)

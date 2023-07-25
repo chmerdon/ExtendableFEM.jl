@@ -20,12 +20,6 @@ default_combop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :verbosity => (0, "verbosity level"),
 )
 
-# informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::CombineDofs, u::Unknown)
-    return false
-end
-
-
 # informs solver in which blocks the operator assembles to
 function ExtendableFEM.dependencies_when_linearized(O::CombineDofs)
     return [O.uX,O.uY]

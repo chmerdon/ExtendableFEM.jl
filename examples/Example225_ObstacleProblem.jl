@@ -52,6 +52,7 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
     assign_operator!(PD, BilinearOperator([grad(u)]; kwargs...))
     assign_operator!(PD, LinearOperator([id(u)]; factor = -1, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
+    @show PD
         
     ## create finite element space
     FES = FESpace{H1Pk{1,2,order}}(xgrid)
