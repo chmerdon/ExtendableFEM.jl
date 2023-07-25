@@ -15,15 +15,14 @@ segment_geometry(::SegmentIntegrator{Tv,UT,KFT,EG}) where {Tv, UT, KFT, EG} = EG
 
 
 default_segint_kwargs()=Dict{Symbol,Tuple{Any,String}}(
-    :geometry => (nothing, "ElementGeometry of the segments the integrator should integrate on"),
     :name => ("SegmentIntegrator", "name for operator used in printouts"),
     :resultdim => (0, "dimension of result field (default = length of arguments)"),
-    :entry_tolerance => (0, "threshold to add entry to sparse matrix"),
     :matrix_mode => (false, "integrator integrates basis functions of FEspace seperately to assembly a matrix that maps solution to segment integrations (requires that kernel is linear)"),
+    :entry_tolerance => (0, "threshold to add entry to sparse matrix (only in matrix_mode)"),
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :factor => (1, "factor that should be multiplied during assembly"),
     :quadorder => ("auto", "quadrature order"),
-    :bonus_quadorder => (0, "quadrature order added to quadorder"),
+    :bonus_quadorder => (0, "additional quadrature order added to quadorder"),
     :verbosity => (0, "verbosity level")
 )
 
@@ -35,6 +34,38 @@ function SegmentIntegrator(EG, kernel, u_args, ops_args; Tv = Float64, kwargs...
     return SegmentIntegrator{Tv, typeof(u_args[1]), typeof(kernel), EG}(u_args, ops_args, kernel, nothing, parameters)
 end
 
+
+"""
+````
+function SegmentIntegrator(
+    EG::ElementGeometry,
+    [kernel!::Function],
+    oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1};
+    kwargs...)
+````
+
+Generates an SegmentIntegrator that can intgrate over segments
+of the specified geometry EG.
+To do so, it evaluates, at each quadrature point, the specified operator evaluations,
+postprocesses them with the kernel function (if provided)
+and accumulates the results with the quadrature weights.
+If no kernel is given, the arguments
+are integrated directly. If a kernel is provided it has be conform
+to the interface
+
+    kernel!(result, eval_args, qpinfo)
+
+where qpinfo allows to access information at the current quadrature point.
+Additionally the length of the result needs to be specified via the kwargs.
+
+Evaluation can be triggered via the integrate_segment! function after an initialize!
+
+Operator evaluations are tuples that pair an unknown identifier or integer
+with a Function operator.
+
+Keyword arguments:
+$(_myprint(default_segint_kwargs()))
+"""
 function SegmentIntegrator(EG, kernel, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
     u_args = [oa[1] for oa in oa_args]
     ops_args = [oa[2] for oa in oa_args]
@@ -47,6 +78,18 @@ function SegmentIntegrator(EG, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataTy
     return SegmentIntegrator(EG, standard_kernel, u_args, ops_args; kwargs...)
 end
 
+
+"""
+````
+function initialize!(
+    O::SegmentIntegrator{T, UT},
+    sol;
+    time = 0,
+    kwargs...)
+````
+
+Initializes the SegmentIntegrator for the specified solution.
+"""
 function initialize!(O::SegmentIntegrator{T, UT}, sol; time = 0, kwargs...) where {T, UT}
     _update_params!(O.parameters, kwargs)
     if UT <: Integer
@@ -278,6 +321,20 @@ function initialize!(O::SegmentIntegrator{T, UT}, sol; time = 0, kwargs...) wher
     return nothing
 end
 
+
+"""
+````
+function integrate_segment!(
+    result::Array{T,1},
+    SI::SegmentIntegrator,
+    w::Array{Array{T,1},1},
+    b::Array{Array{T,1},1},
+    item
+    ) where {T}
+````
+
+Integrate a segment with world coordinates w and barycentric coordinates b in the cell with the given item number.
+"""
 function integrate_segment!(
     result::Array{T,1},
     SI::SegmentIntegrator,

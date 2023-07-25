@@ -25,12 +25,13 @@ end
 default_linop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :entities => (ON_CELLS, "assemble operator on these grid entities (default = ON_CELLS)"),
     :name => ("LinearOperator", "name for operator used in printouts"),
-    :parallel_assembly => (true, "assemble operator in parallel using CellAssemblyGroups"),
+    :parallel_groups => (false, "assemble operator in parallel using CellAssemblyGroups"),
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :factor => (1, "factor that should be multiplied during assembly"),
     :store => (false, "store matrix separately (and copy from there when reassembly is triggered)"),
     :quadorder => ("auto", "quadrature order"),
-    :bonus_quadorder => (0, "quadrature order added to quadorder"),
+    :bonus_quadorder => (0, "additional quadrature order added to quadorder"),
+    :time_dependent => (false, "operator is time-dependent ?"),
     :verbosity => (0, "verbosity level"),
     :regions => ([], "subset of regions where operator should be assembly only")
 )
@@ -47,7 +48,7 @@ end
 
 # informs solver when operator needs reassembly in a time dependent setting
 function ExtendableFEM.is_timedependent(O::LinearOperator)
-    return false
+    return O.parameters[:time_dependent]
 end
 
 function Base.show(io::IO, O::LinearOperator)
@@ -81,6 +82,35 @@ function LinearOperator(kernel, u_test, ops_test; Tv = Float64, kwargs...)
     return LinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, [], [], kernel, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, storage, parameters)
 end
 
+"""
+````
+function LinearOperator(
+    [kernel!::Function],
+    oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1};
+    kwargs...)
+````
+
+Generates a linear form that evaluates, in each quadrature point,
+the kernel function (if non is provided, a constant function one is used)
+and computes the vector product of the result with with the operator evaluation(s)
+of the test function(s). The header of the kernel functions needs to be conform
+to the interface
+
+    kernel!(result, qpinfo)
+
+where qpinfo allows to access information at the current quadrature point,
+e.g. qpinfo.x are the global coordinates of the quadrature point.
+
+Operator evaluations are tuples that pair an unknown identifier or integer
+with a Function operator.
+
+Example: LinearOperator(kernel!, [id(1)]; kwargs...) generates the right-hand side
+for a Poisson problem, where kernel! evaluates the right-hand side.
+
+Keyword arguments:
+$(_myprint(default_linop_kwargs()))
+
+"""
 function LinearOperator(kernel, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
     u_test = [oa[1] for oa in oa_test]
     ops_test = [oa[2] for oa in oa_test]
@@ -93,12 +123,53 @@ function LinearOperator(oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1};
     return LinearOperator(constant_one_kernel, u_test, ops_test; kwargs...)
 end
 
+
+"""
+````
+function LinearOperator(
+    b,
+    u_test;
+    kwargs...)
+````
+
+Generates a linear form from a user-provided vector b, which can be an AbstractVector or a FEVector with
+multiple blocks. The argument u_test specifies where to put the (blocks of the) vector in the system right-hand side.
+
+"""
 function LinearOperator(b, u_test; kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_linop_kwargs())
     _update_params!(parameters, kwargs)
     return LinearOperatorFromVector{typeof(u_test[1]), typeof(b)}(u_test, b, parameters)
 end
 
+
+"""
+````
+function LinearOperator(
+    kernel!::Function,
+    oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1},
+    oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1};
+    kwargs...)
+````
+
+Generates a nonlinear linear form that evaluates a kernel function
+that depends the operator evaluations of the current solution. The result of the
+kernel function is used in a vector product with the operator evaluation(s)
+of the test function(s). Hence, this can be used as a linearization of a
+nonlinear operator. The header of the kernel functions needs to be conform
+to the interface
+
+    kernel!(result, eval_args, qpinfo)
+
+where qpinfo allows to access information at the current quadrature point.
+
+Operator evaluations are tuples that pair an unknown identifier or integer
+with a Function operator.
+
+Keyword arguments:
+$(_myprint(default_linop_kwargs()))
+
+"""
 function LinearOperator(kernel, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
     u_test = [oa[1] for oa in oa_test]
     u_args = [oa[1] for oa in oa_args]
@@ -183,7 +254,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
         append!(op_offsets_args, cumsum(op_lengths_args))
 
         ## prepare parallel assembly
-        if O.parameters[:parallel_assembly]
+        if O.parameters[:parallel_groups]
             bj = Array{typeof(b),1}(undef, length(EGs))
             for j = 1 : length(EGs)
                 bj[j] = deepcopy(b)
@@ -266,7 +337,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 
         function assembler(b, sol; kwargs...)
             time = @elapsed begin
-                if O.parameters[:parallel_assembly]
+                if O.parameters[:parallel_groups]
                     Threads.@threads for j = 1 : length(EGs)
                         fill!(bj[j],0)
                         assembly_loop(bj[j], sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.L2G[j], O.QP_infos[j]; kwargs...)
@@ -352,7 +423,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
         append!(op_offsets_test, cumsum(op_lengths_test))
 
         ## prepare parallel assembly
-        if O.parameters[:parallel_assembly]
+        if O.parameters[:parallel_groups]
             bj = Array{typeof(b),1}(undef, length(EGs))
             for j = 1 : length(EGs)
                 bj[j] = deepcopy(b)
@@ -425,7 +496,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
                     s = b
                 end
                 time = @elapsed begin
-                    if O.parameters[:parallel_assembly]
+                    if O.parameters[:parallel_groups]
                         Threads.@threads for j = 1 : length(EGs)
                             fill!(bj[j],0)
                             assembly_loop(bj[j], view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.L2G[j], O.QP_infos[j]; kwargs...)

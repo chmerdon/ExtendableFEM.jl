@@ -14,13 +14,13 @@ end
 default_iiop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :entities => (ON_CELLS, "assemble operator on these grid entities (default = ON_CELLS)"),
     :name => ("ItemIntegrator", "name for operator used in printouts"),
-    :parallel_assembly => (true, "assemble operator in parallel using CellAssemblyGroups"),
     :resultdim => (0, "dimension of result field (default = length of arguments)"),
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :factor => (1, "factor that should be multiplied during assembly"),
     :quadorder => ("auto", "quadrature order"),
+    :bonus_quadorder => (0, "additional quadrature order added to quadorder"),
     :verbosity => (0, "verbosity level"),
-    :regions => ([], "subset of regions where operator should be assembly only")
+    :regions => ([], "subset of regions where the item integrator should be evaluated")
 )
 
 function l2norm_kernel(result, input, qpinfo)
@@ -34,6 +34,33 @@ function ItemIntegrator(kernel, u_args, ops_args; Tv = Float64, kwargs...)
     return ItemIntegrator{Tv, typeof(u_args[1]), typeof(kernel)}(u_args, ops_args, kernel, nothing, nothing, nothing, nothing, nothing, nothing, parameters)
 end
 
+"""
+````
+function ItemIntegrator(
+    [kernel!::Function],
+    oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1};
+    kwargs...)
+````
+
+Generates an ItemIntegrator that evaluates the specified operator evaluations,
+puts it into the kernel function
+and integrates the results over the entities (see kwargs). If no kernel is given, the arguments
+are integrated directly. If a kernel is provided it has be conform
+to the interface
+
+    kernel!(result, eval_args, qpinfo)
+
+where qpinfo allows to access information at the current quadrature point.
+Additionally the length of the result needs to be specified via the kwargs.
+
+Evaluation can be triggered via the evaluate function.
+
+Operator evaluations are tuples that pair an unknown identifier or integer
+with a Function operator.
+
+Keyword arguments:
+$(_myprint(default_iiop_kwargs()))
+"""
 function ItemIntegrator(kernel, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
     u_args = [oa[1] for oa in oa_args]
     ops_args = [oa[2] for oa in oa_args]
@@ -79,13 +106,16 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
         O.L2G = []
         for EG in EGs
             ## quadrature formula for EG
+            polyorder_args = maximum([get_polynomialorder(FETypes_args[j], EG) - ExtendableFEMBase.NeededDerivative4Operator(O.ops_args[j]) for j = 1 : nargs])
             if O.parameters[:quadorder] == "auto"
-                polyorder = maximum([get_polynomialorder(FE, EG) for FE in FETypes_args])
-                minderiv = minimum([ExtendableFEMBase.NeededDerivative4Operator(op) for op in O.ops_args])
-                push!(O.QF, QuadratureRule{Tv, EG}(polyorder - minderiv))
+                quadorder = polyorder_args + O.parameters[:bonus_quadorder]
             else
-                push!(O.QF, QuadratureRule{Tv, EG}(O.parameters[:quadorder]))
+                quadorder = O.parameters[:quadorder] + O.parameters[:bonus_quadorder]
             end
+            if O.parameters[:verbosity] > 1
+                @info "...... integrating on $EG with quadrature order $quadorder"
+            end
+            push!(O.QF, QuadratureRule{Tv, EG}(quadorder))
         
             ## FE basis evaluator for EG
             push!(O.BE_args, [FEEvaluator(FES_args[j], O.ops_args[j], O.QF[end]; AT = AT) for j in 1 : nargs])
@@ -195,12 +225,35 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 end
 
 
+"""
+````
+function evaluate(
+    b::AbstractMatrix,
+    O::ItemIntegrator,
+    sol;
+    time = 0,
+    kwargs...)
+````
+
+Evaluates the ItemIntegrator for the specified solution into the matrix b.
+"""
 function evaluate!(b, O::ItemIntegrator, sol::FEVector; time = 0, kwargs...)
     ind_args = [findfirst(==(u), sol.tags) for u in O.u_args]
     build_assembler!(O, [sol[j] for j in ind_args])
     O.assembler(b, [sol[j] for j in ind_args]; time = time)
 end
 
+"""
+````
+function evaluate(
+    O::ItemIntegrator,
+    sol;
+    time = 0,
+    kwargs...)
+````
+
+Evaluates the ItemIntegrator for the specified solution and returns an matrix of size resultdim x num_items.
+"""
 function evaluate(O::ItemIntegrator{Tv,UT}, sol; time = 0, kwargs...) where {Tv,UT}
     if UT <: Integer
         ind_args = O.u_args

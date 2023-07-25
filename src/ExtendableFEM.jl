@@ -16,6 +16,9 @@ using UnicodePlots
 using Printf
 using DocStringExtensions
 
+include("io.jl")
+export print_convergencehistory
+
 include("unknowns.jl")
 export Unknown
 
@@ -65,10 +68,12 @@ export NonlinearOperator
 include("common_operators/combinedofs.jl")
 export CombineDofs
 export get_periodic_coupling_info
-include("common_operators/boundarydata_operator.jl")
+include("common_operators/interpolateboundarydata_operator.jl")
 export InterpolateBoundaryData
+include("common_operators/homogeneousdata_operator.jl")
 export HomogeneousBoundaryData
 export HomogeneousData
+include("common_operators/fixdofs_operator.jl")
 export FixDofs
 include("common_operators/discface_interpolator.jl")
 export FaceInterpolator
@@ -86,7 +91,5 @@ export lazy_interpolate!
 include("plots.jl")
 export plot_convergencehistory!
 
-include("io.jl")
-export print_convergencehistory
 
 end #module

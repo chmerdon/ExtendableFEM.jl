@@ -18,7 +18,6 @@ mutable struct NonlinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT,
     ops_args::Array{DataType,1}
     kernel::KFT
     jacobian::JFT
-    
     FES_test             #::Array{FESpace,1}
     FES_args             #::Array{FESpace,1}
     BE_test              #::Union{Nothing, Array{FEEvaluator,1}}
@@ -32,13 +31,14 @@ end
 default_nlop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :entities => (ON_CELLS, "assemble operator on these grid entities (default = ON_CELLS)"),
     :name => ("NonlinearOperator", "name for operator used in printouts"),
-    :parallel_assembly => (true, "assemble operator in parallel using CellAssemblyGroups"),
+    :parallel_groups => (false, "assemble operator in parallel using CellAssemblyGroups"),
     :factor => (1, "factor that should be multiplied during assembly"),
     :sparse_jacobians => (true, "use sparse jacobians"),
     :entry_tolerance => (0, "threshold to add entry to sparse matrix"),
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :quadorder => ("auto", "quadrature order"),
-    :bonus_quadorder => (0, "quadrature order added to quadorder"),
+    :bonus_quadorder => (0, "additional quadrature order added to quadorder"),
+    :time_dependent => (false, "operator is time-dependent ?"),
     :verbosity => (0, "verbosity level"),
     :regions => ([], "subset of regions where operator should be assembly only")
 )
@@ -55,7 +55,7 @@ end
 
 # informs solver when operator needs reassembly in a time dependent setting
 function ExtendableFEM.is_timedependent(O::NonlinearOperator)
-    return false
+    return O.parameters[:time_dependent]
 end
 
 function Base.show(io::IO, O::NonlinearOperator)
@@ -64,6 +64,7 @@ function Base.show(io::IO, O::NonlinearOperator)
     print(io, "$(O.parameters[:name])($([ansatz_function(nl_dependencies[j]) for j = 1 : length(nl_dependencies)]); $([ansatz_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]), $([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]))")
     return nothing
 end
+
 
 function NonlinearOperator(kernel, u_test, ops_test, u_args = u_test, ops_args = ops_test; Tv = Float64, jacobian = nothing, kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_nlop_kwargs())
@@ -74,6 +75,32 @@ function NonlinearOperator(kernel, u_test, ops_test, u_args = u_test, ops_args =
 end
 
 
+"""
+````
+function NonlinearOperator(
+    [kernel!::Function],
+    oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1},
+    oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1} = oa_test;
+    kwargs...)
+````
+
+Generates a nonlinear form for the specified kernel function, test function operators,
+and argument operators evaluations. Operator evaluations are tuples that pair an unknown identifier or integer
+with a FunctionOperator. The header of the kernel functions needs to be conform
+to the interface
+
+    kernel!(result, eval_args, qpinfo)
+
+where qpinfo allows to access information at the current quadrature point.
+
+During assembly the local jacobians of the kernel are computed (by automatic differentiation or
+by a jacobian function provided via the kwargs) to compute the necessary Newton update
+for the operator.
+
+Keyword arguments:
+$(_myprint(default_nlop_kwargs()))
+
+"""
 function NonlinearOperator(kernel, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1} = oa_test; kwargs...)
     u_test = [oa[1] for oa in oa_test]
     u_args = [oa[1] for oa in oa_args]
@@ -186,7 +213,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
         end
 
         ## prepare parallel assembly
-        if O.parameters[:parallel_assembly]
+        if O.parameters[:parallel_groups]
             Aj = Array{typeof(A),1}(undef, length(EGs))
             bj = Array{typeof(b),1}(undef, length(EGs))
             for j = 1 : length(EGs)
@@ -345,7 +372,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 
         function assembler(A, b, sol; kwargs...)
             time = @elapsed begin
-                    if O.parameters[:parallel_assembly]
+                    if O.parameters[:parallel_groups]
                     Threads.@threads for j = 1 : length(EGs)
                         fill!(bj[j],0)
                         fill!(Aj[j].cscmatrix.nzval,0)

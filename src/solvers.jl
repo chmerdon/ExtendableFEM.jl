@@ -14,7 +14,6 @@ function solve(
 ````
 
 Returns a solution of the PDE as an FEVector for the provided FESpace(s) FES (to be used to discretised the unknowns of the PDEs).
-To provide nonzero initial values (for nonlinear problems) the solve function must be used.
 
 This function extends the CommonSolve.solve interface and the PDEDescription takes the role of
 the ProblemType and FES takes the role of the SolverType.
@@ -22,7 +21,7 @@ the ProblemType and FES takes the role of the SolverType.
 Keyword arguments:
 $(_myprint(default_solver_kwargs()))
 
-Depending on the subiterations and detected/configured nonlinearities the whole system is
+Depending on the detected/configured nonlinearities the whole system is
 either solved directly in one step or via a fixed-point iteration.
 
 """

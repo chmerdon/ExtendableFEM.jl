@@ -33,23 +33,6 @@ default_solver_kwargs()=Dict{Symbol,Tuple{Any,String}}(
 )
 
 
-
-#
-# Print default dict for solver parameters into docstrings
-#
-function _myprint(dict::Dict{Symbol,Tuple{Any,String}})
-    lines_out=IOBuffer()
-    for (k,v) in dict
-        if typeof(v[1]) <: String
-            println(lines_out,"  - $(k): $(v[2]). Default: ''$(v[1])''\n")
-        else
-            println(lines_out,"  - $(k): $(v[2]). Default: $(v[1])\n")
-        end
-    end
-    String(take!(lines_out))
-end
-
-
 function Base.show(io::IO, PD::SolverConfiguration)
     println(io, "\nSOLVER-CONFIGURATION")
     for item in PD.parameters

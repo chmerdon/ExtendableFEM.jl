@@ -37,11 +37,11 @@ default_blfop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :entry_tolerance => (0, "threshold to add entry to sparse matrix"),
     :use_sparsity_pattern => ("auto", "read sparsity pattern of jacobian of kernel to find out which components couple"),
-    :parallel_assembly => (true, "assemble operator in parallel using CellAssemblyGroups"),
+    :parallel_groups => (false, "assemble operator in parallel using CellAssemblyGroups"),
     :time_dependent => (false, "operator is time-dependent ?"),
     :store => (false, "store matrix separately (and copy from there when reassembly is triggered)"),
     :quadorder => ("auto", "quadrature order"),
-    :bonus_quadorder => (0, "quadrature order added to quadorder"),
+    :bonus_quadorder => (0, "additional quadrature order added to quadorder"),
     :verbosity => (0, "verbosity level"),
     :regions => ([], "subset of regions where operator should be assembly only")
 )
@@ -73,7 +73,21 @@ function Base.show(io::IO, O::BilinearOperator)
 end
 
 
-function BilinearOperator(A::AbstractMatrix, u_test, u_ansatz = u_test; Tv = Float64, kwargs...)
+"""
+````
+function BilinearOperator(
+    A::AbstractMatrix,
+    u_test,
+    u_ansatz = u_test;
+    kwargs...)
+````
+
+Generates a bilinear form from a user-provided matrix, which can be a sparse matrix or a FEMatrix with
+multiple blocks. The arguments u_test and u_ansatz
+specify where to put the (blocks of the) matrix in the system.
+
+"""
+function BilinearOperator(A::AbstractMatrix, u_test, u_ansatz = u_test; kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_blfop_kwargs())
     _update_params!(parameters, kwargs)
     return BilinearOperatorFromMatrix{typeof(u_test[1]), typeof(A)}(u_test, u_ansatz, A, parameters)
@@ -119,7 +133,7 @@ end
 """
 ````
 function BilinearOperator(
-    [kernel::Function],
+    [kernel!::Function],
     oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1},
     oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1} = oa_test;
     kwargs...)
@@ -305,7 +319,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
         couples_with::Vector{Vector{Int}} = [findall(==(true), view(coupling_matrix,j,:)) for j = 1 : nansatz]
 
         ## prepare parallel assembly
-        if O.parameters[:parallel_assembly]
+        if O.parameters[:parallel_groups]
             Aj = Array{typeof(A),1}(undef, length(EGs))
             for j = 1 : length(EGs)
                 Aj[j] = deepcopy(A)
@@ -452,7 +466,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 
         function assembler(A, sol; kwargs...)
             time = @elapsed begin
-                if O.parameters[:parallel_assembly]
+                if O.parameters[:parallel_groups]
                     Threads.@threads for j = 1 : length(EGs)
                         fill!(Aj[j].cscmatrix.nzval,0)
                         assembly_loop(Aj[j], sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_ansatz[j], O.BE_args[j], O.L2G[j], O.QP_infos[j]; kwargs...)
@@ -578,7 +592,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
         couples_with::Vector{Vector{Int}} = [findall(==(true), view(coupling_matrix,j,:)) for j = 1 : nansatz]
 
         ## prepare parallel assembly
-        if O.parameters[:parallel_assembly]
+        if O.parameters[:parallel_groups]
             Aj = Array{typeof(A),1}(undef, length(EGs))
             for j = 1 : length(EGs)
                 Aj[j] = deepcopy(A)
@@ -720,7 +734,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                     S = A
                 end
                 time = @elapsed begin
-                    if O.parameters[:parallel_assembly]
+                    if O.parameters[:parallel_groups]
                         Threads.@threads for j = 1 : length(EGs)
                             fill!(Aj[j].cscmatrix.nzval,0)
                             assembly_loop(Aj[j], view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_ansatz[j], O.L2G[j], O.QP_infos[j]; kwargs...)

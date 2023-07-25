@@ -2,7 +2,7 @@ abstract type AbstractOperator end
 
 # informs solver when operator needs reassembly
 function depends_nonlinearly_on(O::AbstractOperator)
-    return false
+    return []
 end
 
 # informs solver in which blocks the operator assembles to

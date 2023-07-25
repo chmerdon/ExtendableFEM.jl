@@ -18,7 +18,7 @@ end
 default_interp_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :order => ("auto", "interpolation order (default: match order of applied finite element space)"),
     :name => ("Projector", "name for operator used in printouts"),
-    :parallel_assembly => (true, "assemble operator in parallel using CellAssemblyGroups"),
+    :parallel_groups => (true, "assemble operator in parallel using CellAssemblyGroups"),
     :resultdim => (0, "dimension of result field (default = length of arguments)"),
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :verbosity => (0, "verbosity level")

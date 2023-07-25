@@ -1,8 +1,3 @@
-#####################
-# PointEvaluator #
-#####################
-
-
 mutable struct PointEvaluator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: Function}
     u_args::Array{UT,1}
     ops_args::Array{DataType,1}
@@ -22,6 +17,32 @@ default_peval_kwargs()=Dict{Symbol,Tuple{Any,String}}(
 )
 
 
+"""
+````
+function Pointevaluator(
+    [kernel!::Function],
+    oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1};
+    kwargs...)
+````
+
+Generates a PointEvaluator that can evaluate the specified operator evaluations
+at arbitrary points. If no kernel function is given, the arguments
+are given directly. If a kernel is provided, the arguments are postprocessed
+accordingly and the kernel has be conform to the interface
+
+    kernel!(result, eval_args, qpinfo)
+
+where qpinfo allows to access information at the current evaluation point.
+Additionally the length of the result needs to be specified via the kwargs.
+
+Evaluation can be triggered via the evaluate function after an initialize! call.
+
+Operator evaluations are tuples that pair an unknown identifier or integer
+with a Function operator.
+
+Keyword arguments:
+$(_myprint(default_peval_kwargs()))
+"""
 function PointEvaluator(kernel, u_args, ops_args, sol = nothing; Tv = Float64, kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_peval_kwargs())
     _update_params!(parameters, kwargs)
@@ -45,6 +66,17 @@ function PointEvaluator(oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1},
     return PointEvaluator(standard_kernel, u_args, ops_args, sol; kwargs...)
 end
 
+"""
+````
+function initialize!(
+    O::PointEvaluator,
+    sol;
+    time = 0,
+    kwargs...)
+````
+
+Initializes the PointEvaluator for the specified solution.
+"""
 function initialize!(O::PointEvaluator{T, UT}, sol; time = 0, kwargs...) where {T, UT}
     _update_params!(O.parameters, kwargs)
     if UT <: Integer
@@ -136,6 +168,19 @@ function initialize!(O::PointEvaluator{T, UT}, sol; time = 0, kwargs...) where {
     return nothing
 end
 
+
+"""
+````
+function evaluate!(
+    result,
+    PE::PointEvaluator,
+    xref, 
+    item
+    )
+````
+
+Evaluates the PointEvaluator at the specified reference coordinates in the cell with the specified item number.
+"""
 function evaluate!(
     result,
     PE::PointEvaluator,
@@ -152,6 +197,14 @@ end
 
 
 
+"""
+````
+function eval_func(PE::PointEvaluator)
+````
+
+Yields the function (result, xref, item) -> evaluate!(result,PE,xref,item)
+that can be, e.g., used in a vectorplot.
+"""
 function eval_func(PE::PointEvaluator)
     return (result,xref,item) -> evaluate!(result,PE,xref,item)
 end
