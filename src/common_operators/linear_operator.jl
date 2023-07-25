@@ -230,7 +230,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
             push!(O.L2G, L2GTransformer(EG, xgrid, ON_CELLS))
 
             ## parameter structure
-            push!(O.QP_infos, QPInfos(0,0,Tv(0),time,zeros(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params]))
+            push!(O.QP_infos, QPInfos(xgrid; time = time, params = O.parameters[:params]))
         end
 
         ## prepare regions
@@ -404,7 +404,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
             push!(O.L2G, L2GTransformer(EG, xgrid, AT))
 
             ## parameter structure
-            push!(O.QP_infos, QPInfos(0,0,Tv(0),time,zeros(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params]))
+            push!(O.QP_infos, QPInfos(xgrid; time = time, params = O.parameters[:params]))
         end
 
         ## prepare regions

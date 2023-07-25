@@ -165,7 +165,7 @@ function BilinearOperator(oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1
     u_ansatz = [oa[1] for oa in oa_ansatz]
     ops_test = [oa[2] for oa in oa_test]
     ops_ansatz = [oa[2] for oa in oa_ansatz]
-    return BilinearOperator(standard_kernel, u_test, ops_test, u_ansatz, ops_ansatz; kwargs...)
+    return BilinearOperator(ExtendableFEMBase.standard_kernel, u_test, ops_test, u_ansatz, ops_ansatz; kwargs...)
 end
 
 
@@ -265,7 +265,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
             push!(O.L2G, L2GTransformer(EG, xgrid, ON_CELLS))
 
             ## parameter structure
-            push!(O.QP_infos, QPInfos(0,0,Tv(0),time,zeros(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params]))
+            push!(O.QP_infos, QPInfos(xgrid; time = time, params = O.parameters[:params]))
         end
 
         ## prepare regions
@@ -532,16 +532,16 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                 @info "...... integrating on $EG with quadrature order $quadorder"
             end
             push!(O.QF, QuadratureRule{Tv, EG}(quadorder))
-        
-            ## FE basis evaluator for EG
-            push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT) for j in 1 : ntest])
-            push!(O.BE_ansatz, [FEEvaluator(FES_ansatz[j], O.ops_ansatz[j], O.QF[end]; AT = AT) for j in 1 : nansatz])
 
             ## L2G map for EG
             push!(O.L2G, L2GTransformer(EG, xgrid, gridAT))
+        
+            ## FE basis evaluator for EG
+            push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT, L2G = O.L2G[end]) for j in 1 : ntest])
+            push!(O.BE_ansatz, [FEEvaluator(FES_ansatz[j], O.ops_ansatz[j], O.QF[end]; AT = AT, L2G = O.L2G[end]) for j in 1 : nansatz])
 
             ## parameter structure
-            push!(O.QP_infos, QPInfos(0,0, Tv(0), time, ones(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params]))
+            push!(O.QP_infos, QPInfos(xgrid; time = time, x = ones(Tv, size(xgrid[Coordinates],1)), params = O.parameters[:params]))
         end
 
         ## prepare regions

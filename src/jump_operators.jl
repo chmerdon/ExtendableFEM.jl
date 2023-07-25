@@ -51,8 +51,14 @@ struct FEEvaluatorDisc{T,TvG,TiG,FEType,FEBType,O<:DiscontinuousFunctionOperator
     cvals::DuplicateCValView{T}          # view that doubles cvals of FEB and weights it with proper factors to evaluate jump, average etc.
 end
 
-function FEEvaluator(FE::FESpace{TvG,TiG,FEType,FEAPT}, operator::Type{<:DiscontinuousFunctionOperator}, qrule::QuadratureRule{TvR,EG}; T = Float64, AT = ON_CELLS) where {TvG, TiG, TvR, FEType <: AbstractFiniteElement, EG <: AbstractElementGeometry, FEAPT <: AssemblyType}
-    FEB = FEEvaluator(FE, StandardFunctionOperator(operator), qrule; T = T, AT = AT)
+function FEEvaluator(
+    FE::FESpace{TvG,TiG,FEType,FEAPT},
+    operator::Type{<:DiscontinuousFunctionOperator},
+    qrule::QuadratureRule{TvR,EG};
+    T = Float64,
+    kwargs...) where {TvG, TiG, TvR, FEType <: AbstractFiniteElement, EG <: AbstractElementGeometry, FEAPT <: AssemblyType}
+
+    FEB = FEEvaluator(FE, StandardFunctionOperator(operator), qrule; T = T, kwargs...)
     ndofs = size(FEB.cvals, 2)
     j2dofindex = zeros(Int, 2*ndofs)
     factors = zeros(eltype(FEB.cvals), 2*ndofs)

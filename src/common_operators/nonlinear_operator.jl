@@ -187,7 +187,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
         use_autodiff = O.jacobian === nothing
         for EG in EGs
             ## prepare parameters
-            QPj = QPInfos(0,0,Tv(0),time,zeros(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params])
+            QPj = QPInfos(xgrid; time = time, x = ones(Tv, size(xgrid[Coordinates],1)), params = O.parameters[:params])
             kernel_params = (result, input) -> (O.kernel(result, input, QPj);)
             if sparse_jacobians
                 input_args = zeros(Tv, op_offsets_args[end])

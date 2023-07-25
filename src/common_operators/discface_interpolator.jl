@@ -102,7 +102,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
         push!(O.L2G, L2GTransformer(EG, xgrid, ON_CELLS))
 
         ## parameter structure
-        push!(O.QP_infos, QPInfos(0,0,Tv(0),time,zeros(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params]))
+        push!(O.QP_infos, QPInfos(xgrid; time = time, params = O.parameters[:params]))
     end
 
 
@@ -217,7 +217,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 end
 
 
-function evaluate!(O::FaceInterpolator{Tv,Ti,UT}, sol; kwargs...) where {Tv,Ti,UT}
+function ExtendableFEMBase.evaluate!(O::FaceInterpolator{Tv,Ti,UT}, sol; kwargs...) where {Tv,Ti,UT}
     if UT <: Integer
         ind_args = O.u_args
     else

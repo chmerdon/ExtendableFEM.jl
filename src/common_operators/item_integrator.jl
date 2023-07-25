@@ -124,7 +124,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
             push!(O.L2G, L2GTransformer(EG, xgrid, gridAT))
 
             ## parameter structure
-            push!(O.QP_infos, QPInfos(0,0,Tv(0),time,zeros(Tv, size(xgrid[Coordinates],1)),deepcopy(O.QF[1].xref[1]),xgrid,O.parameters[:params]))
+            push!(O.QP_infos, QPInfos(xgrid; time = time, params = O.parameters[:params]))
         end
 
         ## prepare regions
@@ -237,7 +237,7 @@ function evaluate(
 
 Evaluates the ItemIntegrator for the specified solution into the matrix b.
 """
-function evaluate!(b, O::ItemIntegrator, sol::FEVector; time = 0, kwargs...)
+function ExtendableFEMBase.evaluate!(b, O::ItemIntegrator, sol::FEVector; time = 0, kwargs...)
     ind_args = [findfirst(==(u), sol.tags) for u in O.u_args]
     build_assembler!(O, [sol[j] for j in ind_args])
     O.assembler(b, [sol[j] for j in ind_args]; time = time)

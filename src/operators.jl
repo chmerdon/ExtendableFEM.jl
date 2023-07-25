@@ -29,14 +29,3 @@ function assemble!(A::AbstractMatrix, b::AbstractVector, O::AbstractOperator, so
     ## assembles operator to full matrix A and b
     return nothing
 end
-
-
-function standard_kernel(result, input, qpinfo)
-    result .= input
-    return nothing
-end
-
-function constant_one_kernel(result, qpinfo)
-    result .= 1
-    return nothing
-end

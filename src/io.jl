@@ -1,4 +1,3 @@
-
 #
 # Print default dict for solver parameters into docstrings
 #
@@ -13,7 +12,15 @@ function _myprint(dict::Dict{Symbol,Tuple{Any,String}})
     end
     String(take!(lines_out))
 end
-
+#
+# Update solver params from dict
+#
+function _update_params!(parameters,kwargs)
+    for (k,v) in kwargs
+        parameters[Symbol(k)] = v
+    end
+    return nothing
+end
 
 function center_string(S::String, L::Int = 8)
     if length(S) > L

@@ -42,16 +42,6 @@ function Base.show(io::IO, PD::SolverConfiguration)
     end
 end
 
-#
-# Update solver params from dict
-#
-function _update_params!(parameters,kwargs)
-    for (k,v) in kwargs
-        parameters[Symbol(k)] = v
-    end
-    return nothing
-end
-
 function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknown,1}, FES; TvM = Float64, TiM = Int, bT = Float64, kwargs...)
     @assert length(unknowns) <= length(FES) "length of unknowns and FE spaces must coincide"
     ## check if unknowns are part of Problem description

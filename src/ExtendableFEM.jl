@@ -1,6 +1,7 @@
 module ExtendableFEM
 
 using ExtendableFEMBase
+export evaluate!
 using ExtendableSparse
 using ExtendableGrids
 using SparseArrays
@@ -77,16 +78,6 @@ include("common_operators/fixdofs_operator.jl")
 export FixDofs
 include("common_operators/discface_interpolator.jl")
 export FaceInterpolator
-
-include("common_operators/segment_integrator.jl")
-export SegmentIntegrator, initialize!, integrate_segment!
-
-include("common_operators/point_evaluator.jl")
-export PointEvaluator, evaluate!, eval_func
-
-
-include("lazy_interpolate.jl")
-export lazy_interpolate!
 
 include("plots.jl")
 export plot_convergencehistory!
