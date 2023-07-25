@@ -19,10 +19,6 @@ using ExtendableFEM
 using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
-using ExtendableSparse
-using LinearSolve
-using Krylov
-using Symbolics
 
 ## exact solution u for the Poisson problem
 function u!(result, qpinfo)

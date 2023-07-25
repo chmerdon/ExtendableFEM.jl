@@ -22,10 +22,6 @@ using ExtendableFEM
 using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
-using ExtendableSparse
-using LinearSolve
-using Krylov
-using Symbolics
 
 
 const μ = 0.25          # coefficient for laplacian!

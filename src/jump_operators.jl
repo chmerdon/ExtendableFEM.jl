@@ -45,6 +45,7 @@ Base.size(SCV::DuplicateCValView) = [size(SCV.cvals,1), 2*size(SCV.cvals,2), siz
 Base.size(SCV::DuplicateCValView,i) = (i == 2) ? 2 * size(SCV.cvals,i) : size(SCV.cvals,i)
 
 struct FEEvaluatorDisc{T,TvG,TiG,FEType,FEBType,O<:DiscontinuousFunctionOperator} <: FEEvaluator{T,TvG,TiG}
+    citem::Base.RefValue{Int}                   # current item
     FE::FESpace{TvG,TiG,FEType}       # link to full FE (e.g. for coefficients)
     FEB::FEBType                     # first FEBasisEvaluator
     cvals::DuplicateCValView{T}          # view that doubles cvals of FEB and weights it with proper factors to evaluate jump, average etc.
@@ -61,11 +62,21 @@ function FEEvaluator(FE::FESpace{TvG,TiG,FEType,FEAPT}, operator::Type{<:Discont
     factors[1:ndofs] .= op_coeffs[1]
     factors[ndofs+1:2*ndofs] .= op_coeffs[2]
     cvals = DuplicateCValView(FEB.cvals,j2dofindex,factors)
-    return FEEvaluatorDisc{T,TvG,TiG,FEType,typeof(FEB),operator}(FE, FEB, cvals)
+    return FEEvaluatorDisc{T,TvG,TiG,FEType,typeof(FEB),operator}(FEB.citem, FE, FEB, cvals)
+end
+
+
+function ExtendableFEMBase.update_basis!(FEBE::FEEvaluatorDisc)
+    ExtendableFEMBase.update_basis!(FEBE.FEB)
 end
 
 function ExtendableFEMBase.update_basis!(FEBE::FEEvaluatorDisc, item)
-    ExtendableFEMBase.update_basis!(FEBE.FEB, item)
+    if FEBE.citem[] == item
+    else
+        FEBE.citem[] = item
+        update_basis!(FEBE.FEB, item)
+    end
 end
+
 
 

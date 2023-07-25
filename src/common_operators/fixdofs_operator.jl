@@ -31,7 +31,7 @@ end
 
 function Base.show(io::IO, O::FixDofs)
     dependencies = dependencies_when_linearized(O)
-    print(io, "$(O.parameters[:name])($(ansatz_function(dependencies)), regions = $(O.parameters[:regions]))")
+    print(io, "$(O.parameters[:name])($(ansatz_function(dependencies)), ndofs = $(length(O.dofs)))")
     return nothing
 end
 

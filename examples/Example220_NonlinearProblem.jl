@@ -4,10 +4,6 @@ using ExtendableFEM
 using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
-using ExtendableSparse
-using LinearSolve
-using Krylov
-using Symbolics
 
 const f = x -> x[1]+x[2]
 const μ = 0.25
@@ -41,8 +37,8 @@ function main(; nrefs = 5, Plotter = nothing, kwargs...)
     xgrid = uniform_refine(grid_unitsquare_mixedgeometries(), nrefs)
 
     ## solve
-    FES = FESpace{H1Q2{1,2}}(xgrid)
-    sol = ExtendableFEM.solve(PD, [FES]; kwargs...)
+    FES = FESpace{H1Q1{1}}(xgrid)
+    sol = solve(PD, [FES]; kwargs...)
 
     @info sol
     scalarplot(split_grid_into(xgrid, Triangle2D), nodevalues(sol[1])[:]; Plotter = Plotter)

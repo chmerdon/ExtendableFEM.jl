@@ -78,8 +78,8 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
     for op in PD.operators
         nl_dependencies = depends_nonlinearly_on(op)
         for u in unknowns
-            nonlinear = u in nl_dependencies
-            if nonlinear
+            if u in nl_dependencies
+                nonlinear = true
                 break
             end
         end
