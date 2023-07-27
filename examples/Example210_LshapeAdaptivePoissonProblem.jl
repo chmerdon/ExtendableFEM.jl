@@ -100,6 +100,9 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 
         ## SOLVE : create a solution vector and solve the problem
         println("------- LEVEL $level")
+		if ndofs < 1000
+			println(stdout, unicode_gridplot(xgrid))
+		end
         @time begin
             ## solve
             FES = FESpace{H1Pk{1, 2, order}}(xgrid)

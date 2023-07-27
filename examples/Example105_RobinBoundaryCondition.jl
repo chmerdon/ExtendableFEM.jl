@@ -1,6 +1,6 @@
 #= 
 
-# 105 : Robin-Boundary Conditions 1D
+# 105 : Convection-Diffusion-Reaction
 ([source code](SOURCE_URL))
 
 This demonstrates the assignment of a mixed Robin boundary condition for a nonlinear 1D convection-diffusion-reaction PDE on the unit interval, i.e.

@@ -1,6 +1,6 @@
 #= 
 
-# 224 : Stokes ``SV + RT enrichment``
+# 240 : Stokes ``RT`` enrichment
 ([source code](SOURCE_URL))
 
 This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem

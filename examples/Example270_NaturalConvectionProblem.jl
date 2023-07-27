@@ -1,3 +1,37 @@
+#= 
+
+# 270 : Natural convection
+([source code](SOURCE_URL))
+
+Seek velocity ``u``, pressure ``p`` and temperature ``\theta`` such that
+```math
+\begin{aligned}
+	- \mu \Delta u + (u \cdot \nabla) u + \nabla p & = Ra \, \theta \, g \\
+       - \Delta \theta + u \cdot \nabla \theta & = 0
+\end{aligned}
+```
+on a given domain ``\Omega`` (here a triangle) and boundary conditions
+```math
+\begin{aligned}
+	u & = 0 && \quad \text{along } \partial \Omega\\
+ 	T & = T_\text{bottom} &&\quad \text{along } y = 0\\
+	T & = 0 &&\quad \text{along } x = 0
+\end{aligned}
+```
+
+The weak formulation seeks ``(u,p,\theta) \in V \times Q \times X \subseteq H^1_0(\Omega)^2 \times L^2_0(\Omega) \times H^1_D(\Omega)`` such that
+```math
+\begin{aligned}
+	(\mu \nabla u, \nabla v) + ((u \cdot \nabla) u, v) - (\mathrm{div} v, p) & = (v, Ra g \, \theta) && \quad \text{for all } v \in V,\\
+(\mathrm{div} u, q) & = 0 && \quad \text{for all } q \in Q,\\
+       (\nabla \theta, \nabla \varphi) + (u \cdot \nabla \theta, \varphi) & = 0
+ && \quad \text{for all } \varphi \in X.
+\end{aligned} 
+```
+
+=#
+
+
 module Example270_NaturalConvectionProblem
 
 using ExtendableFEM

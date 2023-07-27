@@ -1,3 +1,19 @@
+#= 
+
+# 250 : Navier--Stokes Problem
+([source code](SOURCE_URL))
+
+This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem
+```math
+\begin{aligned}
+- \mu \Delta \mathbf{u} + \left(\vecb{u} \cdot \nabla\right) \vecb{u}+ \nabla p & = \mathbf{f}\\
+\mathrm{div}(u) & = 0
+\end{aligned}
+```
+with exterior force ``\mathbf{f}`` and some parameter ``\mu`` and inhomogeneous Dirichlet boundary data.
+
+=#
+
 module Example250_NavierStokesProblem
 
 using ExtendableFEM

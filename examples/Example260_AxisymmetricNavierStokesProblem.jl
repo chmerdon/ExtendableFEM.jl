@@ -1,6 +1,6 @@
 #= 
 
-# 260 : Axisymmetric Stokes (2.5D)
+# 260 : Axisymmetric Stokes
 ([source code](SOURCE_URL))
 
 This example solves the 3D stagnation point flow via 

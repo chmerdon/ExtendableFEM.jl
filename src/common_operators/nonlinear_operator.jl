@@ -81,6 +81,7 @@ function NonlinearOperator(
     [kernel!::Function],
     oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1},
     oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1} = oa_test;
+    jacobian = nothing,
     kwargs...)
 ````
 
@@ -89,13 +90,16 @@ and argument operators evaluations. Operator evaluations are tuples that pair an
 with a FunctionOperator. The header of the kernel functions needs to be conform
 to the interface
 
-    kernel!(result, eval_args, qpinfo)
+    kernel!(result, input, qpinfo)
 
 where qpinfo allows to access information at the current quadrature point.
 
-During assembly the local jacobians of the kernel are computed (by automatic differentiation or
-by a jacobian function provided via the kwargs) to compute the necessary Newton update
-for the operator.
+During assembly the Newton update is computed via local jacobians of the kernel
+which are calculated by automatic differentiation or
+by the user-provided jacobian function with interface
+
+    jacobian!(jac, input_args, params)
+    
 
 Keyword arguments:
 $(_myprint(default_nlop_kwargs()))

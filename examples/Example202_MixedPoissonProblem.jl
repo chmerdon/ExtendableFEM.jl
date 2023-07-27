@@ -7,7 +7,7 @@ This example computes the solution ``u`` of the two-dimensional Poisson problem
 in the mixed form
 ```math
 \begin{aligned}
-\sigma + \mu \nabla u = 0
+\sigma + \mu \nabla u = 0\\
 \mathrm{div} \sigma & = f \quad \text{in } \Omega
 \end{aligned}
 ```
