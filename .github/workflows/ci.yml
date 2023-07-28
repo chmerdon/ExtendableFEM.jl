@@ -31,7 +31,7 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - run: |
-          julia --project=docs docs/addnursery.jl
+          julia --project=docs docs/add_nursery.jl
       - uses: actions/cache@v1
         env:
           PYTHON: ""
@@ -58,7 +58,7 @@ jobs:
   #      with:
   #        version: '1'
   #    - run: |
-  #        julia --project=docs docs/addnursery.jl
+  #        julia --project=docs docs/add_nursery.jl
   #    - run: |
   #        julia --project=docs -e '
   #          using Pkg
