@@ -30,7 +30,7 @@ enrichment dofs can be eliminated from the system.
     [>Preprint-Link<](https://arxiv.org/abs/2206.01242)
 =#
 
-module Example240_StokesSVRTEnrichment
+module Example240_SVRTEnrichment
 
 using ExtendableFEM
 using ExtendableFEMBase

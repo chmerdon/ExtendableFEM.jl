@@ -219,7 +219,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
 end
 
 #make_all(; with_examples = true, run_examples = true, run_notebooks = true)
-make_all(; with_examples = true, run_examples = false, run_notebooks = false)
+make_all(; with_examples = true, run_examples = true, run_notebooks = false)
 
 deploydocs(
     repo = "github.com/chmerdon/ExtendableFEM.jl",

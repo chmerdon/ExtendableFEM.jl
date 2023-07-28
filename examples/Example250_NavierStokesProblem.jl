@@ -52,7 +52,7 @@ function initialgrid_cone()
     return xgrid
 end
 
-function main(; μ_final = 0.001, nrefs = 6, Plotter = nothing, kwargs...)
+function main(; μ_final = 0.001, nrefs = 5, Plotter = nothing, kwargs...)
 
     ## prepare parameter field
 	extra_params = Array{Float64,1}([max(μ_final, 0.01)])
@@ -63,7 +63,7 @@ function main(; μ_final = 0.001, nrefs = 6, Plotter = nothing, kwargs...)
     p = Unknown("p"; name = "pressure")
     assign_unknown!(PD, u)
     assign_unknown!(PD, p)
-    assign_operator!(PD, ExtendableFEM.NonlinearOperator(kernel_nonlinear!, [apply(u, ReconstructionIdentity{HDIVRT0{2}}),grad(u),id(p)]; params = extra_params, kwargs...))#; jacobian = kernel_jacobian!)) 
+    assign_operator!(PD, ExtendableFEM.NonlinearOperator(kernel_nonlinear!, [apply(u, Reconstruct{HDIVBDM1{2}, Identity}),grad(u),id(p)]; params = extra_params, kwargs...))#; jacobian = kernel_jacobian!)) 
     assign_operator!(PD, InterpolateBoundaryData(u, boundarydata!; regions = 3))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1,2]))
 

@@ -10,6 +10,8 @@ mutable struct LinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: 
     u_args::Array{UT,1}
     ops_args::Array{DataType,1}
     kernel::KFT
+    BE_test_vals::Array{Array{Array{Tv,3},1}}
+    BE_args_vals::Array{Array{Array{Tv,3},1}}
     FES_test             #::Array{FESpace,1}
     FES_args             #::Array{FESpace,1}
     BE_test              #::Union{Nothing, Array{FEEvaluator,1}}
@@ -67,7 +69,7 @@ function LinearOperator(kernel, u_test, ops_test, u_args, ops_args; Tv = Float64
     else
         storage = nothing
     end
-    return LinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, u_args, ops_args, kernel, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, storage, parameters)
+    return LinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, u_args, ops_args, kernel, [[zeros(Tv, 0, 0, 0)]], [[zeros(Tv, 0, 0, 0)]], nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, storage, parameters)
 end
 
 function LinearOperator(kernel, u_test, ops_test; Tv = Float64, kwargs...)
@@ -79,7 +81,7 @@ function LinearOperator(kernel, u_test, ops_test; Tv = Float64, kwargs...)
     else
         storage = nothing
     end
-    return LinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, [], [], kernel, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, storage, parameters)
+    return LinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, [], [], kernel, [[zeros(Tv, 0, 0, 0)]], [[zeros(Tv, 0, 0, 0)]], nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, storage, parameters)
 end
 
 """
@@ -120,7 +122,7 @@ end
 function LinearOperator(oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
     u_test = [oa[1] for oa in oa_test]
     ops_test = [oa[2] for oa in oa_test]
-    return LinearOperator(constant_one_kernel, u_test, ops_test; kwargs...)
+    return LinearOperator(ExtendableFEMBase.constant_one_kernel, u_test, ops_test; kwargs...)
 end
 
 
@@ -205,6 +207,8 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
         O.QF = []
         O.BE_test = Array{Array{<:FEEvaluator,1},1}([])
         O.BE_args = Array{Array{<:FEEvaluator,1},1}([])
+        O.BE_test_vals = Array{Array{Array{Tv,3},1},1}([])
+        O.BE_args_vals = Array{Array{Array{Tv,3},1},1}([])
         O.QP_infos = Array{QPInfos,1}([])
         O.
         O.L2G = []
@@ -225,6 +229,8 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
             ## FE basis evaluator for EG
             push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT) for j in 1 : ntest])
             push!(O.BE_args, [FEEvaluator(FES_args[j], O.ops_args[j], O.QF[end]; AT = AT) for j in 1 : nargs])
+            push!(O.BE_test_vals, [BE.cvals for BE in O.BE_test[end]])
+            push!(O.BE_args_vals, [BE.cvals for BE in O.BE_args[end]])
 
             ## L2G map for EG
             push!(O.L2G, L2GTransformer(EG, xgrid, ON_CELLS))
@@ -268,7 +274,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
         factor = O.parameters[:factor]
 
         ## Assembly loop for fixed geometry
-        function assembly_loop(b::AbstractVector{T}, sol::Array{<:FEVectorBlock,1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_test::Array{<:FEEvaluator,1}, BE_args::Array{<:FEEvaluator,1}, L2G::L2GTransformer, QPinfos::QPInfos) where {T}
+        function assembly_loop(b::AbstractVector{T}, sol::Array{<:FEVectorBlock,1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_test::Array{<:FEEvaluator,1}, BE_args::Array{<:FEEvaluator,1}, BE_test_vals::Array{Array{Tv,3},1}, BE_args_vals::Array{Array{Tv,3},1}, L2G::L2GTransformer, QPinfos::QPInfos) where {T}
 
             ## prepare parameters
             input_args = zeros(Tv, op_offsets_args[end])
@@ -307,7 +313,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
                         for j = 1 : ndofs_args[id]
                             dof_j = itemdofs_args[id][j, item]
                             for d = 1 : op_lengths_args[id]
-                                input_args[d + op_offsets_args[id]] += sol[id][dof_j] * BE_args[id].cvals[d, j, qp]
+                                input_args[d + op_offsets_args[id]] += sol[id][dof_j] * BE_args_vals[id][d, j, qp]
                             end
                         end
 					end
@@ -324,7 +330,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
                         for k = 1 : ndofs_test[idt]
                             dof = itemdofs_test[idt][k,item] + offsets_test[idt]
                             for d = 1 : op_lengths_test[idt]
-                                b[dof] += result_kernel[d + op_offsets_test[idt]] * BE_test[idt].cvals[d,k,qp]
+                                b[dof] += result_kernel[d + op_offsets_test[idt]] * BE_test_vals[idt][d,k,qp]
                             end
                         end
                     end
@@ -340,14 +346,14 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
                 if O.parameters[:parallel_groups]
                     Threads.@threads for j = 1 : length(EGs)
                         fill!(bj[j],0)
-                        assembly_loop(bj[j], sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+                        assembly_loop(bj[j], sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
                     end
                     for j = 1 : length(EGs)
                         b .+= bj[j]
                     end
                 else
                     for j = 1 : length(EGs)
-                        assembly_loop(b, sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+                        assembly_loop(b, sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
                     end
                 end   
             end
@@ -382,6 +388,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
         ntest = length(FES_test)
         O.QF = []
         O.BE_test = Array{Array{<:FEEvaluator,1},1}([])
+        O.BE_test_vals = Array{Array{Array{Tv,3},1},1}([])
         O.QP_infos = Array{QPInfos,1}([])
         O.L2G = []
         for EG in EGs
@@ -399,6 +406,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
         
             ## FE basis evaluator for EG
             push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT) for j in 1 : ntest])
+            push!(O.BE_test_vals, [BE.cvals for BE in O.BE_test[end]])
 
             ## L2G map for EG
             push!(O.L2G, L2GTransformer(EG, xgrid, AT))
@@ -435,7 +443,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
         factor = O.parameters[:factor]
 
         ## Assembly loop for fixed geometry
-        function assembly_loop(b::AbstractVector{T}, items, EG::ElementGeometries, QF::QuadratureRule, BE_test::Array{<:FEEvaluator,1}, L2G::L2GTransformer, QPinfos::QPInfos) where {T}
+        function assembly_loop(b::AbstractVector{T}, items, EG::ElementGeometries, QF::QuadratureRule, BE_test::Array{<:FEEvaluator,1}, BE_test_vals::Array{Array{Tv,3},1}, L2G::L2GTransformer, QPinfos::QPInfos) where {T}
 
             ## prepare parameters
             result_kernel = zeros(Tv, op_offsets_test[end])
@@ -476,7 +484,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
                         for k = 1 : ndofs_test[idt]
                             dof = itemdofs_test[idt][k,item] + offsets_test[idt]
                             for d = 1 : op_lengths_test[idt]
-                                b[dof] += result_kernel[d + op_offsets_test[idt]] * BE_test[idt].cvals[d,k,qp]
+                                b[dof] += result_kernel[d + op_offsets_test[idt]] * BE_test_vals[idt][d,k,qp]
                             end
                         end
                     end
@@ -499,14 +507,14 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
                     if O.parameters[:parallel_groups]
                         Threads.@threads for j = 1 : length(EGs)
                             fill!(bj[j],0)
-                            assembly_loop(bj[j], view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+                            assembly_loop(bj[j], view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
                         end
                         for j = 1 : length(EGs)
                             s .+= bj[j]
                         end
                     else
                         for j = 1 : length(EGs)
-                            assembly_loop(s, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+                            assembly_loop(s, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
                         end
                     end   
                     if O.parameters[:store]

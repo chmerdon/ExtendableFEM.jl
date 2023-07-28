@@ -88,6 +88,7 @@ function main(;
 
     ## generate bimetal mesh
     xgrid = bimetal_strip2D(; scale = scale, n = 2*(nrefs+1))
+    println(stdout, unicode_gridplot(xgrid))
 
     ## create finite element space and solution vector
     FES = FESpace{H1Pk{2,2,order}}(xgrid)
@@ -135,6 +136,7 @@ function main(;
     vectorplot!(p[2,1], xgrid, eval_func(PointEvaluator([id(1)], sol)), spacing = [50,25], clear = false)
     displace_mesh!(xgrid, sol[1])
     gridplot!(p[3,1], xgrid, linewidth = 1, title = "displaced mesh")
+    println(stdout, unicode_gridplot(xgrid))
 end
 
 ## grid

@@ -1,9 +1,9 @@
 
 # Problem Description
 
-## ProblemDescription
 
 Central object is the ProblemDescription which is given as a weak form of your problem and usually does not need any information on the discretisation at this point (but of course can depend on region numbers).
+## Constructors and assign functions
 
 ```@autodocs
 Modules = [ExtendableFEM]

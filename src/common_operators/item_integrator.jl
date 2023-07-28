@@ -70,7 +70,7 @@ end
 function ItemIntegrator(oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
     u_args = [oa[1] for oa in oa_args]
     ops_args = [oa[2] for oa in oa_args]
-    return ItemIntegrator(standard_kernel, u_args, ops_args; kwargs...)
+    return ItemIntegrator(ExtendableFEMBase.standard_kernel, u_args, ops_args; kwargs...)
 end
 function L2NormIntegrator(oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
     u_args = [oa[1] for oa in oa_args]

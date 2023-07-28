@@ -45,7 +45,7 @@ function boundarydata!(result, qpinfo)
     return nothing
 end
 
-function main(; nrefs = 5, Plotter = nothing, hdivdg = true, kwargs...)
+function main(; nrefs = 5, Plotter = nothing, hdivdg = false, kwargs...)
 
     ## problem description
     PD = ProblemDescription()

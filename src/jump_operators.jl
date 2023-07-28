@@ -32,23 +32,24 @@ ExtendableFEMBase.Length4Operator(::Type{Right{O}}, xdim, nc) where {O} = Length
 ExtendableFEMBase.DefaultName4Operator(::Type{Right{O}}) where {O} = DefaultName4Operator(O) * "|_Right"
 
 
-##### additional infrastructure for pairs of FE evaluators
+## additional infrastructure for discontinuous operators of broken face-continuous spaces
 
-struct DuplicateCValView{T,FT} <: AbstractArray{T,3}
-    cvals::Array{T,3}
-    j2dofindex::Array{Int,1}
-    factors::Array{FT,1}
-end
+#struct DuplicateCValView{T,FT} <: AbstractArray{T,3}
+#    cvals::Array{T,3}
+#    j2dofindex::Array{Int,1}
+#    factors::Array{FT,1}
+#end
 
-Base.getindex(SCV::DuplicateCValView,i::Int,j::Int,k::Int) = SCV.cvals[i,SCV.j2dofindex[j],k] * SCV.factors[j]
-Base.size(SCV::DuplicateCValView) = [size(SCV.cvals,1), 2*size(SCV.cvals,2), size(SCV.cvals,3)]
-Base.size(SCV::DuplicateCValView,i) = (i == 2) ? 2 * size(SCV.cvals,i) : size(SCV.cvals,i)
+#Base.getindex(SCV::DuplicateCValView,i::Int,j::Int,k::Int) = SCV.cvals[i,SCV.j2dofindex[j],k] * SCV.factors[j]
+#Base.size(SCV::DuplicateCValView) = [size(SCV.cvals,1), 2*size(SCV.cvals,2), size(SCV.cvals,3)]
+#Base.size(SCV::DuplicateCValView,i) = (i == 2) ? 2 * size(SCV.cvals,i) : size(SCV.cvals,i)
 
 struct FEEvaluatorDisc{T,TvG,TiG,FEType,FEBType,O<:DiscontinuousFunctionOperator} <: FEEvaluator{T,TvG,TiG}
     citem::Base.RefValue{Int}                   # current item
     FE::FESpace{TvG,TiG,FEType}       # link to full FE (e.g. for coefficients)
     FEB::FEBType                     # first FEBasisEvaluator
-    cvals::DuplicateCValView{T}          # view that doubles cvals of FEB and weights it with proper factors to evaluate jump, average etc.
+    coeffs::Array{T,1}
+    cvals::Array{T,3}          
 end
 
 function FEEvaluator(
@@ -60,20 +61,20 @@ function FEEvaluator(
 
     FEB = FEEvaluator(FE, StandardFunctionOperator(operator), qrule; T = T, kwargs...)
     ndofs = size(FEB.cvals, 2)
-    j2dofindex = zeros(Int, 2*ndofs)
-    factors = zeros(eltype(FEB.cvals), 2*ndofs)
-    j2dofindex[1:ndofs] = 1:ndofs
-    j2dofindex[ndofs+1:2*ndofs] = 1:ndofs
-    op_coeffs = coeffs(operator)
-    factors[1:ndofs] .= op_coeffs[1]
-    factors[ndofs+1:2*ndofs] .= op_coeffs[2]
-    cvals = DuplicateCValView(FEB.cvals,j2dofindex,factors)
-    return FEEvaluatorDisc{T,TvG,TiG,FEType,typeof(FEB),operator}(FEB.citem, FE, FEB, cvals)
+    cvals = reshape(repeat(FEB.cvals, 2), (size(FEB.cvals, 1), 2*ndofs, size(FEB.cvals,3)))
+    return FEEvaluatorDisc{T,TvG,TiG,FEType,typeof(FEB),operator}(FEB.citem, FE, FEB, coeffs(operator), cvals)
 end
 
 
 function ExtendableFEMBase.update_basis!(FEBE::FEEvaluatorDisc)
     ExtendableFEMBase.update_basis!(FEBE.FEB)
+    cvals_std = FEBE.FEB.cvals
+    cvals = FEBE.cvals
+    coeffs = FEBE.coeffs
+    for d = 1 : size(cvals_std, 1), j = size(cvals_std, 2), qp = size(cvals_std,3)
+        cvals[d,j,qp] = coeffs[1] * cvals_std[d,j,qp]
+        cvals[d,j+size(cvals_std,2),qp] = coeffs[2] * cvals_std[d,j,qp] 
+    end
 end
 
 function ExtendableFEMBase.update_basis!(FEBE::FEEvaluatorDisc, item)

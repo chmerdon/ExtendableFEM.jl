@@ -18,6 +18,8 @@ mutable struct NonlinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT,
     ops_args::Array{DataType,1}
     kernel::KFT
     jacobian::JFT
+    BE_test_vals::Array{Array{Array{Tv,3},1}}
+    BE_args_vals::Array{Array{Array{Tv,3},1}}
     FES_test             #::Array{FESpace,1}
     FES_args             #::Array{FESpace,1}
     BE_test              #::Union{Nothing, Array{FEEvaluator,1}}
@@ -71,7 +73,7 @@ function NonlinearOperator(kernel, u_test, ops_test, u_args = u_test, ops_args =
     _update_params!(parameters, kwargs)
     @assert length(u_args) == length(ops_args)
     @assert length(u_test) == length(ops_test)
-    return NonlinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(jacobian)}(u_test, ops_test, u_args, ops_args, kernel, jacobian, nothing, nothing, nothing, nothing, nothing, nothing, nothing, parameters)
+    return NonlinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(jacobian)}(u_test, ops_test, u_args, ops_args, kernel, jacobian, [[zeros(Tv, 0, 0, 0)]], [[zeros(Tv, 0, 0, 0)]], nothing, nothing, nothing, nothing, nothing, nothing, nothing, parameters)
 end
 
 
@@ -99,7 +101,7 @@ which are calculated by automatic differentiation or
 by the user-provided jacobian function with interface
 
     jacobian!(jac, input_args, params)
-    
+
 
 Keyword arguments:
 $(_myprint(default_nlop_kwargs()))
@@ -139,8 +141,10 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
         nargs = length(FES_args)
         ntest = length(FES_test)
         O.QF = []
-        O.BE_test = Array{Array{<:FEEvaluator,1},1}([])
-        O.BE_args = Array{Array{<:FEEvaluator,1},1}([])
+        O.BE_test = Array{Array{<:FEEvaluator{Tv},1},1}([])
+        O.BE_args = Array{Array{<:FEEvaluator{Tv},1},1}([])
+        O.BE_test_vals = Array{Array{Array{Tv,3},1},1}([])
+        O.BE_args_vals = Array{Array{Array{Tv,3},1},1}([])
         O.L2G = []
         for EG in EGs
             ## quadrature formula for EG
@@ -159,6 +163,8 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
             ## FE basis evaluator for EG
             push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]) for j in 1 : ntest])
             push!(O.BE_args, [FEEvaluator(FES_args[j], O.ops_args[j], O.QF[end]) for j in 1 : nargs])
+            push!(O.BE_test_vals, [BE.cvals for BE in O.BE_test[end]])
+            push!(O.BE_args_vals, [BE.cvals for BE in O.BE_args[end]])
 
             ## L2G map for EG
             push!(O.L2G, L2GTransformer(EG, xgrid, ON_CELLS))
@@ -234,7 +240,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
         entry_tol = O.parameters[:entry_tolerance]
 
         ## Assembly loop for fixed geometry
-        function assembly_loop(A::AbstractSparseArray{T}, b::AbstractVector{T}, sol::Array{<:FEVectorBlock{T,Tv,Ti},1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_test::Array{<:FEEvaluator,1}, BE_args::Array{<:FEEvaluator,1}, L2G::L2GTransformer, K::KernelEvaluator) where {T,Tv,Ti}
+        function assembly_loop(A::AbstractSparseArray{T}, b::AbstractVector{T}, sol::Array{<:FEVectorBlock{T,Tv,Ti},1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_test::Array{<:FEEvaluator,1}, BE_args::Array{<:FEEvaluator,1}, BE_test_vals::Array{Array{Tv,3},1}, BE_args_vals::Array{Array{Tv,3},1}, L2G::L2GTransformer, K::KernelEvaluator) where {T,Tv,Ti}
 
             ## extract kernel properties
             params = K.params
@@ -284,7 +290,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                         for j = 1 : ndofs_args[id]
                             dof_j = itemdofs_args[id][j, item]
                             for d = 1 : op_lengths_args[id]
-                                input_args[d + op_offsets_args[id]] += sol[id][dof_j]::T * BE_args[id].cvals[d, j, qp]::Tv
+                                input_args[d + op_offsets_args[id]] += sol[id][dof_j] * BE_args_vals[id][d, j, qp]
                             end
                         end
 					end
@@ -314,13 +320,13 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                                 jac_vals = jac.nzval
                                 for col = 1 : op_lengths_args[id]
                                     for r in nzrange(jac, col + op_offsets_args[id])
-                                        tempV[rows[r]] += jac_vals[r] * BE_args[id].cvals[col,j,qp]
+                                        tempV[rows[r]] += jac_vals[r] * BE_args_vals[id][col,j,qp]
                                     end
                                 end
                             else
                                 for d = 1 : op_lengths_args[id]
                                     for k = 1 : op_offsets_test[end]
-                                        tempV[k] += jac[k,d + op_offsets_args[id]] * BE_args[id].cvals[d,j,qp]
+                                        tempV[k] += jac[k,d + op_offsets_args[id]] * BE_args_vals[id][d,j,qp]
                                     end
                                 end
                             end
@@ -329,7 +335,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                             for idt = 1 : ntest
                                 for k = 1 : ndofs_test[idt]
                                     for d = 1 : op_lengths_test[idt]
-                                        Aloc[idt,id][k,j] += tempV[d + op_offsets_test[idt]] * BE_test[idt].cvals[d,k,qp] * weights[qp]
+                                        Aloc[idt,id][k,j] += tempV[d + op_offsets_test[idt]] * BE_test_vals[idt][d,k,qp] * weights[qp]
                                     end
                                 end
                             end
@@ -344,7 +350,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                         for j = 1 : ndofs_test[idt]
                             dof = itemdofs_test[idt][j, item] + offsets_test[idt]
                             for d = 1 : op_lengths_test[idt]
-                                b[dof] += tempV[d + op_offsets_test[idt]] * BE_test[idt].cvals[d,j,qp]
+                                b[dof] += tempV[d + op_offsets_test[idt]] * BE_test_vals[idt][d,j,qp]
                             end
                         end
                     end
@@ -380,7 +386,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                     Threads.@threads for j = 1 : length(EGs)
                         fill!(bj[j],0)
                         fill!(Aj[j].cscmatrix.nzval,0)
-                        assembly_loop(Aj[j], bj[j], sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.L2G[j], Kj[j]; kwargs...)
+                        assembly_loop(Aj[j], bj[j], sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], Kj[j]; kwargs...)
                     end
                     for j = 1 : length(EGs)
                         A.cscmatrix += Aj[j].cscmatrix
@@ -389,7 +395,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                     flush!(A)
                 else
                     for j = 1 : length(EGs)
-                        assembly_loop(A, b, sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.L2G[j], Kj[j]; kwargs...)
+                        assembly_loop(A, b, sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], Kj[j]; kwargs...)
                     end
                 end   
             end
