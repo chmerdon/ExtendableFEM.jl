@@ -65,16 +65,18 @@ end
 function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; time = 0, kwargs...) where UT
     if UT <: Integer
         ind = O.u
+        inf_sol = ind
     elseif UT <: Unknown
         ind = get_unknown_id(SC, O.u)
+        ind_sol = findfirst(==(O.u), sol.tags)
     end
     offset = SC.offsets[ind]
-    FES = sol[ind].FES
+    FES = b[ind].FES
     regions = O.parameters[:regions]
     bdofs::Array{Int,1} = O.bdofs
     if O.FES !== FES
         bddata = FEVector(FES)
-        bfacedofs::Adjacency{Int32} = sol[ind].FES[ExtendableFEMBase.BFaceDofs]
+        bfacedofs::Adjacency{Int32} = b[ind].FES[ExtendableFEMBase.BFaceDofs]
         bfaceregions = FES.xgrid[BFaceRegions]
         nbfaces = num_sources(bfacedofs)
         ndofs4bface = max_num_targets_per_source(bfacedofs)
@@ -98,11 +100,10 @@ function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::
         penalty = O.parameters[:penalty]
         AE = A.entries
         BE = b.entries
-        SE = sol.entries
         for dof in bdofs
             AE[dof, dof] = penalty
             BE[dof] = penalty * bddata.entries[dof - offset]
-            SE[dof] = bddata.entries[dof - offset]
+            sol[ind_sol][dof-offset] = bddata.entries[dof - offset]
         end
     end
     if O.parameters[:verbosity] > 1

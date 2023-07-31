@@ -121,7 +121,7 @@ function BilinearOperator(kernel::Function, u_test, ops_test, u_ansatz, ops_ansa
     else
         storage = nothing
     end
-    return BilinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args, kernel, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, storage, parameters)
+    return BilinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args, kernel, [[zeros(Tv, 0, 0, 0)]], [[zeros(Tv, 0, 0, 0)]], [[zeros(Tv, 0, 0, 0)]], nothing, nothing, nothing, nothing, nothing, nothing,nothing, nothing, nothing, nothing, storage, parameters)
 end
 
 function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1} = oa_test; kwargs...)
@@ -131,6 +131,17 @@ function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown
     ops_ansatz = [oa[2] for oa in oa_ansatz]
     return BilinearOperator(kernel, u_test, ops_test, u_ansatz, ops_ansatz; kwargs...)
 end
+
+function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1} ; kwargs...)
+    u_test = [oa[1] for oa in oa_test]
+    u_ansatz = [oa[1] for oa in oa_ansatz]
+    u_args = [oa[1] for oa in oa_args]
+    ops_test = [oa[2] for oa in oa_test]
+    ops_ansatz = [oa[2] for oa in oa_ansatz]
+    ops_args = [oa[2] for oa in oa_args]
+    return BilinearOperator(kernel, u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args; kwargs...)
+end
+
 
 
 """
@@ -227,6 +238,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
         ## prepare assembly
         AT = O.parameters[:entities]
         xgrid = FES_test[1].xgrid
+        gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
         itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
@@ -261,17 +273,18 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
             if O.parameters[:verbosity] > 1
                 @info "...... integrating on $EG with quadrature order $quadorder"
             end
+            push!(O.QF, QuadratureRule{Tv, EG}(quadorder))
+
+            ## L2G map for EG
+            push!(O.L2G, L2GTransformer(EG, xgrid, gridAT))
         
             ## FE basis evaluator for EG
-            push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT) for j in 1 : ntest])
-            push!(O.BE_ansatz, [FEEvaluator(FES_ansatz[j], O.ops_ansatz[j], O.QF[end]; AT = AT) for j in 1 : ntest])
-            push!(O.BE_args, [FEEvaluator(FES_args[j], O.ops_args[j], O.QF[end]; AT = AT) for j in 1 : nargs])
+            push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT, L2G = O.L2G[end]) for j in 1 : ntest])
+            push!(O.BE_ansatz, [FEEvaluator(FES_ansatz[j], O.ops_ansatz[j], O.QF[end]; AT = AT, L2G = O.L2G[end]) for j in 1 : nansatz])
+            push!(O.BE_args, [FEEvaluator(FES_args[j], O.ops_args[j], O.QF[end]; AT = AT, L2G = O.L2G[end]) for j in 1 : nargs])
             push!(O.BE_test_vals, [BE.cvals for BE in O.BE_test[end]])
             push!(O.BE_ansatz_vals, [BE.cvals for BE in O.BE_ansatz[end]])
             push!(O.BE_args_vals, [BE.cvals for BE in O.BE_args[end]])
-
-            ## L2G map for EG
-            push!(O.L2G, L2GTransformer(EG, xgrid, ON_CELLS))
 
             ## parameter structure
             push!(O.QP_infos, QPInfos(xgrid; time = time, params = O.parameters[:params]))
@@ -364,13 +377,14 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
             nweights = length(weights)
 
             for item::Int in items
-                if !(visit_region[itemregions[item]])
-                    continue
-                else
-                    QPinfos.region = itemregions[item]
-                    QPinfos.item = item
-                    QPinfos.volume = itemvolumes[item]
+                if itemregions[item] > 0 
+                    if !(visit_region[itemregions[item]]) || AT == ON_IFACES
+                        continue
+                    end
                 end
+                QPinfos.region = itemregions[item]
+                QPinfos.item = item
+                QPinfos.volume = itemvolumes[item]
 
                 ## update FE basis evaluators
                 for j = 1 : ntest
@@ -400,7 +414,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 					end
                 
                     ## get global x for quadrature point
-                    eval_trafo!(params[1], L2G, xref[qp])
+                    eval_trafo!(QPinfos.x, L2G, xref[qp])
 
                     # update matrix
                     for id = 1 : nansatz
@@ -412,8 +426,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
                             end
 
                             # evaluate kernel
-                            O.kernel(result_kernel, input_ansatz, input_args, params)
-
+                            O.kernel(result_kernel, input_ansatz, input_args, QPinfos)
                             result_kernel .*= factor * weights[qp]
 
                             # multiply test function operator evaluation

@@ -264,8 +264,10 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
             dof_j::Int, dof_k::Int = 0, 0
 
             for item::Int in items
-                if !(visit_region[itemregions[item]])
-                    continue
+                if itemregions[item] > 0
+                    if !(visit_region[itemregions[item]])
+                        continue
+                    end
                 else
                     params.region = itemregions[item]
                     params.item = item

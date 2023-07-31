@@ -29,6 +29,13 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Dict{<:Unknown}, SC = no
     return solve(PD, [FES[u] for u in unknowns], SC; unknowns = unknowns, kwargs...)
 end
 
+function CommonSolve.solve(PD::ProblemDescription, SC = nothing; init = nothing, unknowns = PD.unknowns, kwargs...)
+    if init === nothing
+        @error "need to know initial FEVector or finite element spaces for unknowns of problem"
+    end
+    return solve(PD, [init[u].FES for u in unknowns], SC; init = init, unknowns = unknowns, kwargs...)
+end
+
 
 function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unknowns = PD.unknowns, kwargs...)
 
@@ -183,7 +190,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
                 if !is_linear
                     fill!(residual.entries, 0)
                     for j = 1 : length(b), k = 1 : length(b)
-                        addblock_matmul!(residual[j], A[j,k], sol[unknowns[j]])
+                        addblock_matmul!(residual[j], A[j,k], sol[unknowns[k]])
                     end
                     residual.entries .-= b.entries
                     #res = A.entries * sol.entries - b.entries
