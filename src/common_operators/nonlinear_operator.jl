@@ -414,7 +414,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::NonlinearOperator{Tv,UT}, SC::Sol
        ind_args = O.u_args
     elseif UT <: Unknown
         ind_test = [get_unknown_id(SC, u) for u in O.u_test]
-        ind_args = [get_unknown_id(SC, u) for u in O.u_args]
+        ind_args = [findfirst(==(u), sol.tags) for u in O.u_args] #[get_unknown_id(SC, u) for u in O.u_args]
     end
     build_assembler!(A.entries, b.entries, O, [sol[j] for j in ind_test], [sol[j] for j in ind_args]; kwargs...)
     O.assembler(A.entries, b.entries, [sol[j] for j in ind_args])

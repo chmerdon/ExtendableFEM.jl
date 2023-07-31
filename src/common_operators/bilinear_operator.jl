@@ -677,7 +677,6 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 
                             # evaluate kernel
                             O.kernel(result_kernel, input_ansatz, QPinfos)
-
                             result_kernel .*= factor * weights[qp]
 
                             # multiply test function operator evaluation
@@ -783,13 +782,13 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperator{Tv,UT}, SC::Solv
     elseif UT <: Unknown
         ind_test = [get_unknown_id(SC, u) for u in O.u_test]
         ind_ansatz = [get_unknown_id(SC, u) for u in O.u_ansatz]
-        ind_args = [get_unknown_id(SC, u) for u in O.u_args]
+        ind_args = [findfirst(==(u), sol.tags) for u in O.u_args] #[get_unknown_id(SC, u) for u in O.u_args]
     end
     if length(O.u_args) > 0
-        build_assembler!(A.entries, O, [sol[j] for j in ind_test], [sol[j] for j in ind_ansatz], [sol[j] for j in ind_args])
+        build_assembler!(A.entries, O, [A[j,j] for j in ind_test], [A[j,j] for j in ind_ansatz], [sol[j] for j in ind_args])
         O.assembler(A.entries, [sol[j] for j in ind_args])
     else
-        build_assembler!(A.entries, O, [sol[j] for j in ind_test], [sol[j] for j in ind_ansatz])
+        build_assembler!(A.entries, O, [A[j,j] for j in ind_test], [A[j,j] for j in ind_ansatz])
         O.assembler(A.entries)
     end
 end

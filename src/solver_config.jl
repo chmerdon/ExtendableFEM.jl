@@ -4,6 +4,8 @@ mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
     sol::xT
     res::xT
     LP::LinearProblem
+    linsolver
+    unknown_ids_in_sol::Array{Int,1}
     unknowns::Array{Unknown,1}
     unknowns_reduced::Array{Unknown,1}
     offsets::Array{Int,1}  ## offset for each unknown that is solved
@@ -61,11 +63,13 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
     if parameters[:init] === nothing
         names = [u.name for u in unknowns]
         append!(names, ["N.N." for j = length(unknowns)+1:length(FES)])
-        x = FEVector{bT}(FES; name = names, tags = unknowns)    
+        x = FEVector{bT}(FES; name = names, tags = unknowns)   
+        unknown_ids_in_sol = 1:length(unknowns) 
     else   
         x = parameters[:init]
+        unknown_ids_in_sol = [findfirst(==(u), x.tags) for u in unknowns]
     end
     res = deepcopy(b)
     LP = LinearProblem(A.entries.cscmatrix, b.entries)
-    return SolverConfiguration{typeof(A),typeof(b),typeof(x)}(A,b,x,res,LP,unknowns,copy(unknowns),offsets,parameters)
+    return SolverConfiguration{typeof(A),typeof(b),typeof(x)}(A,b,x,res,LP,nothing,unknown_ids_in_sol,unknowns,copy(unknowns),offsets,parameters)
 end

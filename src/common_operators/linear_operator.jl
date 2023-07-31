@@ -180,6 +180,14 @@ function LinearOperator(kernel, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataT
     return LinearOperator(kernel, u_test, ops_test, u_args, ops_args; kwargs...)
 end
 
+function LinearOperator(oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1}; kwargs...)
+    u_test = [oa[1] for oa in oa_test]
+    u_args = [oa[1] for oa in oa_args]
+    ops_test = [oa[2] for oa in oa_test]
+    ops_args = [oa[2] for oa in oa_args]
+    return LinearOperator(ExtendableFEMBase.standard_kernel, u_test, ops_test, u_args, ops_args; kwargs...)
+end
+
 function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0, kwargs...) where {Tv}
     ## check if FES is the same as last time
     FES_test = [FE_test[j].FES for j = 1 : length(FE_test)]
@@ -210,7 +218,6 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
         O.BE_test_vals = Array{Array{Array{Tv,3},1},1}([])
         O.BE_args_vals = Array{Array{Array{Tv,3},1},1}([])
         O.QP_infos = Array{QPInfos,1}([])
-        O.
         O.L2G = []
         for EG in EGs
             ## quadrature formula for EG
@@ -538,13 +545,13 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperator{Tv,UT}, SC::Solver
         ind_args = O.u_args
     elseif UT <: Unknown
         ind_test = [get_unknown_id(SC, u) for u in O.u_test]
-        ind_args = [get_unknown_id(SC, u) for u in O.u_args]
+        ind_args = [findfirst(==(u), sol.tags) for u in O.u_args] # [get_unknown_id(SC, u) for u in O.u_args]
     end
     if length(O.u_args) > 0
-        build_assembler!(b.entries, O, [sol[j] for j in ind_test], [sol[j] for j in ind_args]; kwargs...)
+        build_assembler!(b.entries, O, [b[j] for j in ind_test], [sol[j] for j in ind_args]; kwargs...)
         O.assembler(b.entries, [sol[j] for j in ind_args])
     else
-        build_assembler!(b.entries, O, [sol[j] for j in ind_test]; kwargs...)
+        build_assembler!(b.entries, O, [b[j] for j in ind_test]; kwargs...)
         O.assembler(b.entries)
     end
 end

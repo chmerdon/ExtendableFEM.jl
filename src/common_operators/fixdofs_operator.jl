@@ -47,7 +47,7 @@ Keyword arguments:
 $(_myprint(default_fixdofs_kwargs()))
 
 """
-function FixDofs(u; vals = [], dofs =[], kwargs...)
+function FixDofs(u; dofs = [], vals = zeros(Float64, length(dofs)), kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_fixdofs_kwargs())
     _update_params!(parameters, kwargs)
     @assert length(dofs) == length(vals)

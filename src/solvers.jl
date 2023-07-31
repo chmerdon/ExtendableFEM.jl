@@ -61,7 +61,6 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
     A = SC.A
     b = SC.b
     sol = SC.sol
-    target = SC.sol
     residual = SC.res
     method_linear = SC.parameters[:method_linear]
     precon_linear = SC.parameters[:precon_linear]
@@ -108,7 +107,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
     allocs_final = allocs
     nlres = 1.1e30
     linres = 1.1e30
-    linsolve = nothing
+    linsolve = SC.linsolver
     reduced = false
 
     for j = 1 : maxits+1
@@ -164,7 +163,10 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
                 end
 
                 ## init solver
-                if j == 1
+                if linsolve === nothing
+                    if SC.parameters[:verbosity] > 0
+                        @info ".... initializing linear solver ($(method_linear))\n" 
+                    end
                     abstol = SC.parameters[:abstol]
                     reltol = SC.parameters[:reltol]
                     LP = reduced ? LP_reduced : SC.LP
@@ -173,13 +175,16 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
                     else
                         linsolve = init(LP, method_linear; abstol = abstol, reltol = reltol)
                     end
+                    SC.linsolver = linsolve
                 end
 
 
                 ## compute nonlinear residual
                 if !is_linear
                     fill!(residual.entries, 0)
-                    mul!(residual.entries, A.entries, sol.entries)
+                    for j = 1 : length(b), k = 1 : length(b)
+                        addblock_matmul!(residual[j], A[j,k], sol[unknowns[j]])
+                    end
                     residual.entries .-= b.entries
                     #res = A.entries * sol.entries - b.entries
                     for op in PD.operators
@@ -235,6 +240,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
 
                 ## solve
                 x = LinearSolve.solve(linsolve)
+                SC.linsolver = linsolve
 
                 fill!(residual.entries, 0)
                 mul!(residual.entries, A.entries.cscmatrix, x.u)
@@ -248,10 +254,15 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
                 end
                 #@info residual.entries, norms(residual)
                 linres = norm(residual.entries)
-                if damping > 0
-                    sol.entries .= damping * sol.entries + (1-damping)*x.u
-                else
-                    view(sol.entries,1:length(x.u)) .= x.u
+                offset = 0
+                for u in unknowns
+                    ndofs_u = length(view(sol[u]))
+                    if damping > 0
+                        view(sol[u]) .= damping * view(sol[u]) + (1-damping) * view(x.u, offset+1:offset+ndofs_u)
+                    else
+                        view(sol[u]) .= view(x.u, offset+1:offset+ndofs_u)
+                    end
+                    offset += ndofs_u
                 end
             end
         end

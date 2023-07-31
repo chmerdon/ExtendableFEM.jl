@@ -24,7 +24,7 @@ UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 [compat]
 CommonSolve = "0.2"
 DiffResults = "1"
-ExtendableFEMBase = "^0.0.5"
+ExtendableFEMBase = "^0.0.6"
 ExtendableGrids = "1.0"
 ExtendableSparse = "1.2"
 ForwardDiff = "^0.10.35"
