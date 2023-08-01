@@ -230,7 +230,7 @@ end
 function evaluate(
     b::AbstractMatrix,
     O::ItemIntegrator,
-    sol;
+    sol::FEVector;
     time = 0,
     kwargs...)
 ````
@@ -239,6 +239,24 @@ Evaluates the ItemIntegrator for the specified solution into the matrix b.
 """
 function ExtendableFEMBase.evaluate!(b, O::ItemIntegrator, sol::FEVector; time = 0, kwargs...)
     ind_args = [findfirst(==(u), sol.tags) for u in O.u_args]
+    build_assembler!(O, [sol[j] for j in ind_args])
+    O.assembler(b, [sol[j] for j in ind_args]; time = time)
+end
+
+"""
+````
+function evaluate(
+    b::AbstractMatrix,
+    O::ItemIntegrator,
+    sol::Array{FEVEctorBlock};
+    time = 0,
+    kwargs...)
+````
+
+Evaluates the ItemIntegrator for the specified solution into the matrix b.
+"""
+function ExtendableFEMBase.evaluate!(b, O::ItemIntegrator, sol::Array{<:FEVectorBlock,1}; time = 0, kwargs...)
+    ind_args = O.u_args
     build_assembler!(O, [sol[j] for j in ind_args])
     O.assembler(b, [sol[j] for j in ind_args]; time = time)
 end

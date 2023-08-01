@@ -53,6 +53,8 @@ end
 FO(u) = (u, FO)
 jump(o::Tuple{Union{Unknown,Int}, DataType}) = (o[1], Jump{o[2]})
 average(o::Tuple{Union{Unknown,Int}, DataType}) = (o[1], Average{o[2]})
+this(o::Tuple{Union{Unknown,Int}, DataType}) = (o[1], Left{o[2]})
+other(o::Tuple{Union{Unknown,Int}, DataType}) = (o[1], Right{o[2]})
 
 ## some aliases
 id(u) = (u, Identity)

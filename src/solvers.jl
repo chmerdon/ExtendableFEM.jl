@@ -39,7 +39,7 @@ end
 
 function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unknowns = PD.unknowns, kwargs...)
 
-    @info "SOLVING PROBLEM $(PD.name)
+    @info "SOLVING $(PD.name)
         unknowns = $([u.name for u in unknowns])
          fetypes = $(["$(get_FEType(FES[j]))" for j = 1 : length(unknowns)])
            ndofs = $([FES[j].ndofs for j = 1 : length(unknowns)])"

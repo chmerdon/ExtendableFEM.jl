@@ -53,7 +53,7 @@ export get_unknown_id
 include("jump_operators.jl")
 export DiscontinuousFunctionOperator
 export Jump, Average, Left, Right
-export jump, average
+export jump, average, this, other
 export is_discontinuous
 
 include("common_operators/item_integrator.jl")

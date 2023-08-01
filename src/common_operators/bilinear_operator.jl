@@ -42,6 +42,7 @@ default_blfop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :use_sparsity_pattern => ("auto", "read sparsity pattern of jacobian of kernel to find out which components couple"),
     :parallel_groups => (false, "assemble operator in parallel using CellAssemblyGroups"),
     :time_dependent => (false, "operator is time-dependent ?"),
+    :callback! => (nothing, "function with interface (A, b, sol) that is called in each assembly step"),
     :store => (false, "store matrix separately (and copy from there when reassembly is triggered)"),
     :quadorder => ("auto", "quadrature order"),
     :bonus_quadorder => (0, "additional quadrature order added to quadorder"),
@@ -130,16 +131,6 @@ function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown
     ops_test = [oa[2] for oa in oa_test]
     ops_ansatz = [oa[2] for oa in oa_ansatz]
     return BilinearOperator(kernel, u_test, ops_test, u_ansatz, ops_ansatz; kwargs...)
-end
-
-function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1} ; kwargs...)
-    u_test = [oa[1] for oa in oa_test]
-    u_ansatz = [oa[1] for oa in oa_ansatz]
-    u_args = [oa[1] for oa in oa_args]
-    ops_test = [oa[2] for oa in oa_test]
-    ops_ansatz = [oa[2] for oa in oa_ansatz]
-    ops_args = [oa[2] for oa in oa_args]
-    return BilinearOperator(kernel, u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args; kwargs...)
 end
 
 
@@ -315,8 +306,8 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 
         ## prepare sparsity pattern
         use_sparsity_pattern = O.parameters[:use_sparsity_pattern]
-         if use_sparsity_pattern == "auto"
-             use_sparsity_pattern = ntest > 1
+        if use_sparsity_pattern == "auto"
+             use_sparsity_pattern = false
         end
         coupling_matrix::Matrix{Bool} = ones(Bool, nansatz, ntest)
         if use_sparsity_pattern
@@ -366,9 +357,10 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
             input_args = zeros(T, op_offsets_args[end])
             result_kernel = zeros(T, op_offsets_test[end])
 
-            ndofs_test::Array{Int,1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_test]
-            ndofs_ansatz::Array{Int,1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_ansatz]
-            ndofs_args::Array{Int,1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_args]
+            ndofs_test::Array{Int,1} = [size(BE.cvals,2) for BE in BE_test]
+            ndofs_ansatz::Array{Int,1} = [size(BE.cvals,2) for BE in BE_ansatz]
+            ndofs_args::Array{Int,1} = [size(BE.cvals,2) for BE in BE_args]
+
             Aloc = Matrix{Matrix{T}}(undef, ntest, nansatz)
             for j = 1 : ntest, k = 1 : nansatz
                 Aloc[j,k] = zeros(T, ndofs_test[j], ndofs_ansatz[k])
@@ -749,7 +741,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
         O.FES_test = FES_test
         O.FES_ansatz = FES_ansatz
 
-        function assembler(A; kwargs...)
+        function assembler(A, b; kwargs...)
             if O.parameters[:store] && size(A) == size(O.storage)
                 A.cscmatrix += O.storage.cscmatrix
             else
@@ -773,6 +765,9 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                             assembly_loop(S, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_ansatz[j], O.BE_test_vals[j], O.BE_ansatz_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
                         end
                     end   
+                end
+                if O.parameters[:callback!] !== nothing
+                    S = O.parameters[:callback!](S, b, sol)
                 end
                 if O.parameters[:verbosity] > 1
                     @info ".... assembly of $(O.parameters[:name]) took $time s"
@@ -799,10 +794,10 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperator{Tv,UT}, SC::Solv
     end
     if length(O.u_args) > 0
         build_assembler!(A.entries, O, [A[j,j] for j in ind_test], [A[j,j] for j in ind_ansatz], [sol[j] for j in ind_args])
-        O.assembler(A.entries, [sol[j] for j in ind_args])
+        O.assembler(A.entries, b.entries, [sol[j] for j in ind_args])
     else
         build_assembler!(A.entries, O, [A[j,j] for j in ind_test], [A[j,j] for j in ind_ansatz])
-        O.assembler(A.entries)
+        O.assembler(A.entries, b.entries)
     end
 end
 
@@ -816,7 +811,7 @@ function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperator{Tv,UT}, sol = 
         O.assembler(A.entries, [sol[j] for j in ind_args])
     else
         build_assembler!(A.entries, O, [A[j,j] for j in ind_test], [A[j,j] for j in ind_ansatz])
-        O.assembler(A.entries)
+        O.assembler(A.entries, nothing)
     end
 end
 
@@ -828,6 +823,9 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorFromMatrix{UT,MT}
     elseif UT <: Unknown
         ind_test = [get_unknown_id(SC, u) for u in O.u_test]
         ind_ansatz = [get_unknown_id(SC, u) for u in O.u_ansatz]
+    end
+    if O.parameters[:callback!] !== nothing
+        O.A = O.parameters[:callback!](O.A, [b[j] for j in ind_test], sol)
     end
     if MT <: FEMatrix
         for (j,ij) in enumrate(ind_test), (k,ik) in enumerate(ind_ansatz)

@@ -250,7 +250,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
         regions = O.parameters[:regions]
         visit_region = zeros(Bool, maximum(itemregions))
         if length(regions) > 0
-            visit_region[O.regions] = true
+            visit_region[regions] .= true
         else
             visit_region .= true
         end
@@ -288,19 +288,20 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
             result_kernel = zeros(Tv, op_offsets_test[end])
             offsets_test = [FE_test[j].offset for j in 1 : length(FES_test)]
 
-            ndofs_test::Array{Int,1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_test]
-            ndofs_args::Array{Int,1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_args]
+            ndofs_test::Array{Int,1} = [get_ndofs(AT, FE, EG) for FE in FETypes_test]
+            ndofs_args::Array{Int,1} = [get_ndofs(AT, FE, EG) for FE in FETypes_args]
             weights, xref = QF.w, QF.xref
             nweights = length(weights)
 
             for item::Int in items
-                if !(visit_region[itemregions[item]])
-                    continue
-                else
-                    QPinfos.region = itemregions[item]
-                    QPinfos.item = item
-                    QPinfos.volume = itemvolumes[item]
+                if itemregions[item] > 0 
+                    if !(visit_region[itemregions[item]]) || AT == ON_IFACES
+                        continue
+                    end
                 end
+                QPinfos.region = itemregions[item]
+                QPinfos.item = item
+                QPinfos.volume = itemvolumes[item]
 
                 ## update FE basis evaluators
                 for j = 1 : ntest
