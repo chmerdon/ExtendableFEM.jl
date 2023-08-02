@@ -320,7 +320,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
                     couple = false
                     for j = 1 : op_lengths_ansatz[id]
                         for k = 1 : op_lengths_test[idt]
-                            if sparsity_pattern[j + op_offsets_ansatz[id], k + op_offsets_test[idt]] > 0
+                            if sparsity_pattern[k + op_offsets_test[idt], j + op_offsets_ansatz[id]] > 0
                                 couple = true
                             end
                         end
@@ -598,7 +598,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                     couple = false
                     for j = 1 : op_lengths_ansatz[id]
                         for k = 1 : op_lengths_test[idt]
-                            if sparsity_pattern[j + op_offsets_ansatz[id], k + op_offsets_test[idt]] > 0
+                            if sparsity_pattern[k + op_offsets_test[idt], j + op_offsets_ansatz[id]] > 0
                                 couple = true
                             end
                         end
@@ -703,7 +703,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                 end
 
                 ## add local matrices to global matrix
-                for id = 1 : nansatz, idt = 1 : ntest
+                for id = 1 : nansatz, idt in couples_with[id]
                     Aloc[idt,id] .*= itemvolumes[item]
                     for j = 1 : ndofs_test[idt]
 
@@ -717,7 +717,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                     end
                 end
                 if transposed_copy != 0
-                    for id = 1 : nansatz, idt = 1 : ntest
+                    for id = 1 : nansatz, idt in couples_with[id]
                         Aloc[idt,id] .*= transposed_copy
                         for j = 1 : ndofs_test[idt]
                             dof_j = itemdofs_test[idt][j, item] + offsets_test[idt]

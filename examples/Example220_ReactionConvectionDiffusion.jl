@@ -89,7 +89,7 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
     PD = ProblemDescription("reaction-convection-diffusion problem")
     u = Unknown("u")
     assign_unknown!(PD, u)
-    assign_operator!(PD, BilinearOperator(kernel_DCR!, [id(u), grad(u)]; bonus_quadorder = 1, use_sparsity_pattern = false, kwargs...))
+    assign_operator!(PD, BilinearOperator(kernel_DCR!, [id(u), grad(u)]; bonus_quadorder = 1, kwargs...))
     assign_operator!(PD, LinearOperator(rhs(), [id(u)]; bonus_quadorder = 2, kwargs...))
 
     ## add a gradient jump (interior penalty) stabilisation for dominant convection

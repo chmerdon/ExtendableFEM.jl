@@ -287,7 +287,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
                     couple = false
                     for j = 1 : op_lengths_ansatz[id]
                         for k = 1 : op_lengths_test[idt]
-                            if sparsity_pattern[j + op_offsets_ansatz[id], k + op_offsets_test[idt]] > 0
+                            if sparsity_pattern[k + op_offsets_test[idt], j + op_offsets_ansatz[id]] > 0
                                 couple = true
                             end
                         end
@@ -614,7 +614,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
                     couple = false
                     for j = 1 : op_lengths_ansatz[id]
                         for k = 1 : op_lengths_test[idt]
-                            if sparsity_pattern[j + op_offsets_ansatz[id], k + op_offsets_test[idt]] > 0
+                            if sparsity_pattern[k + op_offsets_test[id], j + op_offsets_ansatz[idt]] > 0
                                 couple = true
                             end
                         end
