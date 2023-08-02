@@ -64,6 +64,8 @@ include("common_operators/linear_operator.jl")
 export LinearOperator
 include("common_operators/bilinear_operator.jl")
 export BilinearOperator
+include("common_operators/bilinear_operator_dg.jl")
+export BilinearOperatorDG
 include("common_operators/nonlinear_operator.jl")
 export NonlinearOperator
 include("common_operators/combinedofs.jl")

@@ -135,7 +135,7 @@ function assemble_fv_operator!(A, b, sol)
     xgrid = FES.xgrid
 
     ## right-hand side = boundary inflow fluxes if velocity points inward
-    BndFluxIntegrator = ItemIntegrator(kernel_inflow!, [normalflux(1)]; entities = ON_BFACES, quadorder = 2)
+    BndFluxIntegrator = ItemIntegrator(kernel_inflow!, [normalflux(1)]; entities = ON_BFACES)
     bnd_fluxes::Matrix{Float64} = evaluate(BndFluxIntegrator,[sol[id_u]]) 
     facecells = xgrid[FaceCells]
     bface2face = xgrid[BFaceFaces]
@@ -150,7 +150,7 @@ function assemble_fv_operator!(A, b, sol)
     A = ExtendableSparseMatrix{Float64,Int}(FES.ndofs, FES.ndofs)
 
     ## integrate normalfux of velocity
-    FluxIntegrator = ItemIntegrator([normalflux(1)]; entities = ON_FACES, quadorder = 2)
+    FluxIntegrator = ItemIntegrator([normalflux(1)]; entities = ON_FACES)
     fluxes::Matrix{Float64} = evaluate(FluxIntegrator,[sol[id_u]])
 
     ## assemble upwind finite volume fluxes over cell faces
