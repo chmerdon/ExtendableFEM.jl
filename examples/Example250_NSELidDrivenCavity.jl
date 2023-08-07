@@ -1,6 +1,6 @@
 #= 
 
-# 250 : Navier--Stokes Problem
+# 250 : Navier--Stokes Lid-driven cavity
 ([source code](SOURCE_URL))
 
 This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem
@@ -14,7 +14,7 @@ with exterior force ``\mathbf{f}`` and some parameter ``\mu`` and inhomogeneous 
 
 =#
 
-module Example250_NavierStokesProblem
+module Example250_NSELidDrivenCavity
 
 using ExtendableFEM
 using ExtendableFEMBase
@@ -52,7 +52,7 @@ function initialgrid_cone()
     return xgrid
 end
 
-function main(; μ_final = 0.001, nrefs = 5, Plotter = nothing, kwargs...)
+function main(; μ_final = 0.001, nrefs = 5, reconstruct = true, Plotter = nothing, kwargs...)
 
     ## prepare parameter field
 	extra_params = Array{Float64,1}([max(μ_final, 0.01)])
@@ -61,9 +61,11 @@ function main(; μ_final = 0.001, nrefs = 5, Plotter = nothing, kwargs...)
     PD = ProblemDescription()
     u = Unknown("u"; name = "velocity")
     p = Unknown("p"; name = "pressure")
+    id_u = reconstruct ? apply(u, Reconstruct{HDIVBDM1{2}, Identity}) : id(u)
+
     assign_unknown!(PD, u)
     assign_unknown!(PD, p)
-    assign_operator!(PD, ExtendableFEM.NonlinearOperator(kernel_nonlinear!, [apply(u, Reconstruct{HDIVBDM1{2}, Identity}),grad(u),id(p)]; params = extra_params, kwargs...))#; jacobian = kernel_jacobian!)) 
+    assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [id_u, grad(u), id(p)]; params = extra_params, kwargs...))
     assign_operator!(PD, InterpolateBoundaryData(u, boundarydata!; regions = 3))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1,2]))
 
@@ -76,7 +78,6 @@ function main(; μ_final = 0.001, nrefs = 5, Plotter = nothing, kwargs...)
     ## prepare plots
     p=GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (1200,1200))
     
-
     ## solve by μ embedding
 	step = 0
     sol = nothing

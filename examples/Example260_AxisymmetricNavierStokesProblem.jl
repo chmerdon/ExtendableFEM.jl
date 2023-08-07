@@ -137,8 +137,6 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     gridplot!(pl[2,1], xgrid; Plotter = Plotter)
     scalarplot!(pl[2,2], xgrid, nodevalues(sol[u]; abs = true)[:]; Plotter = Plotter)
     vectorplot!(pl[2,2], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.05, clear = false)
-
-    
 end
 
 end # module
