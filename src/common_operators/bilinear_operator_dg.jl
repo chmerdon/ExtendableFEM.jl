@@ -60,7 +60,7 @@ end
 
 function Base.show(io::IO, O::BilinearOperatorDG)
     dependencies = dependencies_when_linearized(O)
-    print(io, "$(O.parameters[:name])($([ansatz_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]), $([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]))")
+    print(io, "$(O.parameters[:name])($([ansatz_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]), $([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]); entities = $(O.parameters[:entities])))")
     return nothing
 end
 

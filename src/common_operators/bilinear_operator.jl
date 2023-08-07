@@ -2,9 +2,32 @@
 mutable struct BilinearOperatorFromMatrix{UT <: Union{Unknown, Integer}, MT} <: AbstractOperator
     u_test::Array{UT,1}
     u_ansatz::Array{UT,1}
+    u_args::Array{UT,1}
     A::MT
     parameters::Dict{Symbol,Any}
 end
+
+# informs solver when operator needs reassembly
+function ExtendableFEM.depends_nonlinearly_on(O::BilinearOperatorFromMatrix)
+    return O.u_args
+end
+
+# informs solver in which blocks the operator assembles to
+function ExtendableFEM.dependencies_when_linearized(O::BilinearOperatorFromMatrix)
+    return [O.u_ansatz, O.u_test]
+end
+
+# informs solver when operator needs reassembly in a time dependent setting
+function ExtendableFEM.is_timedependent(O::BilinearOperatorFromMatrix)
+    return O.parameters[:time_dependent]
+end
+
+function Base.show(io::IO, O::BilinearOperatorFromMatrix)
+    dependencies = dependencies_when_linearized(O)
+    print(io, "$(O.parameters[:name])($([ansatz_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]), $([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]))")
+    return nothing
+end
+
 
 mutable struct BilinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: Function, MT} <: AbstractOperator
     u_test::Array{UT,1}
@@ -72,7 +95,7 @@ end
 
 function Base.show(io::IO, O::BilinearOperator)
     dependencies = dependencies_when_linearized(O)
-    print(io, "$(O.parameters[:name])($([ansatz_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]), $([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]))")
+    print(io, "$(O.parameters[:name])($([ansatz_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]), $([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]); entities = $(O.parameters[:entities]))")
     return nothing
 end
 
@@ -91,10 +114,10 @@ multiple blocks. The arguments u_test and u_ansatz
 specify where to put the (blocks of the) matrix in the system.
 
 """
-function BilinearOperator(A::AbstractMatrix, u_test, u_ansatz = u_test; kwargs...)
+function BilinearOperator(A::AbstractMatrix, u_test, u_ansatz = u_test, u_args = []; kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_blfop_kwargs())
     _update_params!(parameters, kwargs)
-    return BilinearOperatorFromMatrix{typeof(u_test[1]), typeof(A)}(u_test, u_ansatz, A, parameters)
+    return BilinearOperatorFromMatrix{typeof(u_test[1]), typeof(A)}(u_test, u_ansatz, u_args, A, parameters)
 end
 
 

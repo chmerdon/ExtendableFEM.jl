@@ -9,3 +9,42 @@ and mainly consist of three types that can be customized via kernel functions:
 - NonlinearOperator (that automatically assemble Newton method by automatic differentiation)
 
 
+### Quick Example
+
+The following minimal example demonstrates how to setup a Poisson problem.
+
+```julia
+using ExtendableFEM
+using ExtendableFEMBase
+using ExtendableGrids
+
+# build/load any grid (here: a uniform-refined 2D unit square into triangles)
+xgrid = uniform_refine(grid_unitsquare(Triangle2D), 4)
+
+# create empty PDE description
+PD = ProblemDescription()
+
+# create and assign unknown
+u = Unknown("u"; name = "potential")
+assign_unknown!(PD, u)
+
+# assign Laplace operator
+assign_operator!(PD, BilinearOperator([grad(u)]; factor = 1e-3))
+
+# assign right-hand side data
+function f!(fval, qpinfo)
+    x = qpinfo.x # global coordinates of quadrature point
+    fval[1] = x[1] * x[2]
+end
+assign_operator!(PD, LinearOperator(f!, [id(u)]))
+
+# assing boundary data (here: u = 0)
+assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
+
+# discretise = choose FEVector with appropriate FESpaces
+FEType = H1Pk{1,2,3} # cubic element with 1 component in 2D
+FES = FESpace{FEType}(xgrid)
+
+# solve
+sol = solve!(Problem, [FES])
+```
