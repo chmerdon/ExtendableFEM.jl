@@ -51,24 +51,16 @@ using ExtendableGrids
 using Triangulate
 using SimplexGridFactory
 using GridVisualize
-
-function kernel_gravity!(result, ϱ, qpinfo)
-    result[1] = 0
-    result[2] = -ϱ[1]
-end
+using Symbolics
 
 ## everything is wrapped in a main function
-function main(; nrefs = 4, M = 1, c = 1, Plotter = nothing, reconstruct = true, μ = 1, order = 1, kwargs...)
+## testcase = 1 : well-balanced test (stratified no-flow over mountain)
+## testcase = 2 : vortex example (ϱu is div-free p7 vortex)
+function main(; testcase = 1, nrefs = 4, M = 1, c = 1, Plotter = nothing, reconstruct = true, μ = 1, order = 1, kwargs...)
 
-	## create grid
-	println("Creating grid...")
-	xgrid = simplexgrid(Triangulate;
-    			points = [0 0; 0.2 0; 0.3 0.2; 0.45 0.05; 0.55 0.35; 0.65 0.2; 0.7 0.3; 0.8 0; 1 0; 1 1 ; 0 1]',
-                bfaces = [1 2; 2 3; 3 4; 4 5; 5 6; 6 7; 7 8; 8 9; 9 10; 10 11; 11 1]',
-                bfaceregions = ones(Int,11),
-                regionpoints = [0.5 0.5;]',
-                regionnumbers = [1],
-                regionvolumes = [4.0^-(nrefs)])
+	## load data for testcase
+    grid_builder, kernel_gravity!, exact_error! = load_testcase_data(testcase; nrefs = nrefs, M = M, c = c)
+    xgrid = grid_builder(nrefs)
 
     ## define unknowns
     u = Unknown("u"; name = "velocity", dim = 2)
@@ -97,20 +89,42 @@ function main(; nrefs = 4, M = 1, c = 1, Plotter = nothing, reconstruct = true, 
     
     ## generate FESpaces and a solution vector for all 3 unknowns
     FETypes = [H1BR{2}, L2P0{1}, L2P0{1}]
-    FES = [FESpace{FETypes[j]}(xgrid) for j = 1 : 3]
-    sol = FEVector(FES; tags = [u,ϱ,p])
 
-    ## initial guess
-    fill!(sol[ϱ],M)
+    ## prepare error calculation
+    ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u), id(ϱ)]; quadorder = 2*order, kwargs...)
+    NDofs = zeros(Int, nrefs)
+    Results = zeros(Float64, nrefs, 3)
 
-    ## solve the two problems iteratively [1] >> [2] >> [1] >> [2] ...
-    sol = iterate_until_stationarity([PD, PDT]; init = sol)
+    sol = nothing
+    xgrid = nothing
+    for lvl = 1 : nrefs
+        xgrid = grid_builder(lvl)
+        FES = [FESpace{FETypes[j]}(xgrid) for j = 1 : 3]
+        sol = FEVector(FES; tags = [u,ϱ,p])
+
+        ## initial guess
+        fill!(sol[ϱ],M)
+        NDofs[lvl] = length(sol.entries)
+
+        ## solve the two problems iteratively [1] >> [2] >> [1] >> [2] ...
+        sol = iterate_until_stationarity([PD, PDT]; init = sol)
+
+        ## caculate error
+        error = evaluate(ErrorIntegratorExact, sol)
+        Results[lvl,1] = sqrt(sum(view(error,1,:)) + sum(view(error,2,:)))
+        Results[lvl,2] = sqrt(sum(view(error,3,:)) + sum(view(error,4,:)) + sum(view(error,5,:)) + sum(view(error,6,:)))
+        Results[lvl,3] = sqrt(sum(view(error,7,:)))
+        @info "errors = $(Results[lvl,:])"
+    end
+    @info NDoFs, Results
 
     ## plot
-    pl = GridVisualizer(; Plotter = Plotter, layout = (2,1), clear = true, resolution = (800,800))
+    pl = GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, resolution = (800,800))
     scalarplot!(pl[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
     vectorplot!(pl[1,1],xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.25, clear = false, title = "u_h (abs + quiver)")
     scalarplot!(pl[2,1],xgrid, view(nodevalues(sol[ϱ]),1,:), levels = 11, title = "ϱ_h")
+    plot_convergencehistory!(pl[2,1], NDofs, Results; add_h_powers = [order,order+1], X_to_h = X -> X.^(-1/2), legend = :lb, fontsize = 20, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||"], limits = (1e-8,1e-1))
+    
 end
 
 ## pure convection finite volume operator for transport
@@ -185,14 +199,107 @@ function assemble_fv_operator!(A, b, sol)
 end
 
 
-function kernel_inflow!(result, input, qpinfo)
-    if input[1] < 0 # if velocity points into domain
-        result[1] = 0
-    else
-        result[1] = 0
+## kernel for exact error calculation
+function exact_error!(u!,∇u!,ϱ!)
+    function closure(result, u, qpinfo)
+        u!(view(result,1:2), qpinfo)
+        ∇u!(view(result,3:6), qpinfo)
+        ϱ!(view(result,7), qpinfo)
+        result .-= u
+        result .= result.^2
     end
 end
 
+function standard_gravity!(result, ϱ, qpinfo)
+    result[1] = 0
+    result[2] = -ϱ[1]
+end
+
+function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = c)
+    if testcase == 1
+        grid_builder = (nref) -> simplexgrid(Triangulate;
+                    points = [0 0; 0.2 0; 0.3 0.2; 0.45 0.05; 0.55 0.35; 0.65 0.2; 0.7 0.3; 0.8 0; 1 0; 1 1 ; 0 1]',
+                    bfaces = [1 2; 2 3; 3 4; 4 5; 5 6; 6 7; 7 8; 8 9; 9 10; 10 11; 11 1]',
+                    bfaceregions = ones(Int,11),
+                    regionpoints = [0.5 0.5;]',
+                    regionnumbers = [1],
+                    regionvolumes = [4.0^-(nref)])
+        xgrid = grid_builder(3)
+        u1!(result, qpinfo) = (fill!(result, 0);)
+        ∇u1!(result, qpinfo) = (fill!(result, 0);)
+        M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[2]/c);), 1; quadorder = 20)
+        area = sum(xgrid[CellVolumes])
+        ϱ1!(result, qpinfo) = (result[1] = exp(-qpinfo.x[2]/c)/(M_exact/area);)
+        return grid_builder, standard_gravity!, exact_error!(u1!, ∇u1!, ϱ1!)
+    elseif testcase == 2
+        grid_builder = (nref) -> simplexgrid(Triangulate;
+                    points = [0 0; 1 0; 1 1 ; 0 1]',
+                    bfaces = [1 2; 2 3; 3 4; 4 1]',
+                    bfaceregions = ones(Int,4),
+                    regionpoints = [0.5 0.5;]',
+                    regionnumbers = [1],
+                    regionvolumes = [4.0^-(nref)])
+
+        xgrid = grid_builder(3)
+        M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[2]/c);), 1; quadorder = 20)
+        ϱ_eval, g_eval, u_eval, ∇u_eval = prepare_data!(; M = M_exact, c = c)
+        ϱ2!(result, qpinfo) = (result[1] = ϱ_eval(qpinfo.x[1], qpinfo.x[2]);)
+
+        M_exact = integrate(xgrid, ON_CELLS, ϱ2!, 1)
+        area = sum(xgrid[CellVolumes])
+
+        function kernel_gravity!(result, input, qpinfo)
+            result .= input[1] * g_eval(qpinfo.x[1], qpinfo.x[2])
+        end
+
+        u2!(result, qpinfo) = (result .= u_eval(qpinfo.x[1], qpinfo.x[2]);)
+        ∇u2!(result, qpinfo) = (result .= ∇u_eval(qpinfo.x[1], qpinfo.x[2]);)
+        return grid_builder, kernel_gravity!, exact_error!(u2!, ∇u2!, ϱ2!)
+    end
+end
+
+
+function prepare_data!(; M = 1, c = 1)
+
+	@variables x y
+	dx = Differential(x)
+	dy = Differential(y)
+
+	## density
+	ϱ = exp(-y/c)/M
+
+	## stream function ξ
+	## sucht that ϱu = curl ξ
+	ξ = x^2*y^2*(x-1)^2*(y-1)^2
+
+	∇ξ = Symbolics.gradient(ξ, [x,y])
+
+	## velocity u = curl ξ / ϱ
+	u = [-∇ξ[2], ∇ξ[1]] ./ ϱ
+
+	## gradient of velocity
+	∇u = Symbolics.jacobian(u, [x,y])
+	∇u_reshaped = [∇u[1,1], ∇u[1,2], ∇u[2,1], ∇u[2,2]]
+
+	## Laplacian
+	Δu = [
+		(Symbolics.gradient(∇u[1,1], [x]) + Symbolics.gradient(∇u[1,2], [y]))[1],
+		(Symbolics.gradient(∇u[2,1], [x]) + Symbolics.gradient(∇u[2,2], [y]))[1]
+	]
+
+	## gravity ϱg = - Δu + ϱ∇log(ϱ)
+
+	g = -Δu/ϱ + Symbolics.gradient(log(ϱ), [x,y]) 
+
+	#Δu = Symbolics.derivative(∇u[1,1], [x]) + Symbolics.derivative(∇u[2,2], [y])
+
+	ϱ_eval = build_function(ϱ, x, y, expression = Val{false})
+	u_eval = build_function(u, x, y, expression = Val{false})
+	∇u_eval = build_function(∇u_reshaped, x, y, expression = Val{false})
+	g_eval = build_function(g, x, y, expression = Val{false})
+
+    return ϱ_eval, g_eval[1], u_eval[1], ∇u_eval[1]
+end
 
 
 end

@@ -88,7 +88,7 @@ function main(; nrefs = 5, Plotter = nothing, reconstruct = true, FVtransport = 
     assign_unknown!(PDT, T)
     if FVtransport ## FVM discretisation of transport equation (pure upwind convection)
         τ = 1e3
-        assign_operator!(PDT, BilinearOperator(ExtendableSparseMatrix{Float64,Int}(0,0), [T], [T]; callback! = assemble_fv_operator!, kwargs...))
+        assign_operator!(PDT, BilinearOperator(ExtendableSparseMatrix{Float64,Int}(0,0), [T], [T], [u]; callback! = assemble_fv_operator!, kwargs...))
         assign_operator!(PDT, BilinearOperator([id(T)]; factor = 1/τ, kwargs...))
         assign_operator!(PDT, LinearOperator([id(T)], [id(T)]; factor = 1/τ, kwargs...))
     else ## FEM discretisation of transport equation (with small diffusion term)

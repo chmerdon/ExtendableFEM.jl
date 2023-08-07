@@ -211,13 +211,13 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
         O.FES_args = FES_args
 
         function assembler(b, sol; kwargs...)
-            time = @elapsed begin
+            time_assembly = @elapsed begin
                 for j = 1 : length(EGs)
                     assembly_loop(b, sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_args[j], O.L2G[j], O.QP_infos[j]; kwargs...)
                 end   
             end
             if O.parameters[:verbosity] > 1
-                @info ".... assembly of $(O.parameters[:name]) took $time s"
+                @info ".... assembly of $(O.parameters[:name]) took $time_assembly s"
             end
         end
         O.assembler = assembler
