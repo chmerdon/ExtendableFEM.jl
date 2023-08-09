@@ -11,6 +11,7 @@ StandardFunctionOperator(::Type{Jump{O}}) where {O} = O
 StandardFunctionOperator(::Type{Average{O}}) where {O} = O
 StandardFunctionOperator(::Type{Left{O}}) where {O} = O
 StandardFunctionOperator(::Type{Right{O}}) where {O} = O
+StandardFunctionOperator(::Type{O}) where {O <: StandardFunctionOperator} = O
 coeffs(::Type{<:Jump}) = [1,-1]
 coeffs(::Type{<:Average}) = [0.5,0.5]
 coeffs(::Type{<:Left}) = [1,0]

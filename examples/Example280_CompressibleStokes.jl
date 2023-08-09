@@ -53,6 +53,7 @@ using SimplexGridFactory
 using GridVisualize
 using Symbolics
 
+
 ## everything is wrapped in a main function
 ## testcase = 1 : well-balanced test (stratified no-flow over mountain)
 ## testcase = 2 : vortex example (ϱu is div-free p7 vortex)
@@ -68,26 +69,31 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, target_residual = 1e-10, 
     p = Unknown("p"; name = "pressure", dim = 1)
 
     ## define reconstruction operator
-    id_u = reconstruct ? apply(u, Reconstruct{HDIVRT0{2}, Identity}) : id(u)
+    if order == 1
+        FETypes = [H1BR{2}, L2P0{1}, L2P0{1}]
+        id_u = reconstruct ? apply(u, Reconstruct{HDIVRT0{2}, Identity}) : id(u)
+    elseif order == 2
+        FETypes = [H1P2B{2,2}, L2P1{1}, L2P1{1}]
+        id_u = reconstruct ? apply(u, Reconstruct{HDIVRT1{2}, Identity}) : id(u)
+    end
 
     ## define first sub-problem: Stokes equations to solve for velocity u
     PD = ProblemDescription("Stokes problem")
     assign_unknown!(PD, u)
     assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, store = true, kwargs...))
-    assign_operator!(PD, LinearOperator([div(u)], [id(ϱ)]; factor = 1, kwargs...))
+    assign_operator!(PD, LinearOperator([div(u)], [id(ϱ)]; factor = c, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
-    assign_operator!(PD, LinearOperator(kernel_gravity!, [id_u], [id(ϱ)]; factor = 1, bonus_quadorder = 2, kwargs...))
+    assign_operator!(PD, LinearOperator(kernel_gravity!, [id_u], [id(ϱ)]; factor = 1, bonus_quadorder = 3*order, kwargs...))
 
     ## FVM for continuity equation
-	τ = order * μ / (M*c) # time step for pseudo timestepping
+	τ = order * μ / (order*M*c) # time step for pseudo timestepping
     PDT = ProblemDescription("continuity equation")
     assign_unknown!(PDT, ϱ)    
-    assign_operator!(PDT, BilinearOperator(ExtendableSparseMatrix{Float64,Int}(0,0), [ϱ], [ϱ], [u]; callback! = assemble_fv_operator!, kwargs...))
-    assign_operator!(PDT, BilinearOperator([id(ϱ)]; factor = 1/τ, store = true, kwargs...))
-    assign_operator!(PDT, LinearOperator([id(ϱ)], [id(ϱ)]; factor = 1/τ, kwargs...))
-    
-    ## generate FESpaces and a solution vector for all 3 unknowns
-    FETypes = [H1BR{2}, L2P0{1}, L2P0{1}]
+    if order > 1
+       assign_operator!(PDT, BilinearOperator(kernel_continuity!,[grad(ϱ)],[id(ϱ)],[id(u)]; quadorder = 2*order, factor = -1, kwargs...))    
+    end
+    assign_operator!(PDT, BilinearOperator([id(ϱ)]; quadorder = 2*(order-1), factor = 1/τ, store = true, kwargs...))
+    assign_operator!(PDT, LinearOperator([id(ϱ)], [id(ϱ)]; quadorder = 2*(order-1), factor = 1/τ, kwargs...))
 
     ## prepare error calculation
     ErrorIntegratorExact = ItemIntegrator(exact_error!(u!, ∇u!, ϱ!), [id(u), grad(u), id(ϱ)]; resultdim = 9, quadorder = 2*(order+1), kwargs...)
@@ -96,10 +102,18 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, target_residual = 1e-10, 
 
     sol = nothing
     xgrid = nothing
+    op_upwind = 0
     for lvl = 1 : nrefs
         xgrid = grid_builder(lvl)
+        @show xgrid
         FES = [FESpace{FETypes[j]}(xgrid) for j = 1 : 3]
         sol = FEVector(FES; tags = [u,ϱ,p])
+
+        if lvl == 1
+            op_upwind = assign_operator!(PDT, BilinearOperatorDG(kernel_upwind!(xgrid), [jump(id(ϱ))], [this(id(ϱ)), other(id(ϱ))], [id(u)]; quadorder = order+1, entities = ON_IFACES, kwargs...))
+        else
+            replace_operator!(PDT, op_upwind, BilinearOperatorDG(kernel_upwind!(xgrid), [jump(id(ϱ))], [this(id(ϱ)), other(id(ϱ))], [id(u)]; quadorder = order+1, entities = ON_IFACES, kwargs...))
+        end
 
         ## initial guess
         fill!(sol[ϱ],M)
@@ -131,77 +145,25 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, target_residual = 1e-10, 
     gridplot!(pl[2,2],xgrid)
 end
 
-## pure convection finite volume operator for transport
-function assemble_fv_operator!(A, b, sol)
-
-    ## find velocity and transported quantity
-    id_u = findfirst(==(:u), [u.identifier for u in sol.tags])
-    id_ϱ = findfirst(==(:ϱ), [u.identifier for u in sol.tags])
-    if id_u === nothing
-        @error "u not found in sol"
-    end
-    if id_ϱ === nothing
-        @error "ϱ not found in sol"
-    end
-
-    ## get FESpace and grid
-    FES = sol[id_ϱ].FES 
-    xgrid = FES.xgrid
-
-    ## matrix
-    if size(A) == (FES.ndofs, FES.ndofs)
-        fill!(A.cscmatrix.nzval,0)
-    else
-        A = ExtendableSparseMatrix{Float64,Int}(FES.ndofs, FES.ndofs)
-    end
-
-    ## integrate normalfux of velocity
-    FluxIntegrator = ItemIntegrator([normalflux(1)]; entities = ON_FACES)
-    fluxes::Matrix{Float64} = evaluate(FluxIntegrator,[sol[id_u]])
-
-    ## assemble upwind finite volume fluxes over cell faces
-    facecells = xgrid[FaceCells]
-    cellfaces = xgrid[CellFaces]
-    cellfacesigns = xgrid[CellFaceSigns]
-    ncells::Int = num_sources(cellfacesigns)
-    nfaces4cell::Int = 0
-    face::Int = 0
-    flux::Float64 = 0.0
-    other_cell::Int = 0
-    for cell = 1 : ncells
-        nfaces4cell = num_targets(cellfaces,cell)
-        for cf = 1 : nfaces4cell
-            face = cellfaces[cf,cell]
-            other_cell = facecells[1,face]
-            if other_cell == cell
-                other_cell = facecells[2,face]
-            end
-            flux = fluxes[face] * cellfacesigns[cf,cell]
-            if (other_cell > 0) 
-                flux *= 1 // 2 # because it will be accumulated on two cells
-            end       
-            if flux > 0 # flow from cell to other_cell or out of domain
-                _addnz(A,cell,cell,flux,1)
-                if other_cell > 0
-                    _addnz(A,other_cell,cell,-flux,1)
-                    # otherwise flow goes out of domain
-                end    
-            else # flow from other_cell into cell or into domain
-                _addnz(A,cell,cell,1e-16,1) # add zero to keep pattern for LU
-                if other_cell > 0 # flow comes from neighbour cell
-                    _addnz(A,other_cell,other_cell,-flux,1)
-                    _addnz(A,cell,other_cell,flux,1)
-                else # flow comes from outside domain
-                    # handled in right-hand side loop above
-                end 
-            end
-        end
-    end
-
-    flush!(A)
-    return A
+## kernel for (uϱ, ∇λ) ON_CELLS in continuity equation
+function kernel_continuity!(result, ϱ, u, qpinfo)
+    result[1]  = ϱ[1] * u[1]
+    result[2]  = ϱ[1] * u[2]
 end
 
+## kernel for (u⋅n ϱ^upw, λ) ON_IFACES in continuity equation
+function kernel_upwind!(xgrid)
+    facenormals = xgrid[FaceNormals]
+    flux::Float64 = 0
+    function closure(result, input, u, qpinfo)
+        flux = dot(u, view(facenormals,:,qpinfo.item))
+        if flux > 0
+            result[1] = input[1] * flux
+        else
+            result[1] = input[2] * flux
+        end
+    end
+end
 
 ## kernel for exact error calculation
 function exact_error!(u!,∇u!,ϱ!)
@@ -218,6 +180,7 @@ function exact_error!(u!,∇u!,ϱ!)
     end
 end
 
+## kernel for gravity term in testcase 1
 function standard_gravity!(result, ϱ, qpinfo)
     result[1] = 0
     result[2] = -ϱ[1]
@@ -249,7 +212,7 @@ function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = 1, μ = 1)
                     regionvolumes = [4.0^-(nref)])
 
         xgrid = grid_builder(3)
-        M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[2]/c);), 1; quadorder = 20)
+        M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[1]^3/(3*c));), 1; quadorder = 20)
         ϱ_eval, g_eval, u_eval, ∇u_eval = prepare_data!(; M = M_exact, c = c, μ = μ)
         ϱ2!(result, qpinfo) = (result[1] = ϱ_eval(qpinfo.x[1], qpinfo.x[2]);)
 
@@ -266,7 +229,7 @@ function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = 1, μ = 1)
     end
 end
 
-
+## exact data for testcase 2 computed by Symbolics
 function prepare_data!(; M = 1, c = 1, μ = 1 )
 
 	@variables x y
@@ -274,7 +237,7 @@ function prepare_data!(; M = 1, c = 1, μ = 1 )
 	dy = Differential(y)
 
 	## density
-	ϱ = exp(-y/c)/M
+	ϱ = exp(-x^3/(3*c))/M
 
 	## stream function ξ
 	## sucht that ϱu = curl ξ
@@ -308,6 +271,4 @@ function prepare_data!(; M = 1, c = 1, μ = 1 )
 
     return ϱ_eval, g_eval[1], u_eval[1], ∇u_eval[1]
 end
-
-
 end
