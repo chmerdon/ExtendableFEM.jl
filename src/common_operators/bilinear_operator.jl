@@ -501,7 +501,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
         O.FES_ansatz = FES_ansatz
         O.FES_args = FES_args
 
-        function assembler(A, sol; kwargs...)
+        function assembler(A, b, sol; kwargs...)
             time = @elapsed begin
                 if O.parameters[:parallel_groups]
                     Threads.@threads for j = 1 : length(EGs)

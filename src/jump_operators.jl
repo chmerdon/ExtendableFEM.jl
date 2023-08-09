@@ -15,6 +15,7 @@ coeffs(::Type{<:Jump}) = [1,-1]
 coeffs(::Type{<:Average}) = [0.5,0.5]
 coeffs(::Type{<:Left}) = [1,0]
 coeffs(::Type{<:Right}) = [0,1]
+coeffs(::Type{<:StandardFunctionOperator}) = [1,0]
 is_discontinuous(::Type{<:StandardFunctionOperator}) = false
 is_discontinuous(::Type{<:DiscontinuousFunctionOperator}) = true
 

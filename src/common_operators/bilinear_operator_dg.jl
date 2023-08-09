@@ -89,7 +89,7 @@ function BilinearOperatorDG(kernel::Function, u_test, ops_test, u_ansatz, ops_an
     else
         storage = nothing
     end
-    return BilinearOperatorDG{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args, kernel, [[zeros(Tv, 0, 0, 0)]], [[zeros(Tv, 0, 0, 0)]], [[zeros(Tv, 0, 0, 0)]], nothing, nothing, nothing, nothing, nothing, nothing,nothing, nothing, nothing, nothing, storage, parameters)
+    return BilinearOperatorDG{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args, kernel, Array{Vector{Matrix{Array{Tv,3}}}}(undef,0), Array{Vector{Matrix{Array{Tv,3}}}}(undef,0), Array{Vector{Matrix{Array{Tv,3}}}}(undef,0), nothing, nothing, nothing, nothing, nothing, nothing,nothing, nothing, nothing, nothing, storage, parameters)
 end
 
 function BilinearOperatorDG(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown,Int}, DataType},1}, oa_ansatz::Array{<:Tuple{Union{Unknown,Int}, DataType},1} = oa_test; kwargs...)
@@ -152,8 +152,8 @@ function BilinearOperatorDG(
 ````
 
 Generates a nonlinear bilinear form that evaluates a kernel function
-that depends on the operator evaluation(s) of the ansatz function(s)
-and the operator evaluations of the current solution. The result of the
+that depends on the (discontinuou) operator evaluation(s) of the ansatz function(s)
+and the (discontinuous) operator evaluations of the current solution. The result of the
 kernel function is used in a vector product with the operator evaluation(s)
 of the test function(s). Hence, this can be used as a linearization of a
 nonlinear operator. The header of the kernel functions needs to be conform
@@ -165,8 +165,6 @@ where qpinfo allows to access information at the current quadrature point.
 
 Operator evaluations are tuples that pair an unknown identifier or integer
 with a Function operator.
-
-Example: BilinearOperatorDG([grad(1)], [grad(1)]; kwargs...) generates a weak Laplace operator.
 
 Keyword arguments:
 $(_myprint(default_blfop_kwargs()))
@@ -187,7 +185,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
     FES_test = [getFEStest(FE_test[j]) for j = 1 : length(FE_test)]
     FES_ansatz = [getFESansatz(FE_ansatz[j]) for j = 1 : length(FE_ansatz)]
     FES_args = [FE_args[j].FES for j = 1 : length(FE_args)]
-    if (O.FES_test != FES_test) || (O.FES_args != FES_args)
+    if (O.FES_test != FES_test) || (O.FES_args != FES_args) || (O.FES_ansatz != FES_ansatz)
 
         if O.parameters[:verbosity] > 0
             @info ".... building assembler for $(O.parameters[:name])"
@@ -195,6 +193,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 
         ## prepare assembly
         AT = O.parameters[:entities]
+        @assert AT <: ON_FACES "only works for entities <: ON_FACES"
         xgrid = FES_test[1].xgrid
         gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
@@ -204,18 +203,31 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
         FETypes_test = [eltype(F) for F in FES_test]
         FETypes_ansatz = [eltype(F) for F in FES_ansatz]
         FETypes_args = [eltype(F) for F in FES_args]
-        EGs = [itemgeometries[itemassemblygroups[1,j]] for j = 1 : num_sources(itemassemblygroups)]
+        EGs = xgrid[UniqueCellGeometries]
+
+        coeffs_ops_test = Array{Array{Int,1},1}([])
+        coeffs_ops_ansatz = Array{Array{Int,1},1}([])
+        coeffs_ops_args = Array{Array{Int,1},1}([])
+        for op in O.ops_test
+            push!(coeffs_ops_test, coeffs(op))
+        end
+        for op in O.ops_ansatz
+            push!(coeffs_ops_ansatz, coeffs(op))
+        end
+        for op in O.ops_ansatz
+            push!(coeffs_ops_args, coeffs(op))
+        end
 
         ## prepare assembly
         nargs = length(FES_args)
         ntest = length(FES_test)
         nansatz = length(FES_ansatz)
         O.QF = []
-        O.BE_test = Array{Array{<:FEEvaluator,1},1}([])
-        O.BE_ansatz = Array{Array{<:FEEvaluator,1},1}([])
-        O.BE_args = Array{Array{<:FEEvaluator,1},1}([])
-        O.BE_test_vals = Array{Array{Array{Tv,3},1},1}([])
-        O.BE_ansatz_vals = Array{Array{Array{Tv,3},1},1}([])
+        O.BE_test = Array{Vector{Matrix{<:FEEvaluator}},1}(undef, 0)
+        O.BE_ansatz = Array{Vector{Matrix{<:FEEvaluator}},1}(undef, 0)
+        O.BE_args = Array{Vector{Matrix{<:FEEvaluator}},1}(undef, 0)
+        O.BE_test_vals = Array{Vector{Matrix{Array{Tv,3}}},1}(undef, 0)
+        O.BE_ansatz_vals = Array{Vector{Matrix{Array{Tv,3}}},1}(undef, 0)
         O.BE_args_vals = Array{Array{Array{Tv,3},1},1}([])
         O.QP_infos = Array{QPInfos,1}([])
         O.L2G = []
@@ -231,21 +243,24 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
             if O.parameters[:verbosity] > 1
                 @info "...... integrating on $EG with quadrature order $quadorder"
             end
-            push!(O.QF, QuadratureRule{Tv, EG}(quadorder))
+            
+            ## generate DG operator
+            push!(O.BE_test, [generate_DG_operators(StandardFunctionOperator(O.ops_test[j]), FES_test[j], quadorder, EG) for j = 1 : ntest])
+            push!(O.BE_ansatz, [generate_DG_operators(StandardFunctionOperator(O.ops_ansatz[j]), FES_ansatz[j], quadorder, EG) for j = 1 : nansatz])
+            push!(O.BE_args, [generate_DG_operators(StandardFunctionOperator(O.ops_args[j]), FES_args[j], quadorder, EG) for j = 1 : nargs])
+            push!(O.QF, generate_DG_master_quadrule(quadorder, EG))
 
             ## L2G map for EG
-            push!(O.L2G, L2GTransformer(EG, xgrid, gridAT))
+            EGface = facetype_of_cellface(EG, 1)
+            push!(O.L2G, L2GTransformer(EGface, xgrid, gridAT))
         
             ## FE basis evaluator for EG
-            push!(O.BE_test, [FEEvaluator(FES_test[j], O.ops_test[j], O.QF[end]; AT = AT, L2G = O.L2G[end]) for j in 1 : ntest])
-            push!(O.BE_ansatz, [FEEvaluator(FES_ansatz[j], O.ops_ansatz[j], O.QF[end]; AT = AT, L2G = O.L2G[end]) for j in 1 : nansatz])
-            push!(O.BE_args, [FEEvaluator(FES_args[j], O.ops_args[j], O.QF[end]; AT = AT, L2G = O.L2G[end]) for j in 1 : nargs])
-            push!(O.BE_test_vals, [BE.cvals for BE in O.BE_test[end]])
-            push!(O.BE_ansatz_vals, [BE.cvals for BE in O.BE_ansatz[end]])
-            push!(O.BE_args_vals, [BE.cvals for BE in O.BE_args[end]])
+            push!(O.BE_test_vals, [[O.BE_test[end][k][j[1], j[2]].cvals for j in CartesianIndices(O.BE_test[end][k])] for k = 1 : ntest])
+            push!(O.BE_ansatz_vals, [[O.BE_ansatz[end][k][j[1], j[2]].cvals for j in CartesianIndices(O.BE_ansatz[end][k])] for k = 1 : nansatz])
+            push!(O.BE_args_vals, [[O.BE_args[end][k][j[1], j[2]].cvals for j in CartesianIndices(O.BE_args[end][k])] for k = 1 : nargs])
 
             ## parameter structure
-            push!(O.QP_infos, QPInfos(xgrid; time = time, params = O.parameters[:params]))
+            push!(O.QP_infos, QPInfos(xgrid; time = time, x = ones(Tv, size(xgrid[Coordinates],1)), params = O.parameters[:params]))
         end
 
         ## prepare regions
@@ -258,9 +273,9 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
         end
 
         ## prepare operator infos
-        op_lengths_test = [size(O.BE_test[1][j].cvals,1) for j = 1 : ntest]
-        op_lengths_ansatz = [size(O.BE_ansatz[1][j].cvals,1) for j = 1 : nansatz]
-        op_lengths_args = [size(O.BE_args[1][j].cvals,1) for j = 1 : nargs]
+        op_lengths_test = [size(O.BE_test[1][j][1,1].cvals,1) for j = 1 : ntest]
+        op_lengths_ansatz = [size(O.BE_ansatz[1][j][1,1].cvals,1) for j = 1 : nansatz]
+        op_lengths_args = [size(O.BE_args[1][j][1,1].cvals,1) for j = 1 : nargs]
         
         op_offsets_test = [0]
         op_offsets_ansatz = [0]
@@ -270,6 +285,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
         append!(op_offsets_args, cumsum(op_lengths_args))
         offsets_test = [FE_test[j].offset for j in 1 : length(FES_test)]
         offsets_ansatz = [FE_ansatz[j].offset for j in 1 : length(FES_ansatz)]
+        offsets_args = [FE_args[j].offset for j in 1 : length(FES_args)]
 
         ## prepare sparsity pattern
         use_sparsity_pattern = O.parameters[:use_sparsity_pattern]
@@ -306,9 +322,9 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
             end
         end
 
-        FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j = 1 : ntest]
-        FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), AT) for j = 1 : nansatz]
-        FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j = 1 : nargs]
+        FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j = 1 : ntest]
+        FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), ON_CELLS) for j = 1 : nansatz]
+        FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), ON_CELLS) for j = 1 : nargs]
         itemdofs_test::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j = 1 : ntest]
         itemdofs_ansatz::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_ansatz[j][Dofmap4AssemblyType(FEATs_ansatz[j])] for j = 1 : nansatz]
         itemdofs_args::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j = 1 : nargs]
@@ -318,124 +334,164 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
         lump = O.parameters[:lump]
 
         ## Assembly loop for fixed geometry
-        function assembly_loop(A::AbstractSparseArray{T}, sol::Array{<:FEVectorBlock,1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_test::Array{<:FEEvaluator,1}, BE_ansatz::Array{<:FEEvaluator,1}, BE_args::Array{<:FEEvaluator,1}, BE_test_vals::Array{Array{Tv,3},1}, BE_ansatz_vals::Array{Array{Tv,3},1}, BE_args_vals::Array{Array{Tv,3},1}, L2G::L2GTransformer, QPinfos::QPInfos) where {T}
+        function assembly_loop(A::AbstractSparseArray{T}, sol::Array{<:FEVectorBlock,1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_test::Vector{Matrix{<:FEEvaluator}}, BE_ansatz::Vector{Matrix{<:FEEvaluator}}, BE_args::Vector{Matrix{<:FEEvaluator}}, BE_test_vals::Vector{Matrix{Array{Tv,3}}}, BE_ansatz_vals::Vector{Matrix{Array{Tv,3}}}, BE_args_vals::Vector{Matrix{Array{Tv,3}}}, L2G::L2GTransformer, QPinfos::QPInfos) where {T}
 
             input_ansatz = zeros(T, op_offsets_ansatz[end])
-            input_args = zeros(T, op_offsets_args[end])
             result_kernel = zeros(T, op_offsets_test[end])
+            itemorientations = xgrid[CellFaceOrientations]
+            itemcells = xgrid[FaceCells]
+            cellitems = xgrid[CellFaces]
 
-            ndofs_test::Array{Int,1} = [size(BE.cvals,2) for BE in BE_test]
-            ndofs_ansatz::Array{Int,1} = [size(BE.cvals,2) for BE in BE_ansatz]
-            ndofs_args::Array{Int,1} = [size(BE.cvals,2) for BE in BE_args]
-
+            ndofs_test::Array{Int,1} = [size(BE[1,1].cvals,2) for BE in BE_test]
+            ndofs_ansatz::Array{Int,1} = [size(BE[1,1].cvals,2) for BE in BE_ansatz]
+            ndofs_args::Array{Int,1} = [size(BE[1,1].cvals,2) for BE in BE_args]
+            
             Aloc = Matrix{Matrix{T}}(undef, ntest, nansatz)
             for j = 1 : ntest, k = 1 : nansatz
                 Aloc[j,k] = zeros(T, ndofs_test[j], ndofs_ansatz[k])
             end
             weights, xref = QF.w, QF.xref
             nweights = length(weights)
+            cell1::Int = 0
+            cell2::Int = 0
+            orientation1::Int = 0
+            orientation2::Int = 0
+            itempos1::Int = 0
+            itempos2::Int = 0
+
+            input_args = [zeros(T, op_offsets_args[end]) for j = 1 : nweights]
 
             for item::Int in items
-                if itemregions[item] > 0 
-                    if !(visit_region[itemregions[item]]) || AT == ON_IFACES
-                        continue
-                    end
-                end
                 QPinfos.region = itemregions[item]
                 QPinfos.item = item
                 QPinfos.volume = itemvolumes[item]
+                update_trafo!(L2G, item)
+                
+                if AT <: ON_IFACES
+                    if itemcells[2, item] == 0
+                        continue
+                    end
+                end
 
-                ## update FE basis evaluators
-                for j = 1 : ntest
-                    BE_test[j].citem[] = item
-                    update_basis!(BE_test[j]) 
-                end
-                for j = 1 : nansatz
-                    BE_ansatz[j].citem[] = item
-                    update_basis!(BE_ansatz[j]) 
-                end
-                for j = 1 : nargs
-                    BE_args[j].citem[] = item
-                    update_basis!(BE_args[j]) 
-                end
-	            update_trafo!(L2G, item)
+                ## evaluate arguments at all quadrature points
+                for qp = 1 : nweights
+                    fill!(input_args[qp],0)
+                    for c1 = 1:2
+                        cell1 = itemcells[c1, item]
+                        if (cell1 > 0)
+                            itempos1 = 1
+                            while !(cellitems[itempos1, cell1] == item)
+                                itempos1 += 1
+                            end
+                            orientation1 = itemorientations[itempos1,cell1]
 
-                ## evaluate arguments
-				for qp = 1 : nweights
-					fill!(input_args,0)
-                    for id = 1 : nargs
-                        for j = 1 : ndofs_args[id]
-                            dof_j = itemdofs_args[id][j, item]
-                            for d = 1 : op_lengths_args[id]
-                                input_args[d + op_offsets_args[id]] += sol[id][dof_j] * BE_args_vals[id][d, j, qp]
+                            for j = 1 : nargs
+                                BE_args[j][itempos1, orientation1].citem[] = cell1
+                                update_basis!(BE_args[j][itempos1, orientation1]) 
+                            end
+    
+                            for id = 1 : nargs
+                                for j = 1 : ndofs_args[id]
+                                    dof_j = itemdofs_args[id][j, cell1] + offsets_args[id]
+                                    for d = 1 : op_lengths_args[id]
+                                        input_args[qp][d + op_offsets_args[id]] += sol[id][dof_j] * BE_args_vals[id][itempos1, orientation1][d, j, qp] * coeffs_ops_args[id][c1]
+                                    end
+                                end
                             end
                         end
-					end
-                
-                    ## get global x for quadrature point
-                    eval_trafo!(QPinfos.x, L2G, xref[qp])
+                    end
+                end
 
-                    # update matrix
-                    for id = 1 : nansatz
-                        for j = 1 : ndofs_ansatz[id]
-                            # evaluat kernel for ansatz basis function
-                            fill!(input_ansatz, 0)
-                            for d = 1 : op_lengths_ansatz[id]
-                                input_ansatz[d + op_offsets_ansatz[id]] += BE_ansatz_vals[id][d,j,qp]
-                            end
+                for c1 = 1:2, c2 = 1:2
+                    cell1 = itemcells[c1, item] # current cell of test function
+                    cell2 = itemcells[c2, item] # current cell of ansatz function
+                    if (cell1 > 0) && (cell2 > 0)
+                        QPinfos.cell = cell2
+                        itempos1 = 1
+                        while !(cellitems[itempos1, cell1] == item)
+                            itempos1 += 1
+                        end
+                        itempos2 = 1
+                        while !(cellitems[itempos2, cell2] == item)
+                            itempos2 += 1
+                        end
+                        orientation1 = itemorientations[itempos1,cell1]
+                        orientation2 = itemorientations[itempos2,cell2]
 
-                            # evaluate kernel
-                            O.kernel(result_kernel, input_ansatz, input_args, QPinfos)
-                            result_kernel .*= factor * weights[qp]
+                        ## update FE basis evaluators
+                        for j = 1 : ntest
+                            BE_test[j][itempos1, orientation1].citem[] = cell1
+                            update_basis!(BE_test[j][itempos1, orientation1]) 
+                        end
+                        for j = 1 : nansatz
+                            BE_ansatz[j][itempos2, orientation2].citem[] = cell2
+                            update_basis!(BE_ansatz[j][itempos2, orientation2]) 
+                        end
 
-                            # multiply test function operator evaluation
-                            if lump
-                                for d = 1 : op_lengths_test[id]
-                                    Aloc[id,id][j,j] += result_kernel[d + op_offsets_test[id]] * BE_test_vals[id][d,j,qp]
+                        ## evaluate arguments
+                        for qp = 1 : nweights
+                        
+                            ## get global x for quadrature point
+                            eval_trafo!(QPinfos.x, L2G, xref[qp])
+
+                            # update matrix
+                            for id = 1 : nansatz
+                                for j = 1 : ndofs_ansatz[id]
+                                    # evaluate kernel for ansatz basis function on cell 2
+                                    fill!(input_ansatz, 0)
+                                    for d = 1 : op_lengths_ansatz[id]
+                                        input_ansatz[d + op_offsets_ansatz[id]] = BE_ansatz_vals[id][itempos2, orientation2][d,j,qp] * coeffs_ops_ansatz[id][c2]
+                                    end
+
+                                    # evaluate kernel
+                                    O.kernel(result_kernel, input_ansatz, input_args[qp], QPinfos)
+                                    result_kernel .*= factor * weights[qp]
+
+                                    # multiply test function operator evaluation on cell 1
+                                    for idt in couples_with[id]
+                                        for k = 1 : ndofs_test[idt]
+                                            for d = 1 : op_lengths_test[idt]
+                                                Aloc[idt,id][k,j] += result_kernel[d + op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d,k,qp] * coeffs_ops_test[idt][c1]
+                                            end
+                                        end
+                                    end
                                 end
-                            else
-                                for idt in couples_with[id]
-                                    for k = 1 : ndofs_test[idt]
-                                        for d = 1 : op_lengths_test[idt]
-                                            Aloc[idt,id][k,j] += result_kernel[d + op_offsets_test[idt]] * BE_test_vals[idt][d,k,qp]
+                            end 
+                        end
+                    
+
+                        ## add local matrices to global matrix
+                        for id = 1 : nansatz, idt = 1 : ntest
+                            Aloc[idt,id] .*= itemvolumes[item]
+                            for j = 1 : ndofs_test[idt]
+                                dof_j = itemdofs_test[idt][j, cell1] + offsets_test[idt]
+                                for k = 1 : ndofs_ansatz[id]
+                                    dof_k = itemdofs_ansatz[id][k, cell2] + offsets_ansatz[id]
+                                    if abs(Aloc[idt,id][j,k]) > entry_tol
+                                        rawupdateindex!(A, +, Aloc[idt,id][j,k], dof_j, dof_k)
+                                    end
+                                end
+                            end
+                        end
+                        if transposed_copy != 0
+                            for id = 1 : nansatz, idt = 1 : ntest
+                                Aloc[idt,id] .*= transposed_copy
+                                for j = 1 : ndofs_test[idt]
+                                    dof_j = itemdofs_test[idt][j, cell1] + offsets_test[idt]
+                                    for k = 1 : ndofs_ansatz[id]
+                                        dof_k = itemdofs_ansatz[id][k, cell2] + offsets_ansatz[id]
+                                        if abs(Aloc[idt,id][j,k]) > entry_tol
+                                            rawupdateindex!(A, +, Aloc[idt,id][j,k], dof_k, dof_j)
                                         end
                                     end
                                 end
                             end
                         end
-                    end 
-                end
-
-                ## add local matrices to global matrix
-                for id = 1 : nansatz, idt = 1 : ntest
-                    Aloc[idt,id] .*= itemvolumes[item]
-                    for j = 1 : ndofs_test[idt]
-                        dof_j = itemdofs_test[idt][j, item] + offsets_test[idt]
-                        for k = 1 : ndofs_ansatz[id]
-                            dof_k = itemdofs_ansatz[id][k, item] + offsets_ansatz[id]
-                            if abs(Aloc[idt,id][j,k]) > entry_tol
-                                rawupdateindex!(A, +, Aloc[idt,id][j,k], dof_j, dof_k)
-                            end
+                
+                        for id = 1 : nansatz, idt = 1 : ntest
+                            fill!(Aloc[idt,id], 0)
                         end
                     end
-                end
-                if transposed_copy != 0
-                    for id = 1 : nansatz, idt = 1 : ntest
-                        Aloc[idt,id] .*= transposed_copy
-                        for j = 1 : ndofs_test[idt]
-                            dof_j = itemdofs_test[idt][j, item] + offsets_test[idt]
-                            for k = 1 : ndofs_ansatz[id]
-                                dof_k = itemdofs_ansatz[id][k, item] + offsets_ansatz[id]
-                                if abs(Aloc[idt,id][j,k]) > entry_tol
-                                    rawupdateindex!(A, +, Aloc[idt,id][j,k], dof_k, dof_j)
-                                end
-                            end
-                        end
-                    end
-                end
-        
-                for id = 1 : nansatz, idt = 1 : ntest
-                    fill!(Aloc[idt,id], 0)
                 end
             end
             flush!(A)
@@ -445,7 +501,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
         O.FES_ansatz = FES_ansatz
         O.FES_args = FES_args
 
-        function assembler(A, sol; kwargs...)
+        function assembler(A, b, sol; kwargs...)
             time = @elapsed begin
                 if O.parameters[:parallel_groups]
                     Threads.@threads for j = 1 : length(EGs)
@@ -518,7 +574,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
         end
         ## prepare assembly
         AT = O.parameters[:entities]
-        @assert AT <: ON_FACES "only works for entities = ON_FACES"
+        @assert AT <: ON_FACES "only works for entities <: ON_FACES"
         xgrid = FES_test[1].xgrid
         gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
@@ -719,22 +775,24 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 
                             # update matrix
                             for id = 1 : nansatz
-                                for j = 1 : ndofs_ansatz[id]
-                                    # evaluate kernel for ansatz basis function on cell 2
-                                    fill!(input_ansatz, 0)
-                                    for d = 1 : op_lengths_ansatz[id]
-                                        input_ansatz[d + op_offsets_ansatz[id]] = BE_ansatz_vals[id][itempos2, orientation2][d,j,qp] * coeffs_ops_ansatz[id][c2]
-                                    end
+                                if coeffs_ops_ansatz[id][c2] != 0
+                                    for j = 1 : ndofs_ansatz[id]
+                                        # evaluate kernel for ansatz basis function on cell 2
+                                        fill!(input_ansatz, 0)
+                                        for d = 1 : op_lengths_ansatz[id]
+                                            input_ansatz[d + op_offsets_ansatz[id]] = BE_ansatz_vals[id][itempos2, orientation2][d,j,qp] * coeffs_ops_ansatz[id][c2]
+                                        end
 
-                                    # evaluate kernel
-                                    O.kernel(result_kernel, input_ansatz, QPinfos)
-                                    result_kernel .*= factor * weights[qp]
+                                        # evaluate kernel
+                                        O.kernel(result_kernel, input_ansatz, QPinfos)
+                                        result_kernel .*= factor * weights[qp]
 
-                                    # multiply test function operator evaluation on cell 1
-                                    for idt in couples_with[id]
-                                        for k = 1 : ndofs_test[idt]
-                                            for d = 1 : op_lengths_test[idt]
-                                                Aloc[idt,id][k,j] += result_kernel[d + op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d,k,qp] * coeffs_ops_test[idt][c1]
+                                        # multiply test function operator evaluation on cell 1
+                                        for idt in couples_with[id]
+                                            for k = 1 : ndofs_test[idt]
+                                                for d = 1 : op_lengths_test[idt]
+                                                    Aloc[idt,id][k,j] += result_kernel[d + op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d,k,qp] * coeffs_ops_test[idt][c1]
+                                                end
                                             end
                                         end
                                     end

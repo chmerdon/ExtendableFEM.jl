@@ -63,9 +63,14 @@ function kernel_convection!(result, ∇T, u, qpinfo)
     result[1] = ∇T[1]*u[1] + ∇T[2]*u[2]
 end
 
+function kernel_inlet!(result, input, qpinfo)
+    c_inlet!(result, qpinfo)
+    result[1] *= -input[1]
+end
+
 
 ## everything is wrapped in a main function
-function main(; nrefs = 5, Plotter = nothing, reconstruct = true, FVtransport = true, μ = 1, kwargs...)
+function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = true, μ = 1, kwargs...)
     
     ## load mesh and refine
     xgrid = uniform_refine(simplexgrid("assets/2d_grid_upipe.sg"), nrefs)
@@ -74,6 +79,8 @@ function main(; nrefs = 5, Plotter = nothing, reconstruct = true, FVtransport = 
     u = Unknown("u"; name = "velocity", dim = 2)
     p = Unknown("p"; name = "pressure", dim = 1)
     T = Unknown("T"; name = "temperature", dim = 1)
+
+    id_u = reconstruct ? apply(u, Reconstruct{HDIVBDM1{2}, Identity}) : id(u)
 
     ## define first sub-problem: Stokes equations to solve for velocity u
     PD = ProblemDescription("Stokes problem")
@@ -92,9 +99,8 @@ function main(; nrefs = 5, Plotter = nothing, reconstruct = true, FVtransport = 
         assign_operator!(PDT, BilinearOperator([id(T)]; factor = 1/τ, kwargs...))
         assign_operator!(PDT, LinearOperator([id(T)], [id(T)]; factor = 1/τ, kwargs...))
     else ## FEM discretisation of transport equation (with small diffusion term)
-        reconstruct_operator = reconstruct ? Reconstruct{HDIVBDM1{2}, Identity} : Identity
         assign_operator!(PDT, BilinearOperator([grad(T)]; factor = 1e-6, kwargs...))
-        assign_operator!(PDT, BilinearOperator(kernel_convection!, [id(T)], [grad(T)], [apply(u, reconstruct_operator)]; kwargs...))
+        assign_operator!(PDT, BilinearOperator(kernel_convection!, [id(T)], [grad(T)], [id_u]; kwargs...))
         assign_operator!(PDT, InterpolateBoundaryData(T, c_inlet!; regions = [4], kwargs...))
     end
     

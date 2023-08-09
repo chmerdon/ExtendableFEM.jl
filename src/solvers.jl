@@ -518,5 +518,5 @@ function iterate_until_stationarity(PDs::Array{ProblemDescription,1}, FES = noth
         end
         @printf "\n"
     end
-    return sol
+    return sol, it
 end

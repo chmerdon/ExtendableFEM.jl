@@ -57,6 +57,22 @@ function assign_operator!(PD::ProblemDescription, o::AbstractOperator)
     return length(PD.operators)
 end
 
+
+"""
+````
+replace_operator!(PD::ProblemDescription, j::Int, o::AbstractOperator)
+````
+
+Replaces the j-th operator of the ProblemDescription PD by the new operator o.
+Here, j is the position in operator array returned by the assign_operator! function.
+Nothing is returned (as the new operator gets position j).
+
+"""
+function replace_operator!(PD::ProblemDescription, j, o::AbstractOperator)
+    PD.operators[j] = o
+    return nothing
+end
+
 function assign_reduction!(PD::ProblemDescription, u::AbstractReductionOperator)
     push!(PD.reduction_operators, u)
 end

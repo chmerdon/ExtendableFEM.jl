@@ -56,10 +56,10 @@ using Symbolics
 ## everything is wrapped in a main function
 ## testcase = 1 : well-balanced test (stratified no-flow over mountain)
 ## testcase = 2 : vortex example (ϱu is div-free p7 vortex)
-function main(; testcase = 1, nrefs = 4, M = 1, c = 1, Plotter = nothing, reconstruct = true, μ = 1, order = 1, kwargs...)
+function main(; testcase = 1, nrefs = 4, M = 1, c = 1, target_residual = 1e-10, Plotter = nothing, reconstruct = true, μ = 1, order = 1, kwargs...)
 
 	## load data for testcase
-    grid_builder, kernel_gravity!, exact_error! = load_testcase_data(testcase; nrefs = nrefs, M = M, c = c)
+    grid_builder, kernel_gravity!, u!, ∇u!, ϱ! = load_testcase_data(testcase; nrefs = nrefs, M = M, c = c, μ = μ)
     xgrid = grid_builder(nrefs)
 
     ## define unknowns
@@ -69,20 +69,19 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, Plotter = nothing, recons
 
     ## define reconstruction operator
     id_u = reconstruct ? apply(u, Reconstruct{HDIVRT0{2}, Identity}) : id(u)
-    div_u = reconstruct ? apply(u, Reconstruct{HDIVRT0{2}, Divergence}) : div(u)
 
     ## define first sub-problem: Stokes equations to solve for velocity u
     PD = ProblemDescription("Stokes problem")
     assign_unknown!(PD, u)
     assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, store = true, kwargs...))
-    assign_operator!(PD, LinearOperator([div_u], [id(ϱ)]; factor = 1, kwargs...))
+    assign_operator!(PD, LinearOperator([div(u)], [id(ϱ)]; factor = 1, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
     assign_operator!(PD, LinearOperator(kernel_gravity!, [id_u], [id(ϱ)]; factor = 1, bonus_quadorder = 2, kwargs...))
 
     ## FVM for continuity equation
 	τ = order * μ / (M*c) # time step for pseudo timestepping
     PDT = ProblemDescription("continuity equation")
-    assign_unknown!(PDT, ϱ)
+    assign_unknown!(PDT, ϱ)    
     assign_operator!(PDT, BilinearOperator(ExtendableSparseMatrix{Float64,Int}(0,0), [ϱ], [ϱ], [u]; callback! = assemble_fv_operator!, kwargs...))
     assign_operator!(PDT, BilinearOperator([id(ϱ)]; factor = 1/τ, store = true, kwargs...))
     assign_operator!(PDT, LinearOperator([id(ϱ)], [id(ϱ)]; factor = 1/τ, kwargs...))
@@ -91,9 +90,9 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, Plotter = nothing, recons
     FETypes = [H1BR{2}, L2P0{1}, L2P0{1}]
 
     ## prepare error calculation
-    ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u), id(ϱ)]; quadorder = 2*order, kwargs...)
+    ErrorIntegratorExact = ItemIntegrator(exact_error!(u!, ∇u!, ϱ!), [id(u), grad(u), id(ϱ)]; resultdim = 9, quadorder = 2*(order+1), kwargs...)
     NDofs = zeros(Int, nrefs)
-    Results = zeros(Float64, nrefs, 3)
+    Results = zeros(Float64, nrefs, 5)
 
     sol = nothing
     xgrid = nothing
@@ -104,27 +103,32 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, Plotter = nothing, recons
 
         ## initial guess
         fill!(sol[ϱ],M)
+        interpolate!(sol[u], u!)
+        interpolate!(sol[ϱ], ϱ!)
         NDofs[lvl] = length(sol.entries)
 
         ## solve the two problems iteratively [1] >> [2] >> [1] >> [2] ...
-        sol = iterate_until_stationarity([PD, PDT]; init = sol)
+        sol, nits = iterate_until_stationarity([PD, PDT]; init = sol, target_residual = target_residual, kwargs...)
 
         ## caculate error
         error = evaluate(ErrorIntegratorExact, sol)
         Results[lvl,1] = sqrt(sum(view(error,1,:)) + sum(view(error,2,:)))
         Results[lvl,2] = sqrt(sum(view(error,3,:)) + sum(view(error,4,:)) + sum(view(error,5,:)) + sum(view(error,6,:)))
         Results[lvl,3] = sqrt(sum(view(error,7,:)))
-        @info "errors = $(Results[lvl,:])"
+        Results[lvl,4] = sqrt(sum(view(error,8,:)) + sum(view(error,9,:)))
+        Results[lvl,5] = nits
     end
-    @info NDoFs, Results
-
+    
+    ## print results
+    print_convergencehistory(NDofs, Results; X_to_h = X -> X.^(-1/2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"], xlabel = "ndof")
+    
     ## plot
     pl = GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, resolution = (800,800))
     scalarplot!(pl[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
     vectorplot!(pl[1,1],xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.25, clear = false, title = "u_h (abs + quiver)")
     scalarplot!(pl[2,1],xgrid, view(nodevalues(sol[ϱ]),1,:), levels = 11, title = "ϱ_h")
-    plot_convergencehistory!(pl[2,1], NDofs, Results; add_h_powers = [order,order+1], X_to_h = X -> X.^(-1/2), legend = :lb, fontsize = 20, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||"], limits = (1e-8,1e-1))
-    
+    plot_convergencehistory!(pl[1,2], NDofs, Results; add_h_powers = [order,order+1], X_to_h = X -> 0.2*X.^(-1/2), legend = :rc, fontsize = 20, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"])
+    gridplot!(pl[2,2],xgrid)
 end
 
 ## pure convection finite volume operator for transport
@@ -205,7 +209,11 @@ function exact_error!(u!,∇u!,ϱ!)
         u!(view(result,1:2), qpinfo)
         ∇u!(view(result,3:6), qpinfo)
         ϱ!(view(result,7), qpinfo)
-        result .-= u
+        result[8] = result[1] * result[7]
+        result[9] = result[2] * result[7]
+        view(result,1:7) .-= u
+        result[8] -= u[1] * u[7]
+        result[9] -= u[2] * u[7]
         result .= result.^2
     end
 end
@@ -215,7 +223,7 @@ function standard_gravity!(result, ϱ, qpinfo)
     result[2] = -ϱ[1]
 end
 
-function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = c)
+function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = 1, μ = 1)
     if testcase == 1
         grid_builder = (nref) -> simplexgrid(Triangulate;
                     points = [0 0; 0.2 0; 0.3 0.2; 0.45 0.05; 0.55 0.35; 0.65 0.2; 0.7 0.3; 0.8 0; 1 0; 1 1 ; 0 1]',
@@ -230,7 +238,7 @@ function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = c)
         M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[2]/c);), 1; quadorder = 20)
         area = sum(xgrid[CellVolumes])
         ϱ1!(result, qpinfo) = (result[1] = exp(-qpinfo.x[2]/c)/(M_exact/area);)
-        return grid_builder, standard_gravity!, exact_error!(u1!, ∇u1!, ϱ1!)
+        return grid_builder, standard_gravity!, u1!, ∇u1!, ϱ1!
     elseif testcase == 2
         grid_builder = (nref) -> simplexgrid(Triangulate;
                     points = [0 0; 1 0; 1 1 ; 0 1]',
@@ -242,7 +250,7 @@ function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = c)
 
         xgrid = grid_builder(3)
         M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[2]/c);), 1; quadorder = 20)
-        ϱ_eval, g_eval, u_eval, ∇u_eval = prepare_data!(; M = M_exact, c = c)
+        ϱ_eval, g_eval, u_eval, ∇u_eval = prepare_data!(; M = M_exact, c = c, μ = μ)
         ϱ2!(result, qpinfo) = (result[1] = ϱ_eval(qpinfo.x[1], qpinfo.x[2]);)
 
         M_exact = integrate(xgrid, ON_CELLS, ϱ2!, 1)
@@ -254,12 +262,12 @@ function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = c)
 
         u2!(result, qpinfo) = (result .= u_eval(qpinfo.x[1], qpinfo.x[2]);)
         ∇u2!(result, qpinfo) = (result .= ∇u_eval(qpinfo.x[1], qpinfo.x[2]);)
-        return grid_builder, kernel_gravity!, exact_error!(u2!, ∇u2!, ϱ2!)
+        return grid_builder, kernel_gravity!, u2!, ∇u2!, ϱ2!
     end
 end
 
 
-function prepare_data!(; M = 1, c = 1)
+function prepare_data!(; M = 1, c = 1, μ = 1 )
 
 	@variables x y
 	dx = Differential(x)
@@ -270,7 +278,7 @@ function prepare_data!(; M = 1, c = 1)
 
 	## stream function ξ
 	## sucht that ϱu = curl ξ
-	ξ = x^2*y^2*(x-1)^2*(y-1)^2
+	ξ = x^2*y^2*(x-1)^2*(y-1)^2 
 
 	∇ξ = Symbolics.gradient(ξ, [x,y])
 
@@ -289,7 +297,7 @@ function prepare_data!(; M = 1, c = 1)
 
 	## gravity ϱg = - Δu + ϱ∇log(ϱ)
 
-	g = -Δu/ϱ + Symbolics.gradient(log(ϱ), [x,y]) 
+	g = - μ*Δu/ϱ + Symbolics.gradient(log(ϱ), [x,y]) 
 
 	#Δu = Symbolics.derivative(∇u[1,1], [x]) + Symbolics.derivative(∇u[2,2], [y])
 

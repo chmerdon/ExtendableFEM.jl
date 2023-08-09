@@ -26,7 +26,7 @@ export Unknown
 include("operators.jl")
 export AbstractOperator
 export AssemblyInformation
-export id, grad, div, normalflux, Δ, apply
+export id, grad, hessian, div, normalflux, Δ, apply
 export id_jump, grad_jump, normalflux_jump
 export assemble!
 
@@ -38,6 +38,7 @@ include("problemdescription.jl")
 export ProblemDescription
 export assign_unknown!
 export assign_operator!
+export replace_operator!
 export assign_reduction!
 
 include("helper_functions.jl")
