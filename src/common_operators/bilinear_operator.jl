@@ -851,7 +851,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorFromMatrix{UT,MT}
         O.A = O.parameters[:callback!](O.A, [b[j] for j in ind_test], sol)
     end
     if MT <: FEMatrix
-        for (j,ij) in enumrate(ind_test), (k,ik) in enumerate(ind_ansatz)
+        for (j,ij) in enumerate(ind_test), (k,ik) in enumerate(ind_ansatz)
             addblock!(A[j,k], O.A[ij,ik]; factor = O.parameters[:factor])
         end
     else

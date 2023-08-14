@@ -4,6 +4,13 @@ mutable struct LinearOperatorFromVector{UT <: Union{Unknown, Integer}, bT} <: Ab
     parameters::Dict{Symbol,Any}
 end
 
+mutable struct LinearOperatorFromMatrix{UT <: Union{Unknown, Integer}, MT} <: AbstractOperator
+    u_test::Array{UT,1}
+    u_args::Array{UT,1}
+    A::MT
+    parameters::Dict{Symbol,Any}
+end
+
 mutable struct LinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: Function, ST} <: AbstractOperator
     u_test::Array{UT,1}
     ops_test::Array{DataType,1}
@@ -142,6 +149,27 @@ function LinearOperator(b, u_test; kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_linop_kwargs())
     _update_params!(parameters, kwargs)
     return LinearOperatorFromVector{typeof(u_test[1]), typeof(b)}(u_test, b, parameters)
+end
+
+"""
+````
+function LinearOperator(
+    A,
+    u_test,
+    u_args;
+    kwargs...)
+````
+
+Generates a linear form from a user-provided matrix A, which can be an AbstractMatrix or a FEMatrix with
+multiple blocks. The arguments u_args specify which coefficients of the current solution
+should be multiplied with the matrix and u_test specifies where to put the
+(blocks of the) resulting vector in the system right-hand side.
+
+"""
+function LinearOperator(A, u_test, u_args; kwargs...)
+    parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_linop_kwargs())
+    _update_params!(parameters, kwargs)
+    return LinearOperatorFromMatrix{typeof(u_test[1]), typeof(A)}(u_test, u_args, A, parameters)
 end
 
 
@@ -585,5 +613,25 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromVector{UT,bT}, 
     else
         @assert length(ind_test) == 1
         addblock!(b[ind_test[1]], O.b; factor = O.parameters[:factor])
+    end
+end
+
+
+
+function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromMatrix{UT,MT}, SC::SolverConfiguration; kwargs...) where {UT,MT}
+    if UT <: Integer
+        ind_test = O.u_test
+        ind_args = O.u_args
+    elseif UT <: Unknown
+        ind_test = [get_unknown_id(SC, u) for u in O.u_test]
+        ind_args = [get_unknown_id(SC, u) for u in O.u_args]
+    end
+    if MT <: FEMatrix
+        for (j,ij) in enumerate(ind_test), k in ind_args
+            addblock_matmul!(b[j], O.A[ij, k], sol[k]; factor = O.parameters[:factor])
+        end
+    else
+        @assert length(ind_test) == 1 && length(ind_args) == 1
+        addblock_matmul!(b[ind_test[1]], O.A, sol[ind_args[1]]; factor = O.parameters[:factor])
     end
 end

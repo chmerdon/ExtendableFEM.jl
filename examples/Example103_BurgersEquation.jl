@@ -65,11 +65,11 @@ function main(;
     p = GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (800,800))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75,2), levels = 0, title = "u_h (t = 0)")
 
-    if (use_diffeq)
-        ## generate mass matrix
-        M = FEMatrix(FES)
-        assemble!(M, BilinearOperator([id(1)]))
+    ## generate mass matrix
+    M = FEMatrix(FES)
+    assemble!(M, BilinearOperator([id(1)]))
 
+    if (use_diffeq)
         ## generate ODE problem
         prob = generate_ode(DifferentialEquations, SC, (0.0, T); mass_matrix = M.entries.cscmatrix)
 
@@ -80,10 +80,11 @@ function main(;
         ## get final solution
         sol.entries .= de_sol[end]
     else
-        ## solve time-dependent problem (implicit Euler)
-        assign_operator!(PD, BilinearOperator([id(u)]; factor = 1/τ, store = true, kwargs...))
-        assign_operator!(PD, LinearOperator([id(u)], [id(u)]; factor = 1/τ, kwargs...))
+        ## add backward Euler time derivative
+        assign_operator!(PD, BilinearOperator(M, [u]; factor = 1/τ, kwargs...))
+        assign_operator!(PD, LinearOperator(M, [u], [u]; factor = 1/τ, kwargs...))
 
+        ## iterate tspan
         t = 0
         for it = 1 : Int(floor(T/τ))
             t += τ   
