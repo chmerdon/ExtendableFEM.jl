@@ -86,5 +86,8 @@ export FaceInterpolator
 include("plots.jl")
 export plot_convergencehistory!
 
+include("diffeq_interface.jl")
+export generate_ode
+
 
 end #module

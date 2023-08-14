@@ -36,7 +36,6 @@ function CommonSolve.solve(PD::ProblemDescription, SC = nothing; init = nothing,
     return solve(PD, [init[u].FES for u in unknowns], SC; init = init, unknowns = unknowns, kwargs...)
 end
 
-
 function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unknowns = PD.unknowns, kwargs...)
     if typeof(SC) <: SolverConfiguration
         _update_params!(SC.parameters, kwargs)
@@ -519,4 +518,24 @@ function iterate_until_stationarity(PDs::Array{ProblemDescription,1}, FES = noth
         @printf "\n"
     end
     return sol, it
+end
+
+function generate_ode(DiffEQ, SC::SolverConfiguration, tspan; mass_matrix = nothing)
+    ## generate default mass matrix if needed
+    if mass_matrix === nothing
+        ops = []
+        FES = []
+        for u in SC.unknowns
+            push!(ops, id(u))
+            push!(FES, SC.sol[u].FES)
+        end
+        M = FEMatrix(FES)
+        assemble!(M, BilinearOperator([id(1)]))
+        mass_matrix = M.entries.cscmatrix
+    end
+
+    ## generate ODE problem
+    f = DiffEQ.ODEFunction(eval_rhs!, jac = eval_jacobian!, jac_prototype = jac_prototype(SC), mass_matrix = mass_matrix)
+    prob = DiffEQ.ODEProblem(f, SC.sol.entries, tspan, SC)
+    return prob
 end

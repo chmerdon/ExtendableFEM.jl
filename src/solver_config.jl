@@ -1,4 +1,5 @@
 mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
+    PD::ProblemDescription
     A::AT
     b::bT
     sol::xT
@@ -44,6 +45,10 @@ function Base.show(io::IO, PD::SolverConfiguration)
     end
 end
 
+function SolverConfiguration(Problem::ProblemDescription, FES; kwargs...)
+    SolverConfiguration(Problem, Problem.unknowns, FES; kwargs...)
+end
+
 function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknown,1}, FES; TvM = Float64, TiM = Int, bT = Float64, kwargs...)
     @assert length(unknowns) <= length(FES) "length of unknowns and FE spaces must coincide"
     ## check if unknowns are part of Problem description
@@ -71,5 +76,5 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
     end
     res = deepcopy(b)
     LP = LinearProblem(A.entries.cscmatrix, b.entries)
-    return SolverConfiguration{typeof(A),typeof(b),typeof(x)}(A,b,x,res,LP,nothing,unknown_ids_in_sol,unknowns,copy(unknowns),offsets,parameters)
+    return SolverConfiguration{typeof(A),typeof(b),typeof(x)}(Problem,A,b,x,res,LP,nothing,unknown_ids_in_sol,unknowns,copy(unknowns),offsets,parameters)
 end
