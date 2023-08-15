@@ -122,7 +122,9 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, target_residual = 1e-10, 
         NDofs[lvl] = length(sol.entries)
 
         ## solve the two problems iteratively [1] >> [2] >> [1] >> [2] ...
-        sol, nits = iterate_until_stationarity([PD, PDT]; init = sol, target_residual = target_residual, kwargs...)
+        SC1 = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, target_residual = target_residual, constant_matrix = true, kwargs...)
+        SC2 = SolverConfiguration(PDT, FES; init = sol, maxiterations = 1, target_residual = target_residual, kwargs...)
+        sol, nits = iterate_until_stationarity([SC1, SC2]; init = sol, kwargs...)
 
         ## caculate error
         error = evaluate(ErrorIntegratorExact, sol)

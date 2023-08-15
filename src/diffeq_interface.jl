@@ -10,7 +10,11 @@ function diffeq_assembly!(sys, ctime)
     b = sys.b
     sol = sys.sol
 
-    @debug "DiffEQ-interface: assembly at t = $ctime"
+    if sys.parameters[:verbosity] > -1
+        @info "t = $ctime" 
+    else
+        @debug "DiffEQ-interface: assembly at t = $ctime"
+    end
 
     ## assemble operators
     fill!(A.entries.cscmatrix.nzval,0)

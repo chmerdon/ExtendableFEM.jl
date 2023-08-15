@@ -248,7 +248,10 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
 
         time_solve = @elapsed begin
             allocs_solve = @allocated begin
-                linsolve.A = A.entries.cscmatrix
+                if SC.parameters[:constant_matrix] && j > 1
+                else
+                    linsolve.A = A.entries.cscmatrix
+                end
                 linsolve.b = b.entries
 
                 ## solve
@@ -302,10 +305,10 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
 end
 
 
-function iterate_until_stationarity(PDs::Array{ProblemDescription,1}, FES = nothing; maxsteps = 1000, tolerance_change = 1e-10, init = nothing, unknowns = [PD.unknowns for PD in PDs], kwargs... )
+function iterate_until_stationarity(SCs::Array{<:SolverConfiguration,1}, FES = nothing; maxsteps = 1000, tolerance_change = 1e-10, init = nothing, unknowns = [SC.PD.unknowns for SC in SCs], kwargs... )
 
+    PDs::Array{ProblemDescription,1} = [SC.PD for SC in SCs]
     nPDs = length(PDs)
-    SCs = Array{SolverConfiguration,1}(undef, nPDs)
 
     ## find FESpaces and generate solution vector
     if FES === nothing

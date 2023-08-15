@@ -96,7 +96,7 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     if FVtransport ## FVM discretisation of transport equation (pure upwind convection)
         τ = 1e3
         assign_operator!(PDT, BilinearOperator(ExtendableSparseMatrix{Float64,Int}(0,0), [T], [T], [u]; callback! = assemble_fv_operator!, kwargs...))
-        assign_operator!(PDT, BilinearOperator([id(T)]; factor = 1/τ, kwargs...))
+        assign_operator!(PDT, BilinearOperator([id(T)]; store = true, factor = 1/τ, kwargs...))
         assign_operator!(PDT, LinearOperator([id(T)], [id(T)]; factor = 1/τ, kwargs...))
     else ## FEM discretisation of transport equation (with small diffusion term)
         assign_operator!(PDT, BilinearOperator([grad(T)]; factor = 1e-6, kwargs...))
@@ -111,7 +111,7 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
 
     ## solve the two problems separately
     sol = solve(PD; init = sol, kwargs...)
-    sol = solve(PDT; init = sol, maxiterations = 20, target_residual = 1e-12, kwargs...)
+    sol = solve(PDT; init = sol, maxiterations = 20, target_residual = 1e-12, constant_matrix = true, kwargs...)
 
     ## print minimal and maximal concentration to check max principle (shoule be in [0,1])
     println("\n[min(c),max(c)] = [$(minimum(view(sol[T]))),$(maximum(view(sol[T])))]")

@@ -31,6 +31,7 @@ default_solver_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :is_linear => ("auto", "linear problem (avoid reassembly of nonlinear operators to check residual)"),
     :inactive => (Array{Unknown,1}([]), "inactive unknowns (are made available in assembly, but not updated in solve)"),
     :maxiterations => (10, "maximal number of nonlinear iterations/linear solves"),
+    :constant_matrix => (false, "matrix is constant (skips refactorization in solver)"),
     :method_linear => (UMFPACKFactorization(), "any solver or custom LinearSolveFunction compatible with LinearSolve.jl (default = UMFPACKFactorization())"),
     :precon_linear => (nothing, "function that computes preconditioner for method_linear incase an iterative solver is chosen")
 )

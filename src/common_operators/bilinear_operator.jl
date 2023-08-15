@@ -509,7 +509,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
                         assembly_loop(Aj[j], sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_ansatz[j], O.BE_args[j], O.BE_test_vals[j], O.BE_ansatz_vals[j], O.BE_args_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
                     end
                     for j = 1 : length(EGs)
-                        A.cscmatrix += Aj[j].cscmatrix
+                        add!(A, Aj[j])
                     end
                     flush!(A)
                 else
@@ -655,8 +655,6 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
             input_ansatz = zeros(T, op_offsets_ansatz[end])
             result_kernel = zeros(T, op_offsets_test[end])
 
-            #ndofs_test::Array{Int,1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_test]
-            #ndofs_ansatz::Array{Int,1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_ansatz]
             ndofs_test::Array{Int,1} = [size(BE.cvals,2) for BE in BE_test]
             ndofs_ansatz::Array{Int,1} = [size(BE.cvals,2) for BE in BE_ansatz]
             
@@ -766,7 +764,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 
         function assembler(A, b; kwargs...)
             if O.parameters[:store] && size(A) == size(O.storage)
-                A.cscmatrix += O.storage.cscmatrix
+                add!(A, O.storage)
             else
                 if O.parameters[:store]
                     S = ExtendableSparseMatrix{Float64,Int}(size(A,1), size(A,2))
@@ -780,7 +778,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                             assembly_loop(Aj[j], view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_ansatz[j], O.BE_test_vals[j], O.BE_ansatz_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
                         end
                         for j = 1 : length(EGs)
-                            S.cscmatrix += Aj[j].cscmatrix
+                            add!(S, Aj[j])
                         end
                         flush!(S)
                     else
@@ -796,7 +794,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                     @info ".... assembly of $(O.parameters[:name]) took $time s"
                 end
                 if O.parameters[:store]
-                    A.cscmatrix += S.cscmatrix
+                    add!(A, S)
                     O.storage = S
                 end
             end

@@ -391,7 +391,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
                         assembly_loop(Aj[j], bj[j], sol, view(itemassemblygroups,:,j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], Kj[j]; kwargs...)
                     end
                     for j = 1 : length(EGs)
-                        A.cscmatrix += Aj[j].cscmatrix
+                        add!(A, Aj[j])
                         b .+= bj[j]
                     end
                     flush!(A)

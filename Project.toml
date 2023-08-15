@@ -1,7 +1,7 @@
 name = "ExtendableFEM"
 uuid = "a722555e-65e0-4074-a036-ca7ce79a4aed"
 authors = ["Christian Merdon <merdon@wias-berlin.de>"]
-version = "0.0.1"
+version = "0.0.2"
 
 [deps]
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
@@ -24,7 +24,7 @@ UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 [compat]
 CommonSolve = "0.2"
 DiffResults = "1"
-ExtendableFEMBase = "^0.0.6"
+ExtendableFEMBase = "^0.0.7"
 ExtendableGrids = "1.0"
 ExtendableSparse = "1.2"
 ForwardDiff = "^0.10.35"
