@@ -79,7 +79,7 @@ function LinearOperator(kernel, u_test, ops_test, u_args, ops_args; Tv = Float64
     return LinearOperator{Tv, typeof(u_test[1]), typeof(kernel), typeof(storage)}(u_test, ops_test, u_args, ops_args, kernel, [[zeros(Tv, 0, 0, 0)]], [[zeros(Tv, 0, 0, 0)]], nothing, nothing, nothing, nothing, nothing, nothing, nothing, nothing, storage, parameters)
 end
 
-function LinearOperator(kernel::Function, u_test::Array{<:Unknown,1}, ops_test::Array{DataType,1}; Tv = Float64, kwargs...)
+function LinearOperator(kernel::Function, u_test, ops_test::Array{DataType,1}; Tv = Float64, kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_linop_kwargs())
     _update_params!(parameters, kwargs)
     @assert length(u_test) == length(ops_test)

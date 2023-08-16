@@ -94,18 +94,9 @@ function main(; Plotter = nothing, λ = 1e4, μ = 1.0, nrefs = 5, kwargs...)
     FES = [FESpace{FETypes[1]}(xgrid), FESpace{FETypes[2]}(xgrid)]
     sol = FEVector([FES[1],FES[2]]; tags = [u,p])
 
-    oldsol = deepcopy(sol)
-    sol, SCu = solve(PDu, [FES[1]]; return_config = true, init = sol, kwargs...)
-    sol, SCp = solve(PDp, [FES[2]]; return_config = true, init = sol, is_linear = true, kwargs...)
-    difference = norm(oldsol.entries - sol.entries)
-    nits = 1
-    while difference > 1e-8
-        nits += 1
-        copyto!(oldsol.entries, sol.entries)
-        sol, SCu = solve(PDu, [FES[1]], SCu; return_config = true, init = sol, kwargs...)
-        sol, SCp = solve(PDp, [FES[2]], SCp; return_config = true, init = sol, is_linear = true, kwargs...)
-        difference = norm(oldsol.entries - sol.entries)
-    end
+    SC1 = SolverConfiguration(PDu, [FES[1]]; init = sol, maxiterations = 1, target_residual = 1e-8, constant_matrix = true, kwargs...)
+    SC2 = SolverConfiguration(PDp, [FES[2]]; init = sol, maxiterations = 1, target_residual = 1e-8, constant_matrix = true, kwargs...)
+    sol, nits = iterate_until_stationarity([SC1, SC2]; init = sol, kwargs...)
     @info "converged after $nits iterations"
 
     ## error calculation

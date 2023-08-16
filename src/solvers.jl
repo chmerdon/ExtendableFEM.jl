@@ -305,7 +305,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
 end
 
 
-function iterate_until_stationarity(SCs::Array{<:SolverConfiguration,1}, FES = nothing; maxsteps = 1000, tolerance_change = 1e-10, init = nothing, unknowns = [SC.PD.unknowns for SC in SCs], kwargs... )
+function iterate_until_stationarity(SCs::Array{<:SolverConfiguration,1}, FES = nothing; maxsteps = 1000, init = nothing, unknowns = [SC.PD.unknowns for SC in SCs], kwargs... )
 
     PDs::Array{ProblemDescription,1} = [SC.PD for SC in SCs]
     nPDs = length(PDs)
@@ -329,22 +329,6 @@ function iterate_until_stationarity(SCs::Array{<:SolverConfiguration,1}, FES = n
             end
         end
         sol = FEVector(FES; tags = all_unknowns)
-    end
-
-
-    ## init solver configurations
-    time = @elapsed begin
-        allocs = @allocated begin
-            for p = 1 : nPDs
-                SCs[p] = SolverConfiguration(PDs[p], unknowns[p], FES[p]; init = sol, kwargs...)
-                if SCs[p].parameters[:verbosity] > 0
-                    @info ".... init solver configurations \n"
-                end
-                if SCs[p].parameters[:show_config]
-                    @info "\n$(SCs[p])"
-                end
-            end
-        end
     end
 
     @info "SOLVING iteratively $([PD.name for PD in PDs])
@@ -385,9 +369,8 @@ function iterate_until_stationarity(SCs::Array{<:SolverConfiguration,1}, FES = n
 
     alloc_factor = 1024^2
 
-    @printf " init time | allocs = %.2f s | %.2f MiB\n" time allocs/alloc_factor
-    time_final = time
-    allocs_final = allocs
+    time_final = 0
+    allocs_final = 0
     nlres = 1.1e30
     linres = 1.1e30
     converged = zeros(Bool, nPDs)
@@ -479,7 +462,9 @@ function iterate_until_stationarity(SCs::Array{<:SolverConfiguration,1}, FES = n
 
                 time_solve = @elapsed begin
                     allocs_solve = @allocated begin
-                        linsolve.A = A.entries.cscmatrix
+                        if !SC.parameters[:constant_matrix] || it == 1
+                            linsolve.A = A.entries.cscmatrix
+                        end
                         linsolve.b = b.entries
 
                         ## solve

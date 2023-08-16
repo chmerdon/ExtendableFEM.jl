@@ -57,10 +57,10 @@ using Symbolics
 ## everything is wrapped in a main function
 ## testcase = 1 : well-balanced test (stratified no-flow over mountain)
 ## testcase = 2 : vortex example (ϱu is div-free p7 vortex)
-function main(; testcase = 1, nrefs = 4, M = 1, c = 1, target_residual = 1e-10, Plotter = nothing, reconstruct = true, μ = 1, order = 1, kwargs...)
+function main(; testcase = 1, nrefs = 4, M = 1, c = 1, ufac = 100, laplacian_in_rhs = false, maxsteps = 5000, target_residual = 1e-10, Plotter = nothing, reconstruct = true, μ = 1, order = 1, kwargs...)
 
 	## load data for testcase
-    grid_builder, kernel_gravity!, u!, ∇u!, ϱ! = load_testcase_data(testcase; nrefs = nrefs, M = M, c = c, μ = μ)
+    grid_builder, kernel_gravity!, kernel_rhs!, u!, ∇u!, ϱ!, τfac = load_testcase_data(testcase; laplacian_in_rhs = laplacian_in_rhs, nrefs = nrefs, M = M, c = c, μ = μ, ufac = ufac)
     xgrid = grid_builder(nrefs)
 
     ## define unknowns
@@ -83,10 +83,13 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, target_residual = 1e-10, 
     assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, store = true, kwargs...))
     assign_operator!(PD, LinearOperator([div(u)], [id(ϱ)]; factor = c, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
+    if kernel_rhs! !== nothing
+        assign_operator!(PD, LinearOperator(kernel_rhs!, [id_u]; factor = 1, store = true, bonus_quadorder = 2*order, kwargs...))
+    end
     assign_operator!(PD, LinearOperator(kernel_gravity!, [id_u], [id(ϱ)]; factor = 1, bonus_quadorder = 3*order, kwargs...))
 
     ## FVM for continuity equation
-	τ = order * μ / (order*M*c) # time step for pseudo timestepping
+	τ = order * μ / (order*M*sqrt(τfac)) # time step for pseudo timestepping
     PDT = ProblemDescription("continuity equation")
     assign_unknown!(PDT, ϱ)    
     if order > 1
@@ -122,9 +125,9 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, target_residual = 1e-10, 
         NDofs[lvl] = length(sol.entries)
 
         ## solve the two problems iteratively [1] >> [2] >> [1] >> [2] ...
-        SC1 = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, target_residual = target_residual, constant_matrix = true, kwargs...)
-        SC2 = SolverConfiguration(PDT, FES; init = sol, maxiterations = 1, target_residual = target_residual, kwargs...)
-        sol, nits = iterate_until_stationarity([SC1, SC2]; init = sol, kwargs...)
+        SC1 = SolverConfiguration(PD, [FES[1]]; init = sol, maxiterations = 1, target_residual = target_residual, constant_matrix = true, kwargs...)
+        SC2 = SolverConfiguration(PDT, [FES[2]]; init = sol, maxiterations = 1, target_residual = target_residual, kwargs...)
+        sol, nits = iterate_until_stationarity([SC1, SC2]; maxsteps = maxsteps, init = sol, kwargs...)
 
         ## caculate error
         error = evaluate(ErrorIntegratorExact, sol)
@@ -188,7 +191,7 @@ function standard_gravity!(result, ϱ, qpinfo)
     result[2] = -ϱ[1]
 end
 
-function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = 1, μ = 1)
+function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, nrefs = 1, M = 1, c = 1, μ = 1, ufac = 100)
     if testcase == 1
         grid_builder = (nref) -> simplexgrid(Triangulate;
                     points = [0 0; 0.2 0; 0.3 0.2; 0.45 0.05; 0.55 0.35; 0.65 0.2; 0.7 0.3; 0.8 0; 1 0; 1 1 ; 0 1]',
@@ -203,7 +206,7 @@ function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = 1, μ = 1)
         M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[2]/c);), 1; quadorder = 20)
         area = sum(xgrid[CellVolumes])
         ϱ1!(result, qpinfo) = (result[1] = exp(-qpinfo.x[2]/c)/(M_exact/area);)
-        return grid_builder, standard_gravity!, u1!, ∇u1!, ϱ1!
+        return grid_builder, standard_gravity!, nothing, u1!, ∇u1!, ϱ1!, 1
     elseif testcase == 2
         grid_builder = (nref) -> simplexgrid(Triangulate;
                     points = [0 0; 1 0; 1 1 ; 0 1]',
@@ -215,7 +218,7 @@ function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = 1, μ = 1)
 
         xgrid = grid_builder(3)
         M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[1]^3/(3*c));), 1; quadorder = 20)
-        ϱ_eval, g_eval, u_eval, ∇u_eval = prepare_data!(; M = M_exact, c = c, μ = μ)
+        ϱ_eval, g_eval, f_eval, u_eval, ∇u_eval = prepare_data!(; laplacian_in_rhs = laplacian_in_rhs, M = M_exact, c = c, μ = μ, ufac = ufac)
         ϱ2!(result, qpinfo) = (result[1] = ϱ_eval(qpinfo.x[1], qpinfo.x[2]);)
 
         M_exact = integrate(xgrid, ON_CELLS, ϱ2!, 1)
@@ -225,14 +228,18 @@ function load_testcase_data(testcase::Int = 1; nrefs = 1, M = 1, c = 1, μ = 1)
             result .= input[1] * g_eval(qpinfo.x[1], qpinfo.x[2])
         end
 
+        function kernel_rhs!(result, qpinfo)
+            result .= f_eval(qpinfo.x[1], qpinfo.x[2])
+        end
+
         u2!(result, qpinfo) = (result .= u_eval(qpinfo.x[1], qpinfo.x[2]);)
         ∇u2!(result, qpinfo) = (result .= ∇u_eval(qpinfo.x[1], qpinfo.x[2]);)
-        return grid_builder, kernel_gravity!, u2!, ∇u2!, ϱ2!
+        return grid_builder, kernel_gravity!, f_eval === nothing ? nothing : kernel_rhs!, u2!, ∇u2!, ϱ2!, ufac
     end
 end
 
 ## exact data for testcase 2 computed by Symbolics
-function prepare_data!(; M = 1, c = 1, μ = 1 )
+function prepare_data!(; M = 1, c = 1, μ = 1, ufac = 100, laplacian_in_rhs = true)
 
 	@variables x y
 	dx = Differential(x)
@@ -243,7 +250,7 @@ function prepare_data!(; M = 1, c = 1, μ = 1 )
 
 	## stream function ξ
 	## sucht that ϱu = curl ξ
-	ξ = x^2*y^2*(x-1)^2*(y-1)^2 
+	ξ = x^2*y^2*(x-1)^2*(y-1)^2 * ufac
 
 	∇ξ = Symbolics.gradient(ξ, [x,y])
 
@@ -262,7 +269,13 @@ function prepare_data!(; M = 1, c = 1, μ = 1 )
 
 	## gravity ϱg = - Δu + ϱ∇log(ϱ)
 
-	g = - μ*Δu/ϱ + Symbolics.gradient(log(ϱ), [x,y]) 
+    if laplacian_in_rhs
+        f = - μ*Δu
+        g = Symbolics.gradient(log(ϱ), [x,y]) 
+	else
+        g = - μ*Δu/ϱ + Symbolics.gradient(log(ϱ), [x,y]) 
+        f = 0
+    end
 
 	#Δu = Symbolics.derivative(∇u[1,1], [x]) + Symbolics.derivative(∇u[2,2], [y])
 
@@ -270,7 +283,8 @@ function prepare_data!(; M = 1, c = 1, μ = 1 )
 	u_eval = build_function(u, x, y, expression = Val{false})
 	∇u_eval = build_function(∇u_reshaped, x, y, expression = Val{false})
 	g_eval = build_function(g, x, y, expression = Val{false})
+	f_eval = build_function(f, x, y, expression = Val{false})
 
-    return ϱ_eval, g_eval[1], u_eval[1], ∇u_eval[1]
+    return ϱ_eval, g_eval[1], f == 0 ? nothing : f_eval[1], u_eval[1], ∇u_eval[1]
 end
 end

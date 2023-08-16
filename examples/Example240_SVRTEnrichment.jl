@@ -147,11 +147,11 @@ function main(; nrefs = 4, order = 2, Plotter = nothing, enrich = true, reduce =
                uR => enrich ? FES_enrich : nothing)
 
     ## define operators
-    assign_operator!(PD, LinearOperator(rhs!, [id(u)]; bonus_quadorder = 5, kwargs...)) 
+    assign_operator!(PD, LinearOperator(rhs!, [id(u)]; bonus_quadorder = bonus_quadorder, kwargs...)) 
     assign_operator!(PD, BilinearOperator(kernel_stokes_standard!, [grad(u), id(p)]; kwargs...))  
     if enrich
         if reduce
-            @time if order == 1
+            if order == 1
                 @info "... preparing condensation of RT0 dofs"
                 AR = FEMatrix(FES_enrich)
                 BR = FEMatrix(FES[p], FES_enrich)
