@@ -607,7 +607,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromVector{UT,bT}, 
         ind_test = [get_unknown_id(SC, u) for u in O.u_test]
     end
     if bT <: FEVector
-        for (j,ij) in enumrate(ind_test)
+        for (j,ij) in enumerate(ind_test)
             addblock!(b[j], O.b[ij]; factor = O.parameters[:factor])
         end
     else

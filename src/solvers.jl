@@ -150,23 +150,30 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
                 # end
 
                 ## reduction steps
-                time_assembly += @elapsed begin
-                    if length(PD.reduction_operators) > 0 && j == 1
-                        LP_reduced = SC.LP
-                        reduced = true
-                        for op in PD.reduction_operators
-                            allocs_assembly += @allocated LP_reduced, A, b = apply!(LP_reduced, op, SC; kwargs...)
-                        end    
-                        residual = deepcopy(b)
-                    end
-                end
+                # time_assembly += @elapsed begin
+                #     if length(PD.reduction_operators) > 0 && j == 1
+                #         LP_reduced = SC.LP
+                #         reduced = true
+                #         for op in PD.reduction_operators
+                #             allocs_assembly += @allocated LP_reduced, A, b = apply!(LP_reduced, op, SC; kwargs...)
+                #         end    
+                #         residual = deepcopy(b)
+                #     end
+                # end
 
                 ## show spy
+                if SC.parameters[:symmetrize]
+                    A.entries.cscmatrix = (A.entries.cscmatrix + A.entries.cscmatrix')/2
+                end
 
                 if SC.parameters[:show_matrix]
                     @show A
                 elseif SC.parameters[:spy]
                     @info ".... spy plot of system matrix:\n$(UnicodePlots.spy(sparse(A.entries.cscmatrix)))"
+                end
+                if SC.parameters[:check_matrix]
+                    @info ".... ||A - A'|| = $(norm(A.entries.cscmatrix - A.entries.cscmatrix', Inf))"
+                    @info "....  isposdef  = $(isposdef(A.entries.cscmatrix))"
                 end
 
                 ## init solver
@@ -355,7 +362,7 @@ function iterate_until_stationarity(SCs::Array{<:SolverConfiguration,1}, FES = n
                 end
             end
         end
-        if SCs[j].parameters[:verbosity] > -1
+        if SCs[j].parameters[:verbosity] > 0
             @info "nonlinear = $(nonlinear[j] ? "true" : "false")\n" 
         end
         if SCs[j].parameters[:is_linear] == "auto"

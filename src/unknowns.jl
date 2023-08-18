@@ -58,7 +58,11 @@ other(o::Tuple{Union{Unknown,Int}, DataType}) = (o[1], Right{o[2]})
 
 ## some aliases
 id(u) = (u, Identity)
+curl1(u) = (u, CurlScalar)
+curl2(u) = (u, Curl2D)
+curl3(u) = (u, Curl3D)
 grad(u) = (u, Gradient)
+laplace(u) = (u, Laplacian)
 hessian(u) = (u, Hessian)
 ExtendableFEMBase.div(u) = (u, Divergence)
 normalflux(u) = (u, NormalFlux)

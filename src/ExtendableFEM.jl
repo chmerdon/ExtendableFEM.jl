@@ -26,7 +26,7 @@ export Unknown
 include("operators.jl")
 export AbstractOperator
 export AssemblyInformation
-export id, grad, hessian, div, normalflux, Δ, apply
+export id, grad, hessian, div, normalflux, Δ, apply, curl1, curl2, curl3, laplace
 export id_jump, grad_jump, normalflux_jump
 export assemble!
 

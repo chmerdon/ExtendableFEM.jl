@@ -59,7 +59,7 @@ default_blfop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :name => ("BilinearOperator", "name for operator used in printouts"),
     :transposed_copy => (0, "assemble a transposed copy of that operator into the transposed matrix block(s), 0 = no, 1 = symmetric, -1 = skew-symmetric"),
     :factor => (1, "factor that should be multiplied during assembly"),
-    :lump => (false, "lump the operator (= only assemble the diagonal)"),
+    :lump => (0, "diagonal lumping (=0 no lumping, =1 only keep diagonal entry, =2 accumulate full row to diagonal)"),
     :params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
     :entry_tolerance => (0, "threshold to add entry to sparse matrix"),
     :use_sparsity_pattern => ("auto", "read sparsity pattern of jacobian of kernel to find out which components couple"),
@@ -706,9 +706,15 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                             result_kernel .*= factor * weights[qp]
 
                             # multiply test function operator evaluation
-                            if lump
+                            if lump == 1
                                 for d = 1 : op_lengths_test[id]
                                     Aloc[id,id][j,j] += result_kernel[d + op_offsets_test[id]] * BE_test_vals[id][d,j,qp]
+                                end
+                            elseif lump == 2
+                                for k = 1 : ndofs_test[id]
+                                    for d = 1 : op_lengths_test[id]
+                                        Aloc[id,id][j,j] += result_kernel[d + op_offsets_test[id]] * BE_test_vals[id][d,k,qp]
+                                    end
                                 end
                             else
                                 for idt in couples_with[id]
@@ -851,13 +857,16 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorFromMatrix{UT,MT}
     if MT <: FEMatrix
         for (j,ij) in enumerate(ind_test), (k,ik) in enumerate(ind_ansatz)
             addblock!(A[j,k], O.A[ij,ik]; factor = O.parameters[:factor])
+            if O.parameters[:transposed_copy] != 0
+                addblock!(A[k,j], O.A[ij,ik]; transpose = true, factor = O.parameters[:factor] * O.parameters[:transposed_copy])
+            end
         end
     else
         @assert length(ind_test) == 1
         @assert length(ind_ansatz) == 1
         addblock!(A[ind_test[1],ind_ansatz[1]], O.A; factor = O.parameters[:factor])
         if O.parameters[:transposed_copy] != 0
-            addblock!(A[ind_test[1],ind_ansatz[1]], O.A; transpose = true, factor = O.parameters[:factor] * O.parameters[:transposed_copy])
+            addblock!(A[ind_ansatz[1],ind_test[1]], O.A; transpose = true, factor = O.parameters[:factor] * O.parameters[:transposed_copy])
         end
     end
 end

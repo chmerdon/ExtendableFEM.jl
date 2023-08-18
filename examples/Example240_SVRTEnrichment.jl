@@ -177,7 +177,7 @@ function main(; nrefs = 4, order = 2, Plotter = nothing, enrich = true, reduce =
                 assemble!(BR, BilinearOperator([id(1)], [div(1)]; factor = -1, kwargs...))
                 assemble!(bR, LinearOperator(rhs!, [id(1)]; bonus_quadorder = 5, kwargs...); time = time)
                 assemble!(A1R, BilinearOperator([id(1)],[Δ(1)]; factor = -μ, kwargs...))
-                F = div_projector(xgrid, FES[u], FES_enrich)
+                F = div_projector(FES[u], FES_enrich)
                 C = F.entries.cscmatrix * A1R.entries.cscmatrix
                 assign_operator!(PD, BilinearOperator(C, [u], [u]; factor = 1, transposed_copy = -1, kwargs...))
                 assign_operator!(PD, LinearOperator(F.entries.cscmatrix * bR.entries, [u]; kwargs...))
@@ -241,8 +241,7 @@ function main(; nrefs = 4, order = 2, Plotter = nothing, enrich = true, reduce =
     end
 end
 
-
-function div_projector(xgrid, V1, VR)
+function div_projector(V1, VR)
 
     ## setup interpolation matrix
     celldofs_V1::VariableTargetAdjacency{Int32} = V1[CellDofs]
@@ -261,7 +260,7 @@ function div_projector(xgrid, V1, VR)
     xp = zeros(Float64,ndofs_VR)
     dof::Int = 0
     dof2::Int = 0
-    ncells::Int = num_cells(xgrid)
+    ncells::Int = num_sources(celldofs_V1)
     F = FEMatrix(V1, VR)
     FE::ExtendableSparseMatrix{Float64,Int64} = F.entries
     for cell = 1 : ncells
