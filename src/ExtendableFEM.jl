@@ -16,6 +16,9 @@ using DiffResults
 using UnicodePlots
 using Printf
 using DocStringExtensions
+if  !isdefined(Base, :get_extension)
+    using Requires
+end
 
 include("io.jl")
 export print_convergencehistory
@@ -51,6 +54,7 @@ include("solvers.jl")
 export solve
 export iterate_until_stationarity
 export get_unknown_id
+export generate_ODEProblem
 
 include("jump_operators.jl")
 export DiscontinuousFunctionOperator
@@ -86,8 +90,12 @@ export FaceInterpolator
 include("plots.jl")
 export plot_convergencehistory!
 
-include("diffeq_interface.jl")
-export generate_ode
-
+@static if  !isdefined(Base, :get_extension)
+    function __init__()
+        @require DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa" begin
+            include("../ext/ExtendableFEMDiffEQExt.jl")
+        end
+    end
+end
 
 end #module

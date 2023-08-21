@@ -47,13 +47,14 @@ end
 ## everything is wrapped in a main function
 function main(;
     m = 2,
-    h = 0.01,
+    h = 0.05,
     t0 = 0.001,
     T = 0.01,
-    order = 2,
+    order = 1,
     τ = 0.0001,
     Plotter = nothing,
     use_diffeq = true,
+    use_masslumping = true,
     solver = ImplicitEuler(), 
     kwargs...)
 
@@ -79,13 +80,13 @@ function main(;
     p = GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (800,800))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], label = "discrete", markershape = :circle, markevery = 1)
 
-    ## generate mass matrix
+    ## generate mass matrix (with mass lumping)
     M = FEMatrix(FES)
-    assemble!(M, BilinearOperator([id(1)]; lump = 2))
+    assemble!(M, BilinearOperator([id(1)]; lump = 2 * use_masslumping))
 
     if (use_diffeq)
         ## generate ODE problem
-        prob = generate_ode(DifferentialEquations, SC, (t0, T); mass_matrix = M.entries.cscmatrix)
+        prob = ExtendableFEM.generate_ODEProblem(SC, (t0, T); mass_matrix = M.entries.cscmatrix)
 
         ## solve ODE problem
         de_sol = DifferentialEquations.solve(prob, solver, abstol=1e-6, reltol=1e-3, dt = τ, dtmin = 1e-8, adaptive = true, initializealg=DifferentialEquations.NoInit())
@@ -110,9 +111,8 @@ function main(;
     ## plot final state
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], label = "discrete", markershape = :circle, markevery = 1)
     
-    
+    ## plot exact solution
     interpolate!(sol[1], u_exact!; time = T, params = [m])
-    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], clear = false, color = :green, levels = 0, label = "exact")
-    
+    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], clear = false, color = :green, label = "exact")
 end
 end

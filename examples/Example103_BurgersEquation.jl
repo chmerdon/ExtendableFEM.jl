@@ -70,8 +70,8 @@ function main(;
     assemble!(M, BilinearOperator([id(1)]))
 
     if (use_diffeq)
-        ## generate ODE problem
-        prob = generate_ode(DifferentialEquations, SC, (0.0, T); mass_matrix = M.entries.cscmatrix)
+        ## generate DifferentialEquations.ODEProblem
+        prob = ExtendableFEM.generate_ODEProblem(SC, (0.0, T); mass_matrix = M.entries.cscmatrix)
 
         ## solve ODE problem
         de_sol = DifferentialEquations.solve(prob, solver, abstol=1e-6, reltol=1e-3, dt = τ, dtmin = 1e-6, adaptive = true, initializealg=DifferentialEquations.NoInit())

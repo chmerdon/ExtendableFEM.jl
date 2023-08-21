@@ -10,17 +10,17 @@ function diffeq_assembly!(sys, ctime)
     b = sys.b
     sol = sys.sol
 
-    if sys.parameters[:verbosity] > -1
-        @info "t = $ctime" 
+    if sys.parameters[:verbosity] > 0
+        @info "DiffEQ-extension: t = $ctime" 
     else
-        @debug "DiffEQ-interface: assembly at t = $ctime"
+        @debug "DiffEQ-extension: assembly at t = $ctime"
     end
 
     ## assemble operators
     fill!(A.entries.cscmatrix.nzval,0)
     fill!(b.entries, 0)
     for op in PD.operators
-        assemble!(A, b, sol, op, sys; time = ctime)
+        ExtendableFEM.assemble!(A, b, sol, op, sys; time = ctime)
     end
 end
 
@@ -30,7 +30,7 @@ rhs function for DifferentialEquations.jl.
 """
 function eval_rhs!(du, x, sys, ctime)
     # (re)assemble system
-    @debug "DiffEQ-interface: evaluating ODE rhs @time = $ctime"
+    @debug "DiffEQ-extension: evaluating ODE rhs @time = $ctime"
 
     PD = sys.PD
     A = sys.A 
@@ -66,7 +66,7 @@ Assume the discrete problem is an ODE problem. Provide the
 jacobi matrix calculation function for DifferentialEquations.jl.
 """
 function eval_jacobian!(J, u, SC, ctime)
-    @debug "eval_jac: ctime = $ctime"
+    @debug "DiffEQ-extension: evaluating jacobian @time = $ctime"
     PD = SC.PD
     A = SC.A
     b = SC.b
