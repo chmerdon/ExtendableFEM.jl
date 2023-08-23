@@ -53,7 +53,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
     ## prepare assembly
     AT = ON_CELLS
     xgrid = FES_args[1].xgrid
-    Ti = eltype(xgrid[CellNodes])
+    Ti = typeof(xgrid).parameters[2]
     itemassemblygroups = xgrid[CellAssemblyGroups]
     itemgeometries = xgrid[CellGeometries]
     itemregions = xgrid[CellRegions]

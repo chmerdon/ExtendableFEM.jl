@@ -129,7 +129,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
         ## prepare assembly
         AT = O.parameters[:entities]
         xgrid = FES_test[1].xgrid
-        Ti = eltype(xgrid[CellNodes])
+        Ti = typeof(xgrid).parameters[2]
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
         itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
@@ -263,17 +263,15 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
             nweights = length(weights)
             tempV = zeros(T, op_offsets_test[end])
             dof_j::Int, dof_k::Int = 0, 0
-
             for item::Int in items
                 if itemregions[item] > 0
                     if !(visit_region[itemregions[item]])
                         continue
                     end
-                else
-                    params.region = itemregions[item]
-                    params.item = item
-                    params.volume = itemvolumes[item]
                 end
+                params.region = itemregions[item]
+                params.item = item
+                params.volume = itemvolumes[item]
 
                 ## update FE basis evaluators
                 for j = 1 : ntest

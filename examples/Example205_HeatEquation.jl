@@ -3,13 +3,13 @@
 # 201 : Poisson-Problem
 ([source code](SOURCE_URL))
 
-This example computes the solution ``u`` of the two-dimensional Poisson problem
+This example computes the solution ``u`` of the two-dimensional heat equation
 ```math
 \begin{aligned}
--\Delta u & = f \quad \text{in } \Omega
+u_t - \Delta u & = 0 \quad \text{in } \Omega
 \end{aligned}
 ```
-with right-hand side ``f(x,y) \equiv xy`` and homogeneous Dirichlet boundary conditions
+for homogeneous Dirichlet boundary conditions and some given initial state
 on the unit square domain ``\Omega`` on a given grid.
 
 =#
@@ -22,6 +22,7 @@ using ExtendableGrids
 using DifferentialEquations
 using GridVisualize
 
+## initial state u at time t0
 function initial_data!(result, qpinfo)
     x = qpinfo.x
     result[1] = exp(-5*x[1]^2 - 5*x[2]^2)
@@ -36,12 +37,11 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-1, order = 2, use_diffeq = true,
     assign_unknown!(PD, u)
     assign_operator!(PD, BilinearOperator([grad(u)]; store = true, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
-    @show PD
 
     ## grid
     xgrid = uniform_refine(grid_unitsquare(Triangle2D; scale = [4,4], shift = [-0.5,-0.5]), nrefs)
 
-    ## prepare solution vector and initial data
+    ## prepare solution vector and initial data u0
     FES = FESpace{H1Pk{1,2,order}}(xgrid)
     sol = FEVector(FES; tags = PD.unknowns)
     interpolate!(sol[u],  initial_data!; bonus_quadorder = 5)

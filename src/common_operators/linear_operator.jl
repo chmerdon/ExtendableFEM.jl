@@ -229,7 +229,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
         ## prepare assembly
         AT = O.parameters[:entities]
         xgrid = FES_test[1].xgrid
-        Ti = eltype(xgrid[CellNodes])
+        Ti = typeof(xgrid).parameters[2]
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
         itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
@@ -414,7 +414,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
         ## prepare assembly
         AT = O.parameters[:entities]
         xgrid = FES_test[1].xgrid
-        Ti = eltype(xgrid[CellNodes])
+        Ti = typeof(xgrid).parameters[2]
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
         itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]

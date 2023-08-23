@@ -91,7 +91,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
         AT = O.parameters[:entities]
         gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[1]), AT)
         xgrid = FES_args[1].xgrid
-        Ti = eltype(xgrid[CellNodes])
+        Ti = typeof(xgrid).parameters[2]
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
         itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]

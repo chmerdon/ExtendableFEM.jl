@@ -252,7 +252,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
         ## prepare assembly
         AT = O.parameters[:entities]
         xgrid = FES_test[1].xgrid
-        Ti = eltype(xgrid[CellNodes])
+        Ti = typeof(xgrid).parameters[2]
         gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
@@ -540,7 +540,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
         ## prepare assembly
         AT = O.parameters[:entities]
         xgrid = FES_test[1].xgrid
-        Ti = eltype(xgrid[CellNodes])
+        Ti = typeof(xgrid).parameters[2]
         gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
