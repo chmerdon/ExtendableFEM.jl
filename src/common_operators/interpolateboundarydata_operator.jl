@@ -76,7 +76,8 @@ function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::
     bdofs::Array{Int,1} = O.bdofs
     if O.FES !== FES
         bddata = FEVector(FES)
-        bfacedofs::Adjacency{Int32} = b[ind].FES[ExtendableFEMBase.BFaceDofs]
+        Ti = eltype(FES.xgrid[CellNodes])
+        bfacedofs::Adjacency{Ti} = b[ind].FES[ExtendableFEMBase.BFaceDofs]
         bfaceregions = FES.xgrid[BFaceRegions]
         nbfaces = num_sources(bfacedofs)
         ndofs4bface = max_num_targets_per_source(bfacedofs)

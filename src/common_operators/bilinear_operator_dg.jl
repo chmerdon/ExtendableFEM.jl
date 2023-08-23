@@ -195,6 +195,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
         AT = O.parameters[:entities]
         @assert AT <: ON_FACES "only works for entities <: ON_FACES"
         xgrid = FES_test[1].xgrid
+        Ti = eltype(xgrid[CellNodes])
         gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
@@ -325,9 +326,9 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
         FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j = 1 : ntest]
         FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), ON_CELLS) for j = 1 : nansatz]
         FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), ON_CELLS) for j = 1 : nargs]
-        itemdofs_test::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j = 1 : ntest]
-        itemdofs_ansatz::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_ansatz[j][Dofmap4AssemblyType(FEATs_ansatz[j])] for j = 1 : nansatz]
-        itemdofs_args::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j = 1 : nargs]
+        itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}},1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j = 1 : ntest]
+        itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}},1} = [FES_ansatz[j][Dofmap4AssemblyType(FEATs_ansatz[j])] for j = 1 : nansatz]
+        itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}},1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j = 1 : nargs]
         factor = O.parameters[:factor]
         transposed_copy = O.parameters[:transposed_copy]
         entry_tol = O.parameters[:entry_tolerance]
@@ -576,6 +577,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
         AT = O.parameters[:entities]
         @assert AT <: ON_FACES "only works for entities <: ON_FACES"
         xgrid = FES_test[1].xgrid
+        Ti = eltype(xgrid[CellNodes])
         gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
@@ -691,8 +693,8 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 
         FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j = 1 : ntest]
         FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), ON_CELLS) for j = 1 : nansatz]
-        itemdofs_test::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j = 1 : ntest]
-        itemdofs_ansatz::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_ansatz[j][Dofmap4AssemblyType(FEATs_ansatz[j])] for j = 1 : nansatz]
+        itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}},1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j = 1 : ntest]
+        itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}},1} = [FES_ansatz[j][Dofmap4AssemblyType(FEATs_ansatz[j])] for j = 1 : nansatz]
         factor = O.parameters[:factor]
         transposed_copy = O.parameters[:transposed_copy]
         entry_tol = O.parameters[:entry_tolerance]

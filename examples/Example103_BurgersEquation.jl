@@ -67,7 +67,7 @@ function main(;
 
     ## generate mass matrix
     M = FEMatrix(FES)
-    assemble!(M, BilinearOperator([id(1)]))
+    assemble!(M, BilinearOperator([id(1)]; lump = 2))
 
     if (use_diffeq)
         ## generate DifferentialEquations.ODEProblem

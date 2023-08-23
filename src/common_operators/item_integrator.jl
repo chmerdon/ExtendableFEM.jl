@@ -91,6 +91,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
         AT = O.parameters[:entities]
         gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[1]), AT)
         xgrid = FES_args[1].xgrid
+        Ti = eltype(xgrid[CellNodes])
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
         itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
@@ -150,7 +151,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
         end
 
         FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j = 1 : nargs]
-        itemdofs_args::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j = 1 : nargs]
+        itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}},1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j = 1 : nargs]
         factor = O.parameters[:factor]
 
         ## Assembly loop for fixed geometry

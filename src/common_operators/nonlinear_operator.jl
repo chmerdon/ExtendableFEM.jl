@@ -129,6 +129,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
         ## prepare assembly
         AT = O.parameters[:entities]
         xgrid = FES_test[1].xgrid
+        Ti = eltype(xgrid[CellNodes])
         itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
         itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
         itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
@@ -234,8 +235,8 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
         
         FEATs_test = [EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j = 1 : ntest]
         FEATs_args = [EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j = 1 : nargs]
-        itemdofs_test::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j = 1 : ntest]
-        itemdofs_args::Array{Union{Adjacency{Int32}, SerialVariableTargetAdjacency{Int32}},1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j = 1 : nargs]
+        itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}},1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j = 1 : ntest]
+        itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}},1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j = 1 : nargs]
         factor = O.parameters[:factor]
         entry_tol = O.parameters[:entry_tolerance]
 

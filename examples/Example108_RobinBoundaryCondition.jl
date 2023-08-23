@@ -1,6 +1,6 @@
 #= 
 
-# 105 : Convection-Diffusion-Reaction
+# 108 : Robin Boundary Condition
 ([source code](SOURCE_URL))
 
 This demonstrates the assignment of a mixed Robin boundary condition for a nonlinear 1D convection-diffusion-reaction PDE on the unit interval, i.e.
@@ -14,7 +14,7 @@ u & = u_D && \text{at } \Gamma_2 = \{ 1 \}
 tested with data ``f(x) = e^{2x}``, ``g = 2`` and ``u_D = e`` such that ``u(x) = e^x`` is the exact solution.
 =#
 
-module Example105_RobinBoundaryCondition
+module Example108_RobinBoundaryCondition
 
 using ExtendableFEM
 using ExtendableFEMBase

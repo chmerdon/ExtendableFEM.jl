@@ -65,7 +65,7 @@ function main(;
     FEType = H1Pk{1,1,order}
 
     ## generate empty PDEDescription for three unknowns (h, u)
-    PD = ProblemDescription("Burger's Equation")
+    PD = ProblemDescription("Nonlinear Diffusion Equation")
     u = Unknown("u"; name = "u")
     assign_unknown!(PD, u)
     assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [grad(u)], [id(u), grad(u)]; params = [m], bonus_quadorder = 2))

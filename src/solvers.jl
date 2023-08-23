@@ -55,7 +55,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
         end
     end
     if SC.parameters[:verbosity] > -1
-        @info "SOLVING $(PD.name)
+        @info "SOLVING $(PD.name) @ time = $(SC.parameters[:time])
             unknowns = $([u.name for u in unknowns])
             fetypes = $(["$(get_FEType(FES[j]))" for j = 1 : length(unknowns)])
             ndofs = $([FES[j].ndofs for j = 1 : length(unknowns)])"
@@ -255,9 +255,10 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
 
         time_solve = @elapsed begin
             allocs_solve = @allocated begin
-                if SC.parameters[:constant_matrix] && j > 1
+                if SC.parameters[:constant_matrix] && SC.parameters[:initialized]
                 else
                     linsolve.A = A.entries.cscmatrix
+                    SC.parameters[:initialized] = true
                 end
                 linsolve.b = b.entries
 
