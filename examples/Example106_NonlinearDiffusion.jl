@@ -77,8 +77,8 @@ function main(;
     SC = SolverConfiguration(PD, [FES]; init = sol, maxiterations = 1, kwargs...)
 
     ## init plotter and plot u0
-    p = GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (800,800))
-    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], label = "discrete", markershape = :circle, markevery = 1)
+    p = GridVisualizer(; Plotter = Plotter, layout = (1,1))
+    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1)
 
     ## generate mass matrix (with mass lumping)
     M = FEMatrix(FES)
@@ -104,15 +104,15 @@ function main(;
         for it = 1 : Int(floor((T-t0)/τ))
             t += τ   
             ExtendableFEM.solve(PD, [FES], SC; time = t)
-            scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], label = "discrete", markershape = :circle, markevery = 1)
+            scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1)
         end
     end
 
     ## plot final state
-    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], label = "discrete", markershape = :circle, markevery = 1)
+    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1)
     
     ## plot exact solution
     interpolate!(sol[1], u_exact!; time = T, params = [m])
-    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], clear = false, color = :green, label = "exact")
+    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], clear = false, color = :green, label = "u", legend = :best)
 end
 end

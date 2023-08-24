@@ -57,7 +57,21 @@ using Symbolics
 ## everything is wrapped in a main function
 ## testcase = 1 : well-balanced test (stratified no-flow over mountain)
 ## testcase = 2 : vortex example (ϱu is div-free p7 vortex)
-function main(; testcase = 1, nrefs = 4, M = 1, c = 1, ufac = 100, laplacian_in_rhs = false, maxsteps = 5000, target_residual = 1e-10, Plotter = nothing, reconstruct = true, μ = 1, order = 1, kwargs...)
+function main(;
+    testcase = 1,
+    nrefs = 4,
+    M = 1,
+    c = 1,
+    ufac = 100,
+    pressure_stab = 0,
+    laplacian_in_rhs = false, # for data in example 2
+    maxsteps = 5000,
+    target_residual = 1e-11,
+    Plotter = nothing,
+    reconstruct = true,
+    μ = 1,
+    order = 1,
+    kwargs...)
 
 	## load data for testcase
     grid_builder, kernel_gravity!, kernel_rhs!, u!, ∇u!, ϱ!, τfac = load_testcase_data(testcase; laplacian_in_rhs = laplacian_in_rhs, nrefs = nrefs, M = M, c = c, μ = μ, ufac = ufac)
@@ -84,16 +98,20 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, ufac = 100, laplacian_in_
     assign_operator!(PD, LinearOperator([div(u)], [id(ϱ)]; factor = c, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
     if kernel_rhs! !== nothing
-        assign_operator!(PD, LinearOperator(kernel_rhs!, [id_u]; factor = 1, store = true, bonus_quadorder = 2*order, kwargs...))
+        assign_operator!(PD, LinearOperator(kernel_rhs!, [id_u]; factor = 1, store = true, bonus_quadorder = 3*order, kwargs...))
     end
     assign_operator!(PD, LinearOperator(kernel_gravity!, [id_u], [id(ϱ)]; factor = 1, bonus_quadorder = 3*order, kwargs...))
 
     ## FVM for continuity equation
-	τ = order * μ / (order*M*sqrt(τfac)) # time step for pseudo timestepping
+	τ = μ / (order^2*M*sqrt(τfac)) # time step for pseudo timestepping
+    @info "timestep = $τ"
     PDT = ProblemDescription("continuity equation")
     assign_unknown!(PDT, ϱ)    
     if order > 1
        assign_operator!(PDT, BilinearOperator(kernel_continuity!,[grad(ϱ)],[id(ϱ)],[id(u)]; quadorder = 2*order, factor = -1, kwargs...))    
+    end
+    if pressure_stab > 0
+        assign_operator!(PDT, BilinearOperator(stab_kernel!, [jump(id(ϱ))]; entities = ON_IFACES, factor = pressure_stab, kwargs...))    
     end
     assign_operator!(PDT, BilinearOperator([id(ϱ)]; quadorder = 2*(order-1), factor = 1/τ, store = true, kwargs...))
     assign_operator!(PDT, LinearOperator([id(ϱ)], [id(ϱ)]; quadorder = 2*(order-1), factor = 1/τ, kwargs...))
@@ -136,18 +154,23 @@ function main(; testcase = 1, nrefs = 4, M = 1, c = 1, ufac = 100, laplacian_in_
         Results[lvl,3] = sqrt(sum(view(error,7,:)))
         Results[lvl,4] = sqrt(sum(view(error,8,:)) + sum(view(error,9,:)))
         Results[lvl,5] = nits
+
+        ## print results
+        print_convergencehistory(NDofs[1:lvl], Results[1:lvl,:]; X_to_h = X -> X.^(-1/2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"], xlabel = "ndof")
     end
     
-    ## print results
-    print_convergencehistory(NDofs, Results; X_to_h = X -> X.^(-1/2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"], xlabel = "ndof")
     
     ## plot
     pl = GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, resolution = (800,800))
     scalarplot!(pl[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
     vectorplot!(pl[1,1],xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.25, clear = false, title = "u_h (abs + quiver)")
     scalarplot!(pl[2,1],xgrid, view(nodevalues(sol[ϱ]),1,:), levels = 11, title = "ϱ_h")
-    plot_convergencehistory!(pl[1,2], NDofs, Results; add_h_powers = [order,order+1], X_to_h = X -> 0.2*X.^(-1/2), legend = :rc, fontsize = 20, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"])
+    plot_convergencehistory!(pl[1,2], NDofs, Results[:,1:4]; add_h_powers = [order,order+1], X_to_h = X -> 0.2*X.^(-1/2), legend = :rc, fontsize = 20, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"])
     gridplot!(pl[2,2],xgrid)
+end
+
+function stab_kernel!(result, p, qpinfo)
+    result .= p ./ qpinfo.volume
 end
 
 ## kernel for (uϱ, ∇λ) ON_CELLS in continuity equation
@@ -199,7 +222,7 @@ function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, nrefs = 
                     bfaceregions = ones(Int,11),
                     regionpoints = [0.5 0.5;]',
                     regionnumbers = [1],
-                    regionvolumes = [4.0^-(nref)])
+                    regionvolumes = [4.0^-(nref)/2])
         xgrid = grid_builder(3)
         u1!(result, qpinfo) = (fill!(result, 0);)
         ∇u1!(result, qpinfo) = (fill!(result, 0);)
@@ -271,9 +294,9 @@ function prepare_data!(; M = 1, c = 1, μ = 1, ufac = 100, laplacian_in_rhs = tr
 
     if laplacian_in_rhs
         f = - μ*Δu
-        g = Symbolics.gradient(log(ϱ), [x,y]) 
+        g = c * Symbolics.gradient(log(ϱ), [x,y]) 
 	else
-        g = - μ*Δu/ϱ + Symbolics.gradient(log(ϱ), [x,y]) 
+        g = - μ*Δu/ϱ + c * Symbolics.gradient(log(ϱ), [x,y]) 
         f = 0
     end
 

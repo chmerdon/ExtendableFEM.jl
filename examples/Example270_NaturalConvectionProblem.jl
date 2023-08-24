@@ -29,6 +29,17 @@ The weak formulation seeks ``(u,p,\theta) \in V \times Q \times X \subseteq H^1_
 \end{aligned} 
 ```
 
+To render the discrete method pressure-robust, a reconstruction operator is applied to all identity evaluations of ``u`` and ``v``
+(when the switch reconstruct is set to true).
+Further explanations and discussion on this example can be found in the reference below.
+
+!!! reference
+
+    "On the divergence constraint in mixed finite element methods for incompressible flows",\
+    V. John, A. Linke, C. Merdon, M. Neilan and L. Rebholz,\
+    SIAM Review 59(3) (2017),\
+    [>Journal-Link<](https://doi.org/10.1137/15M1047696)
+    [>Preprint-Link<](http://www.wias-berlin.de/publications/wias-publ/run.jsp?template=abstract&type=Preprint&year=2015&number=2177)
 =#
 
 
@@ -39,13 +50,9 @@ using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
 
-const μ = 1.0
-const ϵ = 1.0
-const Ra_final = 1.0e6
-
 function kernel_nonlinear!(result, u_ops, qpinfo)
     u, ∇u, p, ∇T, T = view(u_ops, 1:2), view(u_ops,3:6), view(u_ops, 7), view(u_ops, 8:9), view(u_ops, 10)
-    Ra = qpinfo.params[1]
+    Ra, μ, ϵ = qpinfo.params[1], qpinfo.params[2], qpinfo.params[3]
     result[1] = dot(u, view(∇u,1:2))
     result[2] = dot(u, view(∇u,3:4)) - Ra*T[1]
     result[3] = μ*∇u[1] - p[1]
@@ -64,18 +71,27 @@ function T_bottom!(result, qpinfo)
     result[1] = 2*(1-cos(2*π*x[1]))
 end
 
-function main(; nrefs = 5, Plotter = nothing, kwargs...)
+function main(; 
+    nrefs = 5, 
+    μ = 1.0,
+    ϵ = 1.0,
+    Ra_final = 1.0e6,
+    reconstruct = true,
+    Plotter = nothing,
+    kwargs...)
 
     ## problem description
     PD = ProblemDescription()
     u = Unknown("u"; name = "velocity")
     p = Unknown("p"; name = "pressure")
-    T = Unknown("p"; name = "temperature")
+    T = Unknown("T"; name = "temperature")
     assign_unknown!(PD, u)
     assign_unknown!(PD, p)
     assign_unknown!(PD, T)
-    assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [apply(u, Reconstruct{HDIVBDM1{2}, Identity}),grad(u),id(p),grad(T),id(T)]; kwargs...))#; jacobian = kernel_jacobian!))
+    id_u = reconstruct ? apply(u, Reconstruct{HDIVBDM1{2}, Identity}) : id(u)
+    assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [id_u,grad(u),id(p),grad(T),id(T)]; kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:3))
+    assign_operator!(PD, FixDofs(p; dofs = [1], vals = [0]))
     assign_operator!(PD, HomogeneousBoundaryData(T; regions = 3))
     assign_operator!(PD, InterpolateBoundaryData(T, T_bottom!; regions = 1))
 
@@ -87,21 +103,35 @@ function main(; nrefs = 5, Plotter = nothing, kwargs...)
                p => FESpace{L2P0{1}}(xgrid),
                T => FESpace{H1P1{1}}(xgrid))
 
+    ## prepare plots
+    plt = GridVisualizer(; Plotter = Plotter, layout = (1,3), clear = true, resolution = (1200,400))
+
     ## solve by Ra embedding
-	extra_params = Array{Float64,1}([min(Ra_final, 4000)])
-    sol, SC = solve(PD, FES; return_config = true, target_residual = 1e-6, params = extra_params, maxiterations = 20, kwargs...)
+	params = Array{Float64,1}([min(Ra_final, 4000), μ, ϵ])
+    sol = nothing
+    SC = nothing
 	step = 0
 	while (true)
-		if extra_params[1] >= Ra_final
+        ## solve (params are given to all operators)
+        sol, SC = ExtendableFEM.solve(PD, FES, SC; init = sol, return_config = true, target_residual = 1e-6, params = params, kwargs...)
+        
+        ## plot
+        scalarplot!(plt[1,1], xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
+        vectorplot!(plt[1,1], xgrid, eval_func(PointEvaluator([id(u)], sol)), clear = false, title = "|u| + quiver (Ra = $(params[1]))")
+        scalarplot!(plt[1,2], xgrid, view(nodevalues(sol[T]),1,:), title = "T (Ra = $(params[1]))")
+        scalarplot!(plt[1,3], xgrid, view(nodevalues(sol[p]),1,:), title = "p (Ra = $(params[1]))")
+
+        ## stop if Ra_final is reached
+		if params[1] >= Ra_final
 			break
 		end
-		extra_params[1] = min(Ra_final, extra_params[1]*3)
+
+        ## increase Ra
+		params[1] = min(Ra_final, params[1]*3)
 		step += 1
-		@info "Step $step : solving for Ra=$(extra_params[1])"
-        
-        sol, SC = ExtendableFEM.solve(PD, FES, SC; init = sol, return_config = true, target_residual = 1e-7, params = extra_params, kwargs...)
-        scalarplot(xgrid, nodevalues(sol[T])[1,:]; Plotter = Plotter)
+		@info "Step $step : solving for Ra=$(params[1])"
 	end
+    return sol
 end
 
 end # module

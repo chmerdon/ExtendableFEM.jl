@@ -28,7 +28,7 @@ function initial_data!(result, qpinfo)
     result[1] = exp(-5*x[1]^2 - 5*x[2]^2)
 end
 
-function main(; nrefs = 4, T = 2.0, τ = 1e-1, order = 2, use_diffeq = true, 
+function main(; nrefs = 4, T = 2.0, τ = 1e-2, order = 2, use_diffeq = true, 
     solver = Rosenbrock23(), Plotter = nothing, kwargs...)
 
     ## problem description
@@ -53,7 +53,7 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-1, order = 2, use_diffeq = true,
 
     ## generate mass matrix
     M = FEMatrix(FES)
-    assemble!(M, BilinearOperator([id(1)]; lump = 2))
+    assemble!(M, BilinearOperator([id(1)]))
 
     if (use_diffeq)
         ## generate DifferentialEquations.ODEProblem

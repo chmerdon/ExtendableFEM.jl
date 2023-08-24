@@ -446,9 +446,15 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
                             result_kernel .*= factor * weights[qp]
 
                             # multiply test function operator evaluation
-                            if lump
+                            if lump == 1
                                 for d = 1 : op_lengths_test[id]
                                     Aloc[id,id][j,j] += result_kernel[d + op_offsets_test[id]] * BE_test_vals[id][d,j,qp]
+                                end
+                            elseif lump == 2
+                                for k = 1 : ndofs_test[id]
+                                    for d = 1 : op_lengths_test[id]
+                                        Aloc[id,id][j,j] += result_kernel[d + op_offsets_test[id]] * BE_test_vals[id][d,k,qp]
+                                    end
                                 end
                             else
                                 for idt in couples_with[id]

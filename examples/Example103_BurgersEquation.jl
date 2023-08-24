@@ -62,7 +62,7 @@ function main(;
     SC = SolverConfiguration(PD, [FES]; init = sol, maxiterations = 1, kwargs...)
 
     ## init plotter and plot u0
-    p = GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (800,800))
+    p = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (800,400))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75,2), levels = 0, title = "u_h (t = 0)")
 
     ## generate mass matrix
@@ -89,12 +89,12 @@ function main(;
         for it = 1 : Int(floor(T/τ))
             t += τ   
             ExtendableFEM.solve(PD, [FES], SC; time = t)
-            scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75,2), levels = 0, title = "u_h (t = $t)")
+            scalarplot!(p[1,2], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75,2), levels = 0, title = "u_h (t = $t)")
         end
     end
 
     ## plot final state
-    scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75,2), levels = 0, title = "u_h (t = $T)")
+    scalarplot!(p[1,2], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75,2), levels = 0, title = "u_h (t = $T)")
 
 end
 end
