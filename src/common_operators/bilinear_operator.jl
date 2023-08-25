@@ -65,7 +65,6 @@ default_blfop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :use_sparsity_pattern => ("auto", "read sparsity pattern of jacobian of kernel to find out which components couple"),
     :parallel_groups => (false, "assemble operator in parallel using CellAssemblyGroups"),
     :time_dependent => (false, "operator is time-dependent ?"),
-    :callback! => (nothing, "function with interface (A, b, sol) that is called in each assembly step"),
     :store => (false, "store matrix separately (and copy from there when reassembly is triggered)"),
     :quadorder => ("auto", "quadrature order"),
     :bonus_quadorder => (0, "additional quadrature order added to quadorder"),
@@ -540,8 +539,14 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 
     if (O.FES_test != FES_test) || (O.FES_ansatz != FES_ansatz)
 
+        ntest = length(FES_test)
+        nansatz = length(FES_ansatz)
         if O.parameters[:verbosity] > 0
             @info ".... building assembler for $(O.parameters[:name])"
+            if O.parameters[:verbosity] > 1
+                @info "......   TEST : $([(get_FEType(FES_test[j]), O.ops_test[j]) for j = 1 : ntest])"
+                @info "...... ANSATZ : $([(get_FEType(FES_ansatz[j]), O.ops_ansatz[j]) for j = 1 : nansatz])"
+            end
         end
         ## prepare assembly
         AT = O.parameters[:entities]
@@ -557,8 +562,6 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
         EGs = [itemgeometries[itemassemblygroups[1,j]] for j = 1 : num_sources(itemassemblygroups)]
 
         ## prepare assembly
-        ntest = length(FES_test)
-        nansatz = length(FES_ansatz)
         O.QF = []
         O.BE_test = Array{Array{<:FEEvaluator,1},1}([])
         O.BE_ansatz = Array{Array{<:FEEvaluator,1},1}([])
@@ -801,9 +804,6 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
                         end
                     end   
                 end
-                if O.parameters[:callback!] !== nothing
-                    S = O.parameters[:callback!](S, b, sol)
-                end
                 if O.parameters[:verbosity] > 1
                     @info ".... assembly of $(O.parameters[:name]) took $time s"
                 end
@@ -817,7 +817,10 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
     end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperator{Tv,UT}, SC::SolverConfiguration; kwargs...) where {Tv,UT}
+function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperator{Tv,UT}, SC::SolverConfiguration; assemble_matrix = true, kwargs...) where {Tv,UT}
+    if !assemble_matrix
+        return nothing
+    end
     if UT <: Integer
         ind_test = O.u_test
         ind_ansatz = O.u_ansatz
@@ -836,7 +839,10 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperator{Tv,UT}, SC::Solv
     end
 end
 
-function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperator{Tv,UT}, sol = nothing; kwargs...) where {Tv,UT}
+function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperator{Tv,UT}, sol = nothing; assemble_matrix = true, kwargs...) where {Tv,UT}
+    if !assemble_matrix
+        return nothing
+    end
     @assert UT <: Integer
     ind_test = O.u_test
     ind_ansatz = O.u_ansatz
@@ -851,16 +857,16 @@ function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperator{Tv,UT}, sol = 
 end
 
 
-function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorFromMatrix{UT,MT}, SC::SolverConfiguration; kwargs...) where {UT,MT}
+function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorFromMatrix{UT,MT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {UT,MT}
+    if !assemble_matrix
+        return nothing
+    end
     if UT <: Integer
         ind_test = O.u_test
         ind_ansatz = O.u_ansatz
     elseif UT <: Unknown
         ind_test = [get_unknown_id(SC, u) for u in O.u_test]
         ind_ansatz = [get_unknown_id(SC, u) for u in O.u_ansatz]
-    end
-    if O.parameters[:callback!] !== nothing
-        O.A = O.parameters[:callback!](O.A, [b[j] for j in ind_test], sol)
     end
     if MT <: FEMatrix
         for (j,ij) in enumerate(ind_test), (k,ik) in enumerate(ind_ansatz)

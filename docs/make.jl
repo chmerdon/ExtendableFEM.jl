@@ -126,7 +126,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
         example_jl_dir = joinpath(@__DIR__,"..","examples")
         example_md_dir  = joinpath(@__DIR__,"src","examples")
         fully_excluded_examples = ["XXX"] # excludes just these examples
-        run_excluded_examples = ["XXX"] # excludes just the run of these examples
+        run_excluded_examples = ["255","XXX"] # excludes just the run of these examples
         image_dir = joinpath(@__DIR__,"src","images")
 
         for example_source in readdir(example_jl_dir)
@@ -150,6 +150,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
                     if (run_examples) && !(number in run_excluded_examples) # exclude these examples for now (because they take long or require extra packages)
                         # generate default main run output file 
                         include(example_jl_dir * "/" * example_source)
+                        eval(Meta.parse("$base.main()")) # run once to get rid of compilation effects
                         @time open(filename, "a") do io
                             redirect_stdout(io) do
                                 println("**Default output:**")
@@ -198,6 +199,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
                 "interpolateboundarydata.md",
                 "homogeneousdata.md",
                 "fixdofs.md",
+                "callbackoperator.md",
             ],
            # "Discretisation" => Any[
            # ],

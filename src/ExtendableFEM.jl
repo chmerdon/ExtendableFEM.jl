@@ -16,6 +16,7 @@ using DiffResults
 using UnicodePlots
 using Printf
 using DocStringExtensions
+
 if  !isdefined(Base, :get_extension)
     using Requires
 end
@@ -74,6 +75,8 @@ include("common_operators/bilinear_operator_dg.jl")
 export BilinearOperatorDG
 include("common_operators/nonlinear_operator.jl")
 export NonlinearOperator
+include("common_operators/callback_operator.jl")
+export CallbackOperator
 include("common_operators/combinedofs.jl")
 export CombineDofs
 export get_periodic_coupling_info

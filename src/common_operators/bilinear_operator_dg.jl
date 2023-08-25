@@ -884,7 +884,10 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
     end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorDG{Tv,UT}, SC::SolverConfiguration; kwargs...) where {Tv,UT}
+function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorDG{Tv,UT}, SC::SolverConfiguration; assemble_matrix = true, kwargs...) where {Tv,UT}
+    if !assemble_matrix
+        return nothing
+    end
     if UT <: Integer
         ind_test = O.u_test
         ind_ansatz = O.u_ansatz
@@ -903,7 +906,10 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorDG{Tv,UT}, SC::So
     end
 end
 
-function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperatorDG{Tv,UT}, sol = nothing; kwargs...) where {Tv,UT}
+function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperatorDG{Tv,UT}, sol = nothing; assemble_matrix = true, kwargs...) where {Tv,UT}
+    if !assemble_matrix
+        return nothing
+    end
     @assert UT <: Integer
     ind_test = O.u_test
     ind_ansatz = O.u_ansatz

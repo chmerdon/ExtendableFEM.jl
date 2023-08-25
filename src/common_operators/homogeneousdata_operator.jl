@@ -66,7 +66,7 @@ function HomogeneousBoundaryData(u; entities = ON_BFACES, kwargs...)
     return HomogeneousData(u; entities = entities, kwargs...)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT,AT}, SC::SolverConfiguration; kwargs...) where {UT,AT}
+function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT,AT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {UT,AT}
     if UT <: Integer
         ind = O.u
     elseif UT <: Unknown
@@ -149,10 +149,14 @@ function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT,AT}, SC::Solve
     AE = A.entries
     BE = b.entries
     SE = sol.entries
-    for dof in bdofs
-        AE[dof, dof] = penalty
-        BE[dof] = 0
-        SE[dof] = 0
+    if assemble_matrix
+        for dof in bdofs
+            AE[dof, dof] = penalty
+        end
+        flush!(AE)
     end
-    flush!(AE)
+    if assemble_rhs
+        BE[bdofs] .= 0
+    end
+    SE[bdofs] .= 0
 end

@@ -37,14 +37,14 @@ function CombineDofs(uX, uY, dofsX, dofsY, factors; kwargs...)
     return CombineDofs(uX, uY, dofsX, dofsY, factors, nothing, nothing, nothing, parameters)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::CombineDofs{Tv,UT}, SC::SolverConfiguration; kwargs...) where {Tv,UT}
+function ExtendableFEM.assemble!(A, b, sol, O::CombineDofs{Tv,UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {Tv,UT}
     if UT <: Integer
         ind = [O.ux, O.uY]
     elseif UT <: Unknown
         ind = [get_unknown_id(SC, O.uX), get_unknown_id(SC, O.uY)]
     end
     build_assembler!(O, [sol[j] for j in ind])
-    O.assembler(A.entries, b.entries)
+    O.assembler(A.entries, b.entries, assemble_matrix, assemble_rhs)
 end
 
 
@@ -52,7 +52,6 @@ function build_assembler!(O::CombineDofs{Tv}, FE::Array{<:FEVectorBlock,1}; time
     ## check if FES is the same as last time
     FESX, FESY = FE[1].FES, FE[2].FES
     if (O.FESX != FESX) || (O.FESY != FESY)
-
         dofsX = O.dofsX
         dofsY = O.dofsY
         offsetX = FE[1].offset
@@ -61,44 +60,42 @@ function build_assembler!(O::CombineDofs{Tv}, FE::Array{<:FEVectorBlock,1}; time
         if O.parameters[:verbosity] > 0
             @info ".... combining $(length(dofsX)) dofs"
         end
-        
-        function assemble(A::AbstractSparseArray{T}, b::AbstractVector{T}) where {T}
+        function assemble(A::AbstractSparseArray{T}, b::AbstractVector{T}, assemble_matrix::Bool, assemble_rhs::Bool) where {T}
+            if assemble_matrix
+                targetrow::Int = 0
+                sourcerow::Int = 0
+                targetcol::Int = 0
+                sourcecol::Int = 0
+                val::Float64 = 0
+                ncols::Int = size(A,2)
+                for gdof in eachindex(dofsX)
+                    # copy source row (for dofY) to target row (for dofX)
+                    targetrow = dofsX[gdof] + offsetX
+                    sourcerow = offsetY + dofsY[gdof]
+                    for sourcecol = 1 : ncols
+                        targetcol = sourcecol - offsetY + offsetX
+                        val = A[sourcerow,sourcecol]
+                        _addnz(A, targetrow, targetcol, factors[gdof] * val,1)
+                        A[sourcerow,sourcecol] = 0
+                    end
 
-            #if !only_rhs 
-            targetrow::Int = 0
-            sourcerow::Int = 0
-            targetcol::Int = 0
-            sourcecol::Int = 0
-            val::Float64 = 0
-            ncols::Int = size(A,2)
-            nrows::Int = size(A,1)
-            for gdof = 1 : length(dofsX)
-                # copy source row (for dofY) to target row (for dofX)
-                targetrow = dofsX[gdof] + offsetX
-                sourcerow = offsetY + dofsY[gdof]
-                for sourcecol = 1 : ncols
-                    targetcol = sourcecol - offsetY + offsetX
-                    val = A[sourcerow,sourcecol]
-                    _addnz(A, targetrow, targetcol, factors[gdof] * val,1)
-                    A[sourcerow,sourcecol] = 0
+                    # replace source row (of dofY) with equation for coupling the two dofs
+                    sourcecol = dofsY[gdof] + offsetY
+                    targetcol = dofsX[gdof] + offsetX
+                    sourcerow = offsetY + dofsY[gdof]
+                    _addnz(A, sourcerow, targetcol, 1,1)
+                    _addnz(A, sourcerow, sourcecol, -factors[gdof],1)
                 end
-
-                # replace source row (of dofY) with equation for coupling the two dofs
-                sourcecol = dofsY[gdof] + offsetY
-                targetcol = dofsX[gdof] + offsetX
-                sourcerow = offsetY + dofsY[gdof]
-                _addnz(A, sourcerow, targetcol, 1,1)
-                _addnz(A, sourcerow, sourcecol, -factors[gdof],1)
+                flush!(A)
             end
-            #end
-
-            for gdof = 1 : length(dofsX)
-                sourcerow = offsetY + dofsY[gdof]
-                targetrow = offsetX + dofsX[gdof]
-                b[targetrow] += b[sourcerow]
-                b[sourcerow] = 0
+            if assemble_rhs
+                for gdof = 1 : length(dofsX)
+                    sourcerow = offsetY + dofsY[gdof]
+                    targetrow = offsetX + dofsX[gdof]
+                    b[targetrow] += b[sourcerow]
+                    b[sourcerow] = 0
+                end
             end
-            flush!(A)
         end
         O.assembler = assemble
         O.FESX = FESX

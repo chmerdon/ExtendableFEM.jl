@@ -54,7 +54,7 @@ function FixDofs(u; dofs = [], vals = zeros(Float64, length(dofs)), kwargs...)
     return FixDofs{typeof(u),typeof(dofs),typeof(vals)}(u, dofs, 0, vals, nothing, parameters)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::FixDofs{UT}, SC::SolverConfiguration; kwargs...) where {UT}
+function ExtendableFEM.assemble!(A, b, sol, O::FixDofs{UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {UT}
     if UT <: Integer
         ind = O.u
     elseif UT <: Unknown
@@ -69,8 +69,12 @@ function ExtendableFEM.assemble!(A, b, sol, O::FixDofs{UT}, SC::SolverConfigurat
     SE = sol.entries
     for j = 1 : length(dofs)
         dof = dofs[j] + offset
-        AE[dof, dof] = penalty
-        BE[dof] = penalty * vals[j]
+        if assemble_matrix
+            AE[dof, dof] = penalty
+        end
+        if assemble_rhs
+            BE[dof] = penalty * vals[j]
+        end
         SE[dof] = vals[j]
     end
     O.offset = offset

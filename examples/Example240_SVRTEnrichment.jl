@@ -3,7 +3,7 @@
 # 240 : Stokes ``RT`` enrichment
 ([source code](SOURCE_URL))
 
-This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem
+This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Stokes problem
 ```math
 \begin{aligned}
 - \mu \Delta \mathbf{u} + \nabla p & = \mathbf{f}\\
@@ -41,7 +41,7 @@ using Triangulate
 using SimplexGridFactory
 using Symbolics
 
-## exact data for problem by symbolics
+## exact data for problem by Symbolics
 function prepare_data(; μ = 1)
 
 	@variables x y
@@ -111,9 +111,7 @@ function get_grid2D(nref; uniform = false, barycentric = false)
 	return grid
 end
 
-
 function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, reduce = true, time = 0.5, bonus_quadorder = 5, kwargs...)
-
 
     ## prepare problem data
     f_eval, u_eval, ∇u_eval, p_eval = prepare_data(; μ = μ)
@@ -200,7 +198,6 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
                     for bface in xgrid[BFaceFaces]
                         AR.entries[bface,bface] = 1e60
                     end
-                    flush!(AR.entries)
                     assemble!(BR, BilinearOperator([id(1)], [div(1)]; factor = -1, kwargs...))
                     assemble!(bR, LinearOperator(rhs!, [id(1)]; bonus_quadorder = 5, kwargs...); time = time)
                     ## invert AR (diagonal matrix)
@@ -383,6 +380,8 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
             plot_convergencehistory!(pl[2,1], NDofs[1:lvl], Results[1:lvl,1:4]; add_h_powers = [order,order+1], X_to_h = X -> 8*X.^(-1/2), legend = :lb, fontsize = 20, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| uR ||", "|| p - p_h ||", "|| div(u + uR) ||"])
         end
     end
+    
+    print_convergencehistory(NDofs, Results; X_to_h = X -> X.^(-1/2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| uR ||", "|| p - p_h ||", "|| div(u + uR) ||"], xlabel = "ndof")
 end
 
 function div_projector(V1, VR)

@@ -570,7 +570,10 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
     end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::LinearOperator{Tv,UT}, SC::SolverConfiguration; kwargs...) where {Tv,UT}
+function ExtendableFEM.assemble!(A, b, sol, O::LinearOperator{Tv,UT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {Tv,UT}
+    if !assemble_rhs
+        return
+    end
     if UT <: Integer
         ind_test = O.u_test
         ind_args = O.u_args
@@ -588,7 +591,10 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperator{Tv,UT}, SC::Solver
 end
 
 
-function ExtendableFEM.assemble!(b, O::LinearOperator{Tv,UT}, sol = nothing; kwargs...) where {Tv,UT}
+function ExtendableFEM.assemble!(b, O::LinearOperator{Tv,UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv,UT}
+    if !assemble_rhs
+        return
+    end
     @assert UT <: Integer
     ind_test = O.u_test
     ind_args = O.u_args
@@ -602,7 +608,10 @@ function ExtendableFEM.assemble!(b, O::LinearOperator{Tv,UT}, sol = nothing; kwa
 end
 
 
-function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromVector{UT,bT}, SC::SolverConfiguration; kwargs...) where {UT,bT}
+function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromVector{UT,bT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {UT,bT}
+    if !assemble_rhs
+        return
+    end
     if UT <: Integer
         ind_test = O.u_test
     elseif UT <: Unknown
@@ -620,7 +629,10 @@ end
 
 
 
-function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromMatrix{UT,MT}, SC::SolverConfiguration; kwargs...) where {UT,MT}
+function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromMatrix{UT,MT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {UT,MT}
+    if !assemble_rhs
+        return
+    end
     if UT <: Integer
         ind_test = O.u_test
         ind_args = O.u_args

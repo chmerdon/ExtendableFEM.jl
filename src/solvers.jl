@@ -126,13 +126,20 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
         else
             time_total += @elapsed begin
                 fill!(b.entries, 0)
-                fill!(A.entries.cscmatrix.nzval,0)
+               # if SC.parameters[:constant_matrix] && SC.parameters[:initialized]
+               #     ## assemble operators
+               #     time_assembly += @elapsed for op in PD.operators
+               #         allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], assemble_matrix = false, kwargs...)
+               #     end
+               # else
+                    fill!(A.entries.cscmatrix.nzval,0)
 
-                ## assemble operators
-                time_assembly += @elapsed for op in PD.operators
-                    allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], kwargs...)
-                end
-                flush!(A.entries)
+                    ## assemble operators
+                    time_assembly += @elapsed for op in PD.operators
+                        allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], kwargs...)
+                    end
+                    flush!(A.entries)
+               # end
 
                 # ## remove inactive dofs
                 # for u_off in SC.parameters[:inactive]

@@ -90,7 +90,6 @@ function main(; Plotter = nothing, λ = 1e4, μ = 1.0, nrefs = 5, kwargs...)
     assign_operator!(PDp, LinearOperator(div_projection!, [id(p)], [id(p), div(u)]; params = [λ], factor = 1, kwargs...))
     
     ## show and solve problem
-    @show PDu, PDp
     FES = [FESpace{FETypes[1]}(xgrid), FESpace{FETypes[2]}(xgrid)]
     sol = FEVector([FES[1],FES[2]]; tags = [u,p])
 

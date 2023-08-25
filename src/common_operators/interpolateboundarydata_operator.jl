@@ -62,7 +62,7 @@ function InterpolateBoundaryData(u, data = nothing; kwargs...)
     return InterpolateBoundaryData{typeof(u),typeof(data)}(u, data, zeros(Int,0), nothing, nothing, nothing, parameters)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; time = 0, kwargs...) where UT
+function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; time = 0, assemble_matrix = true, assemble_rhs = true, kwargs...) where UT
     if UT <: Integer
         ind = O.u
         inf_sol = ind
@@ -101,9 +101,18 @@ function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::
         penalty = O.parameters[:penalty]
         AE = A.entries
         BE = b.entries
+        if assemble_matrix
+            for dof in bdofs
+                AE[dof, dof] = penalty
+            end
+            flush!(AE)
+        end
+        if assemble_rhs
+            for dof in bdofs
+                BE[dof] = penalty * bddata.entries[dof - offset]
+            end
+        end
         for dof in bdofs
-            AE[dof, dof] = penalty
-            BE[dof] = penalty * bddata.entries[dof - offset]
             sol[ind_sol][dof-offset] = bddata.entries[dof - offset]
         end
     end

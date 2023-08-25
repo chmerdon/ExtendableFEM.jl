@@ -25,7 +25,7 @@ function fixed_dofs(O::AbstractOperator)
     return []
 end
 
-function assemble!(A::AbstractMatrix, b::AbstractVector, O::AbstractOperator, sol; time = 0)
+function assemble!(A::AbstractMatrix, b::AbstractVector, O::AbstractOperator, sol; time = 0, assemble_matrix = true, assemble_rhs = true, kwargs...)
     ## assembles operator to full matrix A and b
     return nothing
 end

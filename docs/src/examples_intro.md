@@ -9,7 +9,8 @@ The examples have been designed with the following issues in mind:
   and/or demonstrates customisation features or experimental features
 - the default output of the main function is printed on the website and can be
   used to check if the code runs as expected (unfortunately REPL messages are not recorded)
-- printed assembly and solving times (especially in a first iteration) can be much larger due to first-run compilation times
+- printed assembly and solving times (especially in a first iteration) can be much larger due to first-run compilation times,
+  the printouts in the documentation are taken from a second run after compilations are done
 
 
 ## Running the examples

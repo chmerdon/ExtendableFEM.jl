@@ -95,7 +95,7 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     assign_unknown!(PDT, T)
     if FVtransport ## FVM discretisation of transport equation (pure upwind convection)
         τ = 1e3
-        assign_operator!(PDT, BilinearOperator(ExtendableSparseMatrix{Float64,Int}(0,0), [T], [T], [u]; callback! = assemble_fv_operator!, kwargs...))
+        assign_operator!(PDT, CallbackOperator(assemble_fv_operator!(), [u]; kwargs...))
         assign_operator!(PDT, BilinearOperator([id(T)]; store = true, factor = 1/τ, kwargs...))
         assign_operator!(PDT, LinearOperator([id(T)], [id(T)]; factor = 1/τ, kwargs...))
     else ## FEM discretisation of transport equation (with small diffusion term)
@@ -124,81 +124,71 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
 end
 
 ## pure convection finite volume operator for transport
-function assemble_fv_operator!(A, b, sol)
+function assemble_fv_operator!()
+    
+    BndFluxIntegrator = ItemIntegrator(kernel_inflow!, [normalflux(1)]; entities = ON_BFACES)
+    FluxIntegrator = ItemIntegrator([normalflux(1)]; entities = ON_FACES)
+    fluxes::Matrix{Float64} = zeros(Float64,1,0)
 
-    ## find velocity and transported quantity
-    id_u = findfirst(==(:u), [u.identifier for u in sol.tags])
-    id_T = findfirst(==(:T), [u.identifier for u in sol.tags])
-    if id_u === nothing
-        @error "u not found in sol"
-    end
-    if id_T === nothing
-        @error "T not found in sol"
-    end
+    function closure(A, b, args; assemble_matrix = true, assemble_rhs = true, kwargs...)
 
-    ## get FESpace and grid
-    FES = sol[id_T].FES 
-    xgrid = FES.xgrid
+    ## prepare grid and stash
+    xgrid = args[1].FES.xgrid
+    nfaces = size(xgrid[FaceCells],2)
+    if size(fluxes,2) < nfaces
+        fluxes = zeros(Float64, 1, nfaces)
+    end
 
     ## right-hand side = boundary inflow fluxes if velocity points inward
-    BndFluxIntegrator = ItemIntegrator(kernel_inflow!, [normalflux(1)]; entities = ON_BFACES)
-    bnd_fluxes::Matrix{Float64} = evaluate(BndFluxIntegrator,[sol[id_u]]) 
-    facecells = xgrid[FaceCells]
-    bface2face = xgrid[BFaceFaces]
-    for bface in 1 : lastindex(bface2face)
-        b[1][facecells[1, bface2face[bface]]] -= bnd_fluxes[bface]
-    end
-
-    ## matrix
-    if size(A) == (FES.ndofs, FES.ndofs)
-        return A
-    end
-    A = ExtendableSparseMatrix{Float64,Int}(FES.ndofs, FES.ndofs)
-
-    ## integrate normalfux of velocity
-    FluxIntegrator = ItemIntegrator([normalflux(1)]; entities = ON_FACES)
-    fluxes::Matrix{Float64} = evaluate(FluxIntegrator,[sol[id_u]])
-
-    ## assemble upwind finite volume fluxes over cell faces
-    cellfaces = xgrid[CellFaces]
-    cellfacesigns = xgrid[CellFaceSigns]
-    ncells::Int = num_sources(cellfacesigns)
-    nfaces4cell::Int = 0
-    face::Int = 0
-    flux::Float64 = 0.0
-    other_cell::Int = 0
-    for cell = 1 : ncells
-        nfaces4cell = num_targets(cellfaces,cell)
-        for cf = 1 : nfaces4cell
-            face = cellfaces[cf,cell]
-            other_cell = facecells[1,face]
-            if other_cell == cell
-                other_cell = facecells[2,face]
-            end
-            flux = fluxes[face] * cellfacesigns[cf,cell]
-            if (other_cell > 0) 
-                flux *= 1 // 2 # because it will be accumulated on two cells
-            end       
-            if flux > 0 # flow from cell to other_cell or out of domain
-                _addnz(A,cell,cell,flux,1)
-                if other_cell > 0
-                    _addnz(A,other_cell,cell,-flux,1)
-                    # otherwise flow goes out of domain
-                end    
-            else # flow from other_cell into cell or into domain
-                _addnz(A,cell,cell,1e-16,1) # add zero to keep pattern for LU
-                if other_cell > 0 # flow comes from neighbour cell
-                    _addnz(A,other_cell,other_cell,-flux,1)
-                    _addnz(A,cell,other_cell,flux,1)
-                else # flow comes from outside domain
-                    # handled in right-hand side loop above
-                end 
-            end
+    if assemble_rhs
+        fill!(fluxes, 0)
+        evaluate!(fluxes, BndFluxIntegrator, [args[1]]) 
+        facecells = xgrid[FaceCells]
+        bface2face = xgrid[BFaceFaces]
+        for bface in 1 : lastindex(bface2face)
+            b[facecells[1, bface2face[bface]]] -= fluxes[bface]
         end
     end
 
-    flush!(A)
-    return A
+    ## assemble upwind finite volume fluxes over cell faces into matrix
+    if assemble_matrix
+        ## integrate normalfux of velocity
+        fill!(fluxes, 0)
+        evaluate!(fluxes, FluxIntegrator, [args[1]])
+
+        cellfaces = xgrid[CellFaces]
+        cellfacesigns = xgrid[CellFaceSigns]
+        for cell = 1 : num_cells(xgrid)
+            nfaces4cell = num_targets(cellfaces, cell)
+            for cf = 1 : nfaces4cell
+                face = cellfaces[cf,cell]
+                other_cell = facecells[1,face]
+                if other_cell == cell
+                    other_cell = facecells[2,face]
+                end
+                flux = fluxes[face] * cellfacesigns[cf,cell]
+                if (other_cell > 0) 
+                    flux *= 1 // 2 # because it will be accumulated on two cells
+                end       
+                if flux > 0 # flow from cell to other_cell or out of domain
+                    _addnz(A,cell,cell,flux,1)
+                    if other_cell > 0
+                        _addnz(A,other_cell,cell,-flux,1)
+                        ## otherwise flow goes out of domain
+                    end    
+                else # flow from other_cell into cell or into domain
+                    _addnz(A,cell,cell,1e-16,1) # add zero to keep pattern for LU
+                    if other_cell > 0 # flow comes from neighbour cell
+                        _addnz(A,other_cell,other_cell,-flux,1)
+                        _addnz(A,cell,other_cell,flux,1)
+                    end 
+                    ## otherwise flow comes from outside into domain, handled in rhs side loop above
+                end
+            end
+        end
+    end
+    return nothing
+    end
 end
 
 
