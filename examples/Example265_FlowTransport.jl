@@ -37,6 +37,8 @@ using ExtendableFEM
 using ExtendableFEMBase
 using ExtendableSparse
 using ExtendableGrids
+using SimplexGridFactory
+using Triangulate
 using GridVisualize
 
 ## boundary data
@@ -73,7 +75,13 @@ end
 function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = true, μ = 1, kwargs...)
     
     ## load mesh and refine
-    xgrid = uniform_refine(simplexgrid("assets/2d_grid_upipe.sg"), nrefs)
+    xgrid = uniform_refine(simplexgrid(Triangulate;
+    points = [0 0; 3 0; 3 -3; 7 -3; 7 0; 10 0; 10 1; 6 1; 6 -2; 4 -2; 4 1; 0 1]',
+    bfaces = [1 2; 2 3; 3 4; 4 5; 5 6; 6 7; 7 8; 8 9; 9 10; 10 11; 11 12; 12 1]',
+    bfaceregions = [1; 1; 1; 1; 1; 2; 3; 3; 3; 3; 3; 4],
+    regionpoints = [0.5 0.5;]',
+    regionnumbers = [1],
+    regionvolumes = [1.0]), nrefs)
 
     ## define unknowns
     u = Unknown("u"; name = "velocity", dim = 2)
