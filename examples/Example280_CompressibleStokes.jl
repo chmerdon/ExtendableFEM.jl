@@ -75,7 +75,7 @@ function main(;
     kwargs...)
 
 	## load data for testcase
-    grid_builder, kernel_gravity!, kernel_rhs!, u!, ∇u!, ϱ!, τfac = load_testcase_data(testcase; laplacian_in_rhs = laplacian_in_rhs, nrefs = nrefs, M = M, c = c, μ = μ, ufac = ufac)
+    grid_builder, kernel_gravity!, kernel_rhs!, u!, ∇u!, ϱ!, τfac = load_testcase_data(testcase; laplacian_in_rhs = laplacian_in_rhs, M = M, c = c, μ = μ, ufac = ufac)
     xgrid = grid_builder(nrefs)
 
     ## define unknowns
