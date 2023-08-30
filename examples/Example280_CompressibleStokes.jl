@@ -50,14 +50,10 @@ using ExtendableFEM
 using ExtendableFEMBase
 using ExtendableSparse
 using ExtendableGrids
-using Gmsh
 using Triangulate
 using SimplexGridFactory
 using GridVisualize
 using Symbolics
-
-Gmsh.initialize()
-
 
 ## everything is wrapped in a main function
 ## testcase = 1 : well-balanced test (stratified no-flow over mountain)
@@ -219,7 +215,7 @@ function standard_gravity!(result, ϱ, qpinfo)
     result[2] = -ϱ[1]
 end
 
-function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, nrefs = 1, M = 1, c = 1, μ = 1, ufac = 100)
+function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, M = 1, c = 1, μ = 1, ufac = 100)
     if testcase == 1
         grid_builder = (nref) -> simplexgrid(Triangulate;
                     points = [0 0; 0.2 0; 0.3 0.2; 0.45 0.05; 0.55 0.35; 0.65 0.2; 0.7 0.3; 0.8 0; 1 0; 1 1 ; 0 1]',
@@ -236,14 +232,13 @@ function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, nrefs = 
         ϱ1!(result, qpinfo) = (result[1] = exp(-qpinfo.x[2]/c)/(M_exact/area);)
         return grid_builder, standard_gravity!, nothing, u1!, ∇u1!, ϱ1!, 1
     elseif testcase == 2
-        grid_builder = (nref) -> (grid = ExtendableGrids.simplexgrid_from_gmsh("assets/testmesh2.gmsh2"; incomplete = true);
-ExtendableGrids.seal!(grid; encode=true, encoding_type=Int32); @show typeof(grid[CellNodes]); return uniform_refine(grid, nref)) #simplexgrid(Triangulate;
-                   # points = [0 0; 1 0; 1 1 ; 0 1]',
-                   # bfaces = [1 2; 2 3; 3 4; 4 1]',
-                   # bfaceregions = ones(Int,4),
-                   # regionpoints = [0.5 0.5;]',
-                   # regionnumbers = [1],
-                   # regionvolumes = [4.0^-(nref)])
+        grid_builder = (nref) -> simplexgrid(Triangulate;
+                    points = [0 0; 1 0; 1 1 ; 0 1]',
+                    bfaces = [1 2; 2 3; 3 4; 4 1]',
+                    bfaceregions = ones(Int,4),
+                    regionpoints = [0.5 0.5;]',
+                    regionnumbers = [1],
+                    regionvolumes = [4.0^-(nref)])
 
         xgrid = grid_builder(3)
         M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[1]^3/(3*c));), 1; quadorder = 20)
