@@ -8,19 +8,19 @@ Structure holding data for a problem description with the following fields:
 $(TYPEDFIELDS)
 """
 mutable struct ProblemDescription
-    """
-    The name of the problem used for printout messages. Default: "My Problem"
-    """
-    name::String
-    """
-    A vector of Unknowns that are involved in the problem.
-    """
-    unknowns::Array{Unknown,1}
-    """
-    A vector of operators that are involved in the problem.
-    """
-    operators::Array{AbstractOperator,1}
-    #reduction_operators::Array{AbstractReductionOperator,1}
+	"""
+	The name of the problem used for printout messages. Default: "My Problem"
+	"""
+	name::String
+	"""
+	A vector of Unknowns that are involved in the problem.
+	"""
+	unknowns::Array{Unknown, 1}
+	"""
+	A vector of operators that are involved in the problem.
+	"""
+	operators::Array{AbstractOperator, 1}
+	#reduction_operators::Array{AbstractReductionOperator,1}
 end
 
 """
@@ -32,7 +32,7 @@ Generates an empty ProblemDescription with the given name.
 
 """
 function ProblemDescription(name = "My problem")
-    return ProblemDescription(name, Array{Unknown,1}(undef,0), Array{AbstractOperator,1}(undef,0))
+	return ProblemDescription(name, Array{Unknown, 1}(undef, 0), Array{AbstractOperator, 1}(undef, 0))
 end
 
 
@@ -46,13 +46,13 @@ and returns its position in the unknowns array of the ProblemDescription.
 
 """
 function assign_unknown!(PD::ProblemDescription, u::Unknown)
-    if u in PD.unknowns
-        @warn "This unknown was already assigned to the problem description! Ignoring this call."
-        return find(==(u), PD.unknowns)
-    else
-        push!(PD.unknowns, u)
-        return length(PD.unknowns)
-    end
+	if u in PD.unknowns
+		@warn "This unknown was already assigned to the problem description! Ignoring this call."
+		return find(==(u), PD.unknowns)
+	else
+		push!(PD.unknowns, u)
+		return length(PD.unknowns)
+	end
 end
 
 
@@ -66,8 +66,8 @@ and returns its position in the operators array of the ProblemDescription.
 
 """
 function assign_operator!(PD::ProblemDescription, o::AbstractOperator)
-    push!(PD.operators, o)
-    return length(PD.operators)
+	push!(PD.operators, o)
+	return length(PD.operators)
 end
 
 
@@ -82,8 +82,8 @@ Nothing is returned (as the new operator gets position j).
 
 """
 function replace_operator!(PD::ProblemDescription, j, o::AbstractOperator)
-    PD.operators[j] = o
-    return nothing
+	PD.operators[j] = o
+	return nothing
 end
 
 #function assign_reduction!(PD::ProblemDescription, u::AbstractReductionOperator)
@@ -91,20 +91,20 @@ end
 #end
 
 function Base.show(io::IO, PD::ProblemDescription)
-    println(io, "\nPDE-DESCRIPTION")
-    println(io, "    • name = $(PD.name)")
-    println(io, "\n  <<<UNKNOWNS>>>") 
-    for u in PD.unknowns
-        print(io, "    • $u")
-    end
+	println(io, "\nPDE-DESCRIPTION")
+	println(io, "    • name = $(PD.name)")
+	println(io, "\n  <<<UNKNOWNS>>>")
+	for u in PD.unknowns
+		print(io, "    • $u")
+	end
 
-    println(io, "\n  <<<OPERATORS>>>") 
-    for o in PD.operators
-        println(io, "    • $(o)")
-    end
+	println(io, "\n  <<<OPERATORS>>>")
+	for o in PD.operators
+		println(io, "    • $(o)")
+	end
 
-    #println(io, " reductions =") 
-    #for o in PD.reduction_operators
-    #    println(io, "    • $o")
-    #end
+	#println(io, " reductions =") 
+	#for o in PD.reduction_operators
+	#    println(io, "    • $o")
+	#end
 end
