@@ -1,8 +1,3 @@
-[![Build status](https://github.com/chmerdon/ExtendableFEM.jl/workflows/linux-macos-windows/badge.svg)](https://github.com/chmerdon/ExtendableFEM.jl/actions)
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/stable/index.html)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/dev/index.html)
-[![DOI](https://zenodo.org/badge/229078096.svg)](https://zenodo.org/badge/latestdoi/229078096)
-
 # ExtendableFEM.jl
 
 This package offers a toolkit to easily setup (mostly low-order, standard and non-standard) finite element methods for multiphysics problems in Julia

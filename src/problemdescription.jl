@@ -1,13 +1,26 @@
 """
-$(TYPEDEF)
+````
+struct ProblemDescription
+````
 
-Structure holding data for a problem description, i.e. a name, a vector of Unknown and a vector of AbstractOperators.
+Structure holding data for a problem description with the following fields:
+
+$(TYPEDFIELDS)
 """
 mutable struct ProblemDescription
+    """
+    The name of the problem used for printout messages. Default: "My Problem"
+    """
     name::String
+    """
+    A vector of Unknowns that are involved in the problem.
+    """
     unknowns::Array{Unknown,1}
+    """
+    A vector of operators that are involved in the problem.
+    """
     operators::Array{AbstractOperator,1}
-    reduction_operators::Array{AbstractReductionOperator,1}
+    #reduction_operators::Array{AbstractReductionOperator,1}
 end
 
 """
@@ -19,7 +32,7 @@ Generates an empty ProblemDescription with the given name.
 
 """
 function ProblemDescription(name = "My problem")
-    return ProblemDescription(name, Array{Unknown,1}(undef,0), Array{AbstractOperator,1}(undef,0), Array{AbstractReductionOperator,1}(undef,0))
+    return ProblemDescription(name, Array{Unknown,1}(undef,0), Array{AbstractOperator,1}(undef,0))
 end
 
 
@@ -73,9 +86,9 @@ function replace_operator!(PD::ProblemDescription, j, o::AbstractOperator)
     return nothing
 end
 
-function assign_reduction!(PD::ProblemDescription, u::AbstractReductionOperator)
-    push!(PD.reduction_operators, u)
-end
+#function assign_reduction!(PD::ProblemDescription, u::AbstractReductionOperator)
+#    push!(PD.reduction_operators, u)
+#end
 
 function Base.show(io::IO, PD::ProblemDescription)
     println(io, "\nPDE-DESCRIPTION")

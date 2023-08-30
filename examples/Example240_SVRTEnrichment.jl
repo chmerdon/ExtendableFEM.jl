@@ -128,7 +128,7 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
     uR = Unknown("uR"; name = "velocity enrichment", dim = 2) # only used if enrich == true
 
     ## prepare plots
-    pl=GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, resolution = (1000,1000))
+    pl=GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, size = (1000,1000))
 
     ## prepare error calculations
     function exact_error!(result, u, qpinfo)

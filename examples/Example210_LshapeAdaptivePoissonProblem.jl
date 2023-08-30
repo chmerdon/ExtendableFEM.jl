@@ -161,7 +161,7 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
     end
 
     ## plot
-    p=GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, resolution = (1000,1000))
+    p=GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, size = (1000,1000))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], levels = 7, title = "u_h")
     plot_convergencehistory!(p[1,2], NDofs, [ResultsL2 ResultsH1 Resultsη]; add_h_powers = [order,order+1], X_to_h = X -> order*X.^(-1/2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
     gridplot!(p[2,1], xgrid; linewidth = 1)

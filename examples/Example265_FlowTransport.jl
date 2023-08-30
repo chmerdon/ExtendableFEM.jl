@@ -117,7 +117,7 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     println("\n[min(c),max(c)] = [$(minimum(view(sol[T]))),$(maximum(view(sol[T])))]")
 
     ## plot
-    p = GridVisualizer(; Plotter = Plotter, layout = (2,1), clear = true, resolution = (800,800))
+    p = GridVisualizer(; Plotter = Plotter, layout = (2,1), clear = true, size = (800,800))
     scalarplot!(p[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
     vectorplot!(p[1,1],xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.25, clear = false, title = "u_h (abs + quiver)")
     scalarplot!(p[2,1],xgrid, view(nodevalues(sol[T]),1,:), limits = (0,0.25), levels = 11, title = "c_h")

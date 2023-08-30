@@ -10,7 +10,6 @@ end
 default_cbop_kwargs()=Dict{Symbol,Tuple{Any,String}}(
     :name => ("CallbackOperator", "name for operator used in printouts"),
     :time_dependent => (false, "operator is time-dependent ?"),
-    :callback! => (nothing, "function with interface (A, b, sol) that is called in each assembly step"),
     :modifies_matrix => (true, "callback function modifies the matrix?"),
     :modifies_rhs => (true, "callback function modifies the rhs?"),
     :store => (false, "store matrix and rhs separately (and copy from there when reassembly is triggered)"),

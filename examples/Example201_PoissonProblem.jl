@@ -43,7 +43,7 @@ function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, kwargs...)
     sol = solve(PD, [FES]; kwargs...)
        
     ## plot
-    p=GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (600,600))
+    p=GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, size = (600,600))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], levels = 7, title = "u_h")
 end
 

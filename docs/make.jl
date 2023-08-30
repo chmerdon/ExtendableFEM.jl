@@ -199,6 +199,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
                 "interpolateboundarydata.md",
                 "homogeneousdata.md",
                 "fixdofs.md",
+                "combinedofs.md",
                 "callbackoperator.md",
             ],
            # "Discretisation" => Any[
@@ -207,6 +208,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
                    "pdesolvers.md",
                 ],
             "Postprocessing" => Any[
+                    "postprocessing.md",
                     "itemintegrators.md",
            #         "viewers.md",
                 ],

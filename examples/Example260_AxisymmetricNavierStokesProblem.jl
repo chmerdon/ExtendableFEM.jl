@@ -131,7 +131,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     @info "||div(u)|| = $(sqrt(sum(evaluate(DivIntegrator, sol))))"
 
     ## plot
-    pl=GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, resolution = (1200,1200))
+    pl=GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, size = (1200,1200))
     scalarplot!(pl[1,1], xgrid, nodevalues_view(sol[u])[1]; Plotter = Plotter)
     scalarplot!(pl[1,2], xgrid, nodevalues_view(sol[u])[2]; Plotter = Plotter)
     gridplot!(pl[2,1], xgrid; Plotter = Plotter)

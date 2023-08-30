@@ -17,9 +17,11 @@ with some right-hand side ``f`` within the set of admissible functions that lie 
 ```
 
 The obstacle constraint is realised via a penalty term
+```math
 \begin{aligned}
     \frac{1}{\epsilon} \| min(0, u - \chi) \|^2_{L^2}
 \end{aligned}
+```
 that is added to the energy above and is automatically differentiated for a Newton scheme.
 
 =#
@@ -61,7 +63,7 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
     sol = solve(PD, [FES]; kwargs...)
 
     ## plot
-    p = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (1000,500))
+    p = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, size = (1000,500))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], levels = 6, title = "u_h")
     scalarplot!(p[1,2], xgrid, view(nodevalues(sol[u], Gradient; abs = true),1,:), levels = 0, colorbarticks = 8, title = "∇u_h (abs + quiver)")
     vectorplot!(p[1,2], xgrid, eval_func(PointEvaluator([grad(u)], sol)), spacing = 0.1, clear = false)

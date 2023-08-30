@@ -34,13 +34,13 @@ triggers that the ```result``` vector of the kernel is multiplied with the Ident
 
 !!! remark
 
-    Also note, that the same kernel could be used for a fully explicit linearisation of the convetion term as a LinearOperator via
+    Also note, that the same kernel could be used for a fully explicit linearisation of the convection term as a LinearOperator via
     ```julia
     u = Unknown("u"; name = "velocity")
     LinearOperator(kernel!, [id(u)], [id(u),grad(u)])
     ```
     For a Picard iteration of the convection term, a BilinearOperator can be used with a slightly modified kernel
-    that separates the operator evaluations of the ansat function and the current solution, i.e.,
+    that separates the operator evaluations of the ansatz function and the current solution, i.e.,
     ```julia
     function kernel_picard!(result, input_ansatz, input_args, qpinfo)
         a, ∇u = view(input_args, 1:2), view(input_ansatz,1:4)

@@ -1,6 +1,6 @@
 #= 
 
-# 201 : Poisson-Problem
+# 205 : Heat equation
 ([source code](SOURCE_URL))
 
 This example computes the solution ``u`` of the two-dimensional heat equation
@@ -48,7 +48,7 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-2, order = 2, use_diffeq = true,
     SC = SolverConfiguration(PD, [FES]; init = sol, maxiterations = 1, constant_matrix = true, kwargs...)
 
     ## init plotter and plot u0
-    p = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (800,400))
+    p = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, size = (800,400))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], levels = 7, title = "u_h (t = 0)")
 
     ## generate mass matrix

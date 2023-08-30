@@ -75,7 +75,7 @@ function main(; nrefs = 5, Plotter = nothing, hdivdg = false, kwargs...)
     sol = ExtendableFEM.solve(PD, FES; kwargs...)
 
     ## plot
-    p=GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (1000,500))
+    p=GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, size = (1000,500))
     xgrid_plot = split_grid_into(xgrid, Triangle2D)
     scalarplot!(p[1,1], xgrid_plot, nodevalues(sol[u])[:]; Plotter = Plotter, title = "u")
     scalarplot!(p[1,2], xgrid_plot, nodevalues(sol[σ]; abs = true)[:]; Plotter = Plotter, title = "|σ|")

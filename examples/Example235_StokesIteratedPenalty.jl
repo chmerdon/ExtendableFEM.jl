@@ -3,10 +3,10 @@
 # 235 : Stokes iterated penalty method
 ([source code](SOURCE_URL))
 
-This example computes a velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem
+This example computes a velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Stokes problem
 ```math
 \begin{aligned}
-- \mu \Delta \mathbf{u} + (\mathbf{u} \cdot \nabla) \mathbf{u} + \nabla p & = \mathbf{0}\\
+- \mu \Delta \mathbf{u} + \nabla p & = \mathbf{0}\\
 \mathrm{div}(u) & = 0
 \end{aligned}
 ```
@@ -18,14 +18,13 @@ Given intermediate solutions  ``\mathbf{u}_h`` and  ``p_h`` the next approximati
 
 ```math
 \begin{aligned}
-(\nabla \mathbf{u}_h^{next}, \nabla \mathbf{v}_h) + ((\mathbf{u}_h^{next} \cdot \nabla) \mathbf{u}_h^{next}, \mathbf{v}_h) + \lambda (\mathrm{div}_h(\mathbf{u}_h) ,\mathrm{div}_h(\mathbf{v}_h)) & = (\mathbf{f},\mathbf{v}_h) + (p_h,\mathrm{div}(\mathbf{v}_h))
+(\nabla \mathbf{u}_h^{next}, \nabla \mathbf{v}_h) + \lambda (\mathrm{div}_h(\mathbf{u}_h) ,\mathrm{div}_h(\mathbf{v}_h)) & = (\mathbf{f},\mathbf{v}_h) + (p_h,\mathrm{div}(\mathbf{v}_h))
 && \text{for all } \mathbf{v}_h \in \mathbf{V}_h\\
 (p^{next}_h,q_h) & = (p_h,q_h) - \lambda (\mathrm{div}(\mathbf{u}_h^{next}),q_h) && \text{for all } q_h \in Q_h
 \end{aligned}
 ```
 
 This is done consecutively until the residual of both equations is small enough.
-The convection term is linearised by auto-differentiated Newton terms.
 The discrete divergence is computed via a RT0 reconstruction operator that preserves the disrete divergence.
 (another way would be to compute B*inv(M)*B' where M is the mass matrix of the pressure and B is the matrix for the div-pressure block).
 =#
@@ -107,7 +106,7 @@ function main(; Plotter = nothing, λ = 1e4, μ = 1.0, nrefs = 5, kwargs...)
     @info "L2error(p) = $L2errorP"
 
     ## plot
-    pl = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (1000,500))
+    pl = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, size = (1000,500))
     scalarplot!(pl[1,1],xgrid,view(nodevalues(sol[u]; abs = true),1,:), levels = 3)
     vectorplot!(pl[1,1],xgrid,eval_func(PointEvaluator([id(u)], sol)), spacing = [0.25,0.1], clear = false, title = "u_h (abs + quiver)")
     scalarplot!(pl[1,2],xgrid,view(nodevalues(sol[p]),1,:), levels = 11, title = "p_h")

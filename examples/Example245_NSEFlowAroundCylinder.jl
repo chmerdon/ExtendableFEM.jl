@@ -87,7 +87,7 @@ function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true,
     println("p difference = $pdiff")
 
     ## plots via GridVisualize
-    pl = GridVisualizer(; Plotter = Plotter, layout = (4,1), clear = true, resolution = (800,1200))
+    pl = GridVisualizer(; Plotter = Plotter, layout = (4,1), clear = true, size = (800,1200))
     gridplot!(pl[1,1], xgrid, linewidth = 1)
     gridplot!(pl[2,1], xgrid, linewidth = 1, xlimits = [0,0.3], ylimits = [0.1,0.3])
     scalarplot!(pl[3,1], xgrid, nodevalues(sol[u]; abs = true)[1,:])

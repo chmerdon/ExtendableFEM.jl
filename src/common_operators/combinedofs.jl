@@ -30,7 +30,21 @@ function ExtendableFEM.fixed_dofs(O::CombineDofs)
     return O.dofsY
 end
 
+
+"""
+````
 function CombineDofs(uX, uY, dofsX, dofsY, factors; kwargs...)
+````
+
+When assembled, the dofsX of the unknown uX will be coupled
+with the dofsY of uY, e.g., for periodic boundary conditions.
+ 
+
+Keyword arguments:
+$(_myprint(default_combop_kwargs()))
+
+"""
+function CombineDofs(uX, uY, dofsX, dofsY, factors = ones(Int, length(X)); kwargs...)
     parameters=Dict{Symbol,Any}( k => v[1] for (k,v) in default_combop_kwargs())
     _update_params!(parameters, kwargs)
     @assert length(dofsX) == length(dofsY)

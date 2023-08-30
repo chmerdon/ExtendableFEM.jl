@@ -17,19 +17,21 @@ Here eos ``eos`` is some equation of state function that describes the dependenc
 (and further physical quantities like temperature in a more general setting).
 Moreover, ``\mu`` and ``\lambda`` are Lame parameters and ``\mathbf{f}`` and ``\mathbf{g}`` are given right-hand side data.
 
-In this example we solve a analytical toy problem with the prescribed solution
+There are two testcases. The first testcase solves an analytical toy problem with the prescribed solution
 ```math
 \begin{aligned}
 \mathbf{u}(\mathbf{x}) & =0\\
-\varrho(\mathbf{x}) & = 1 - (x_2 - 0.5)/c\\
+\varrho(\mathbf{x}) & = \exp(-y/c) \\
 p &= eos(\varrho) := c \varrho^\gamma
 \end{aligned}
 ```
-such that ``\mathbf{f} = 0`` and ``\mathbf{g}`` nonzero to match the prescribed solution.
+such that ``\mathbf{f} = 0`` and ``\mathbf{g}`` nonzero to match the prescribed solution. The second testcase
+tests an analytical nonzero velocity benchmark problem with the same density.
 
 This example is designed to study the well-balanced property of a discretisation. The gradient-robust discretisation
-approximates the well-balanced state much better, i.e. has a much smaller L2 velocity error. For larger c the problem gets more incompressible which reduces
-the error further as then the right-hand side is a perfect gradient also when evaluated with the (now closer to a constant) discrete density.
+approximates the well-balanced state much better, i.e. has a much smaller L2 velocity error. For larger c
+(= smaller Mach number) the problem gets more incompressible which reduces the error further as then the
+right-hand side is a perfect gradient also when evaluated with the (now closer to a constant) discrete density.
 See reference below for more details.
 
 !!! reference
@@ -48,10 +50,13 @@ using ExtendableFEM
 using ExtendableFEMBase
 using ExtendableSparse
 using ExtendableGrids
+using Gmsh
 using Triangulate
 using SimplexGridFactory
 using GridVisualize
 using Symbolics
+
+Gmsh.initialize()
 
 
 ## everything is wrapped in a main function
@@ -161,7 +166,7 @@ function main(;
     
     
     ## plot
-    pl = GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, resolution = (800,800))
+    pl = GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, size = (800,800))
     scalarplot!(pl[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
     vectorplot!(pl[1,1],xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.25, clear = false, title = "u_h (abs + quiver)")
     scalarplot!(pl[2,1],xgrid, view(nodevalues(sol[ϱ]),1,:), levels = 11, title = "ϱ_h")
@@ -231,13 +236,14 @@ function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, nrefs = 
         ϱ1!(result, qpinfo) = (result[1] = exp(-qpinfo.x[2]/c)/(M_exact/area);)
         return grid_builder, standard_gravity!, nothing, u1!, ∇u1!, ϱ1!, 1
     elseif testcase == 2
-        grid_builder = (nref) -> simplexgrid(Triangulate;
-                    points = [0 0; 1 0; 1 1 ; 0 1]',
-                    bfaces = [1 2; 2 3; 3 4; 4 1]',
-                    bfaceregions = ones(Int,4),
-                    regionpoints = [0.5 0.5;]',
-                    regionnumbers = [1],
-                    regionvolumes = [4.0^-(nref)])
+        grid_builder = (nref) -> (grid = ExtendableGrids.simplexgrid_from_gmsh("assets/testmesh2.gmsh2"; incomplete = true);
+ExtendableGrids.seal!(grid; encode=true, encoding_type=Int32); @show typeof(grid[CellNodes]); return uniform_refine(grid, nref)) #simplexgrid(Triangulate;
+                   # points = [0 0; 1 0; 1 1 ; 0 1]',
+                   # bfaces = [1 2; 2 3; 3 4; 4 1]',
+                   # bfaceregions = ones(Int,4),
+                   # regionpoints = [0.5 0.5;]',
+                   # regionnumbers = [1],
+                   # regionvolumes = [4.0^-(nref)])
 
         xgrid = grid_builder(3)
         M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[1]^3/(3*c));), 1; quadorder = 20)

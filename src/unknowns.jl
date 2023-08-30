@@ -1,17 +1,29 @@
 """
-$(TYPEDEF)
+````
+struct Unknown
+````
 
-Structure holding specifications of an unknown, in particular its name and an identifier, but also other traits.
+Structure holding information for an unknwon with the following fields:
+
+$(TYPEDFIELDS)
 """
 mutable struct Unknown{IT}
+    """
+    The name of the unknown used for printout messages.
+    """
     name::String
+    """
+    The identifier of the unknown used for assignments to operators.
+    """
     identifier::IT
+    """
+    Further properties of the unknown can be stored in a Dict, see constructor.
+    """
     parameters::Dict{Symbol,Any}
 end
 
 
 default_unknown_kwargs()=Dict{Symbol,Tuple{Any,String}}(
-    :name => ("Unknown", "name for the unknown"),
     :dimension => (nothing, "dimension of the unknown"),
     :symbol_ansatz => (nothing, "symbol for ansatz functions of this unknown in printouts"),
     :symbol_test => (nothing, "symbol for test functions of this unknown in printouts"),

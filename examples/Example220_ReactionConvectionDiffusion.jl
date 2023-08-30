@@ -79,40 +79,32 @@ end
 ## everything is wrapped in a main function
 function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
 
-
-    xgrid = grid_unitsquare(Triangle2D); # initial grid
-
-    ## choose a finite element type, here we choose a second order H1-conforming one
-    FEType = H1Pk{1,2,order}
-
     ## create problem description
     PD = ProblemDescription("reaction-convection-diffusion problem")
     u = Unknown("u")
     assign_unknown!(PD, u)
     assign_operator!(PD, BilinearOperator(kernel_DCR!, [id(u), grad(u)]; bonus_quadorder = 1, kwargs...))
     assign_operator!(PD, LinearOperator(rhs(), [id(u)]; bonus_quadorder = 2, kwargs...))
+    assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = 1:4, kwargs...))
 
     ## add a gradient jump (interior penalty) stabilisation for dominant convection
     if τ > 0
         assign_operator!(PD, BilinearOperatorDG(stab_kernel!, [jump(grad(u))]; entities = ON_IFACES, factor = τ))
     end
 
-    assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = 1:4, kwargs...))
-
-    ## finally we have a look at the defined problem
-    @show PD
-
+    ## prepare error calculation
     ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(1), grad(1)]; quadorder = 2*order, kwargs...)
     Results = zeros(Float64,nlevels,4); NDofs = zeros(Int,nlevels)
 
     ## refinement loop over levels
     sol = nothing
+    xgrid = grid_unitsquare(Triangle2D); # initial grid
     for level = 1 : nlevels
         ## uniform mesh refinement
         xgrid = uniform_refine(xgrid)
 
         ## generate FESpace and solve
-        FES = FESpace{FEType}(xgrid)
+        FES = FESpace{H1Pk{1,2,order}}(xgrid)
         sol = solve(PD, [FES])
 
         ## compute L2 and H1 errors and save data
@@ -130,7 +122,7 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
     end    
 
     ## plot
-    p = GridVisualizer(; Plotter = Plotter, layout = (1,3), clear = true, resolution = (1500,500))
+    p = GridVisualizer(; Plotter = Plotter, layout = (1,3), clear = true, size = (1500,500))
     scalarplot!(p[1,1], xgrid, view(nodevalues(sol[u]),1,:), levels = 7, title = "u_h")
     scalarplot!(p[1,2], xgrid, view(nodevalues(sol[u], Gradient; abs = true),1,:), levels = 7, colorbarticks = 9, title = "∇u_h (abs + quiver)")
     vectorplot!(p[1,2], xgrid, eval_func(PointEvaluator([id(u)], sol)), vscale = 0.8, clear = false)
@@ -139,5 +131,4 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
     ## print convergence history
     print_convergencehistory(NDofs, Results; X_to_h = X -> X.^(-1/2), ylabels = ["|| u - u_h ||", "|| u - Iu ||", "|| ∇(u - u_h) ||", "|| ∇(u - Iu) ||"])
 end
-
 end

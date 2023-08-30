@@ -23,6 +23,7 @@ end
 
 include("io.jl")
 export print_convergencehistory
+export print_table
 
 include("unknowns.jl")
 export Unknown

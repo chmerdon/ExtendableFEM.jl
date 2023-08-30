@@ -104,7 +104,7 @@ function main(;
                T => FESpace{H1P1{1}}(xgrid))
 
     ## prepare plots
-    plt = GridVisualizer(; Plotter = Plotter, layout = (1,3), clear = true, resolution = (1200,400))
+    plt = GridVisualizer(; Plotter = Plotter, layout = (1,3), clear = true, size = (1200,400))
 
     ## solve by Ra embedding
 	params = Array{Float64,1}([min(Ra_final, 4000), μ, ϵ])

@@ -33,12 +33,3 @@ Modules = [ExtendableFEM]
 Pages = ["solvers.jl"]
 Order   = [:type, :function]
 ```
-
-
-## Export and Postprocessing
-
-Some tools for postprocessing are discussed in a separate section.
-
-[ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl) offers an interface
-to [WriteVTK.jl](https://github.com/jipolanco/WriteVTK.jl) which can be used, e.g.
-in combination with nodevalues interpolations or (piecewise constant) item integrator results.

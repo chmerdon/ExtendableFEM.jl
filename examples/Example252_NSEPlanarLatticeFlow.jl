@@ -15,7 +15,7 @@ with an exterior force ``\mathbf{f}`` and some viscosity parameter ``\nu`` and D
 Here the exact data for the planar lattice flow
 ```math
 \begin{aligned}
-\mathbf{u}(x,y,t) & := \exp(-8 \pi^2 \nu t) \begin{pmatrix} \sin(2 \pi x) sin(2 \pi y) \\ \cos(2 \pi x) cos(2 \pi y) \end{pmatrix}\\
+\mathbf{u}(x,y,t) & := \exp(-8 \pi^2 \nu t) \begin{pmatrix} \sin(2 \pi x) \sin(2 \pi y) \\ \cos(2 \pi x) \cos(2 \pi y) \end{pmatrix}\\
 p(x,y,t) & := \exp(-8 \pi^2 \nu t) ( \cos(4 \pi x) - \cos(4 \pi y)) / 4
 \end{aligned}
 ```
@@ -112,7 +112,7 @@ function main(; μ = 0.001, nrefs = 5, reconstruct = true, Plotter = nothing, kw
     @info "L2error(p) = $L2errorP"
 
     ## plot
-    p=GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (1200,1200))
+    p=GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, size = (1200,1200))
     scalarplot!(p[1,1], xgrid, nodevalues(sol[u]; abs = true)[1,:]; Plotter = Plotter)
     vectorplot!(p[1,1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.05, clear = false)
 end

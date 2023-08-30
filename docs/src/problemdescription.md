@@ -3,6 +3,10 @@
 
 
 Central object is the ProblemDescription which is given as a weak form of your problem and usually does not need any information on the discretisation at this point (but of course can depend on region numbers).
+
+```@docs
+ProblemDescription
+```
 ## Constructors and assign functions
 
 ```@autodocs
@@ -40,6 +44,7 @@ To assing boundary conditions or global constraints there are three possibilitie
 - InterpolateBoundaryData
 - HomogeneousData
 - FixDofs
+- CombineDofs
 
 
 

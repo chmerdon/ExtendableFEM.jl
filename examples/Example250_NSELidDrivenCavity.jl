@@ -76,7 +76,7 @@ function main(; μ_final = 0.001, nrefs = 5, reconstruct = true, Plotter = nothi
     FES = [FESpace{H1BR{2}}(xgrid), FESpace{L2P0{1}}(xgrid)]
 
     ## prepare plots
-    p=GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, resolution = (1200,1200))
+    p=GridVisualizer(; Plotter = Plotter, layout = (1,1), clear = true, size = (1200,1200))
     
     ## solve by μ embedding
 	step = 0

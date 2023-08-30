@@ -62,7 +62,7 @@ function main(;
     SC = SolverConfiguration(PD, [FES]; init = sol, maxiterations = 1, kwargs...)
 
     ## init plotter and plot u0
-    p = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, resolution = (800,400))
+    p = GridVisualizer(; Plotter = Plotter, layout = (1,2), clear = true, size = (800,400))
     scalarplot!(p[1,1], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75,2), levels = 0, title = "u_h (t = 0)")
 
     ## generate mass matrix

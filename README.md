@@ -1,7 +1,10 @@
+[![Build status](https://github.com/chmerdon/ExtendableFEM.jl/workflows/linux-macos-windows/badge.svg)](https://github.com/chmerdon/ExtendableFEM.jl/actions)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/stable/index.html)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/dev/index.html)
+
 # ExtendableFEM
 High Level API Finite Element Methods based on ExtendableGrids and ExtendableFEMBase. 
-It offers a ProblemDescription interface, that basically involves assigning Unknowns
-and operators. Such operator usually stem from a weak formulation of the problem
+It offers a ProblemDescription interface, that basically involves assigning Unknowns and Operators. Such operators usually stem from a weak formulation of the problem
 and mainly consist of three types that can be customized via kernel functions:
 
 - BilinearOperator,

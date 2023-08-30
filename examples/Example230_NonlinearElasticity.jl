@@ -124,7 +124,7 @@ function main(;
     sol = solve(PD, [FES]; kwargs...)
 
     ## displace mesh and plot
-    p = GridVisualizer(; Plotter = Plotter, layout = (3,1), clear = true, resolution = (1000,1500))
+    p = GridVisualizer(; Plotter = Plotter, layout = (3,1), clear = true, size = (1000,1500))
     grad_nodevals = nodevalues(sol[1], Gradient)
     strain_nodevals = zeros(Float64,3,num_nodes(xgrid))
     for j in 1 : num_nodes(xgrid)
