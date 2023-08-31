@@ -36,25 +36,15 @@ function eval_rhs!(du, x, sys, ctime)
 	A = sys.A
 	b = sys.b
 	sol = sys.sol
+	residual = sys.res
 
-	## assemble
 	sol.entries .= x
 	diffeq_assembly!(sys, ctime)
 
 	# calculate residual
-	residual = sys.res
 	fill!(residual.entries, 0)
 	mul!(residual.entries, A.entries.cscmatrix, x)
 	residual.entries .-= b.entries
-	#for op in PD.operators
-	#    for dof in ExtendableFEM.fixed_dofs(op)
-	#        if dof <= length(residual.entries)
-	#            residual.entries[dof] = 0
-	#        end
-	#    end
-	#end
-
-	# @show norm(residual.entries)
 
 	## set residual as rhs of ODE
 	du .= -vec(residual.entries)

@@ -38,7 +38,7 @@ function main(;
 	τ = 0.01,
 	Plotter = nothing,
 	use_diffeq = true,
-	solver = Rosenbrock23(),
+	solver = Rosenbrock23(autodiff = false),
 	kwargs...)
 
 	## load mesh and exact solution
@@ -95,6 +95,5 @@ function main(;
 
 	## plot final state
 	scalarplot!(p[1, 2], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75, 2), levels = 0, title = "u_h (t = $T)")
-
 end
 end

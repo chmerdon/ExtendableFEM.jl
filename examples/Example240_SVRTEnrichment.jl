@@ -12,8 +12,9 @@ This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of
 ```
 with exterior force ``\mathbf{f}`` and some parameter ``\mu`` and inhomogeneous Dirichlet boundary data.
 
-The problem will be solved by a ``(P_k \oplus RTenrichment) \times P_{k-1}`` scheme, which can be seen as an inf-sup stabilized Scott-Vogelius variant, see references below.
-Therein, the velocity space employs continuous Pk functions plus certain (only H(div)-conforming) Raviart-Thomas functions and a discontinuous Pk-1 pressure space
+The problem will be solved by a ``(P_k \oplus RTenrichment) \times P_{k-1}`` scheme, which can be seen as an inf-sup stabilized Scott-Vogelius variant
+that works with general meshes, see references below.
+Therein, the velocity space employs continuous ``P_{k}`` functions plus certain (only H(div)-conforming) Raviart-Thomas functions and a discontinuous ``P_{k-1}`` pressure space
 leading to an exactly divergence-free discrete velocity. In a reduction step (that can be triggered with the reduce switch) all higher order pressure dofs and the
 enrichment dofs can be eliminated from the system.
 
@@ -181,7 +182,7 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
 		######################
 		assign_operator!(PD, LinearOperator(rhs!, [id(u)]; bonus_quadorder = bonus_quadorder, kwargs...))
 		assign_operator!(PD, BilinearOperator(kernel_stokes_standard!, [grad(u), id(p)]; params = [μ], kwargs...))
-		assign_operator!(PD, InterpolateBoundaryData(u, exact_u!; regions = 1:4))
+		assign_operator!(PD, InterpolateBoundaryData(u, exact_u!; regions = 1:4, bonus_quadorder = bonus_quadorder))
 		assign_operator!(PD, FixDofs(p; dofs = [1], vals = [0]))
 
 		##################
@@ -295,7 +296,7 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
 					end
 				end
 
-				# interpolate into Pk basis (= same pressure basis as in full scheme)
+				## interpolate into Pk basis (= same pressure basis as in full scheme)
 				PF = FES[pfull]
 				append!(sol, PF; tag = pfull)
 				celldofs_PF::SerialVariableTargetAdjacency{Int32} = PF[CellDofs]

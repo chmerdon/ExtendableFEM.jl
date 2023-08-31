@@ -132,7 +132,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 		regions = O.parameters[:regions]
 		visit_region = zeros(Bool, maximum(itemregions))
 		if length(regions) > 0
-			visit_region[O.regions] = true
+			visit_region[regions] .= true
 		else
 			visit_region .= true
 		end

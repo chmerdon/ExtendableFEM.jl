@@ -317,8 +317,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
 
 	if SC.parameters[:plot]
 		for u in unknowns
-			ncomponents = get_ncomponents(sol[u])
-			println(stdout, unicode_scalarplot(sol[u]; abs = ncomponents > 1, title = u.name, kwargs...))
+			println(stdout, unicode_scalarplot(sol[u]; title = u.name, kwargs...))
 		end
 	end
 

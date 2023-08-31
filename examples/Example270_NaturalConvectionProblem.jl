@@ -131,6 +131,12 @@ function main(;
 		step += 1
 		@info "Step $step : solving for Ra=$(params[1])"
 	end
+
+    ## compute Nusselt number
+    ∇T_faces = FaceInterpolator([jump(grad(T))]; order = 0, kwargs...)
+	NuIntegrator = ItemIntegrator((result, input, qpinfo) -> (result[1] = -input[2]), [id(1)]; entities = ON_FACES, regions = [1])
+	@info "Nu = $(sum(evaluate(NuIntegrator, evaluate!(∇T_faces, sol))))"
+
     return sol
 end
 

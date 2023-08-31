@@ -147,16 +147,16 @@ function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::Solv
 	end
 	penalty = O.parameters[:penalty]
 	AE = A.entries
-	BE = b.entries
-	SE = sol.entries
+	#BE = b.entries
+	#SE = sol.entries
 	if assemble_matrix
 		for dof in bdofs
-			AE[dof, dof] = penalty
+			AE[dof, dof] += penalty
 		end
 		flush!(AE)
 	end
-	if assemble_rhs
-		BE[bdofs] .= 0
-	end
-	SE[bdofs] .= 0
+	#if assemble_rhs
+		#BE[bdofs] .= 0
+	#end
+	#SE[bdofs] .= 0
 end

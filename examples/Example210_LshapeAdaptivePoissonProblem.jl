@@ -73,7 +73,7 @@ end
 function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotter = nothing, kwargs...)
 
 	## problem description
-	PD = ProblemDescription()
+	PD = ProblemDescription("Poisson problem")
 	u = Unknown("u"; name = "u")
 	assign_unknown!(PD, u)
 	assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, kwargs...))

@@ -63,7 +63,6 @@ function main(; nrefs = 5, Plotter = nothing, hdivdg = false, kwargs...)
 	assign_operator!(PD, LinearOperator(boundarydata!, [normalflux(σ)]; entities = ON_BFACES, regions = 1:4, kwargs...))
 	assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
 	assign_operator!(PD, FixDofs(u; dofs = [1], vals = [0]))
-	@info PD
 
 	## discretize
 	xgrid = uniform_refine(grid_unitsquare_mixedgeometries(), nrefs)

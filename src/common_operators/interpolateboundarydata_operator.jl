@@ -65,7 +65,7 @@ end
 function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; time = 0, assemble_matrix = true, assemble_rhs = true, kwargs...) where UT
 	if UT <: Integer
 		ind = O.u
-		inf_sol = ind
+		ind_sol = ind
 	elseif UT <: Unknown
 		ind = get_unknown_id(SC, O.u)
 		ind_sol = findfirst(==(O.u), sol.tags)
@@ -103,17 +103,17 @@ function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::
 		BE = b.entries
 		if assemble_matrix
 			for dof in bdofs
-				AE[dof, dof] = penalty
+				AE[dof, dof] += penalty
 			end
 			flush!(AE)
 		end
 		if assemble_rhs
 			for dof in bdofs
-				BE[dof] = penalty * bddata.entries[dof-offset]
+				BE[dof] += penalty * bddata.entries[dof-offset]
 			end
 		end
 		for dof in bdofs
-			sol[ind_sol][dof-offset] = bddata.entries[dof-offset]
+			#sol[ind_sol][dof-offset] = bddata.entries[dof-offset]
 		end
 	end
 	if O.parameters[:verbosity] > 1

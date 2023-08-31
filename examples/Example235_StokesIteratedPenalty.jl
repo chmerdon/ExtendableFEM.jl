@@ -13,7 +13,7 @@ This example computes a velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of t
 with some μ parameter ``\mu``.
 
 Here we solve the simple Hagen-Poiseuille flow on the two-dimensional unit square domain with the iterated penalty method
-for the Bernardi--Raugel finite element method.
+suggested in the reference below adapted to the Bernardi--Raugel finite element method.
 Given intermediate solutions  ``\mathbf{u}_h`` and  ``p_h`` the next approximations are computed by the two equations
 
 ```math
@@ -27,6 +27,14 @@ Given intermediate solutions  ``\mathbf{u}_h`` and  ``p_h`` the next approximati
 This is done consecutively until the residual of both equations is small enough.
 The discrete divergence is computed via a RT0 reconstruction operator that preserves the disrete divergence.
 (another way would be to compute B*inv(M)*B' where M is the mass matrix of the pressure and B is the matrix for the div-pressure block).
+
+!!! reference
+
+	"An iterative penalty method for the finite element solution of the stationary Navier-Stokes equations",\
+	R. Codina,\
+	Computer Methods in Applied Mechanics and Engineering Volume 110, Issues 3–4 (1993),\
+	[>Journal-Link<](https://doi.org/10.1016/0045-7825(93)90163-R)
+
 =#
 
 module Example235_StokesIteratedPenalty

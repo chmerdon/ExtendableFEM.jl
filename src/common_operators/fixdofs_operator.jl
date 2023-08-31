@@ -66,16 +66,16 @@ function ExtendableFEM.assemble!(A, b, sol, O::FixDofs{UT}, SC::SolverConfigurat
 	penalty = O.parameters[:penalty]
 	AE = A.entries
 	BE = b.entries
-	SE = sol.entries
+	#SE = sol.entries
 	for j ∈ 1:length(dofs)
 		dof = dofs[j] + offset
 		if assemble_matrix
-			AE[dof, dof] = penalty
+			AE[dof, dof] += penalty
 		end
 		if assemble_rhs
-			BE[dof] = penalty * vals[j]
+			BE[dof] += penalty * vals[j]
 		end
-		SE[dof] = vals[j]
+		#SE[dof] = vals[j]
 	end
 	O.offset = offset
 end

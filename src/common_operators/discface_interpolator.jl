@@ -57,6 +57,12 @@ function FaceInterpolator(kernel, oa_args::Array{<:Tuple{Union{Unknown, Int}, Da
 	return FaceInterpolator(kernel, u_args, ops_args; kwargs...)
 end
 
+function FaceInterpolator(oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
+	u_args = [oa[1] for oa in oa_args]
+	ops_args = [oa[2] for oa in oa_args]
+	return FaceInterpolator(ExtendableFEMBase.standard_kernel, u_args, ops_args; kwargs...)
+end
+
 function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0) where {Tv}
 
 	FES_args = [FE_args[j].FES for j ∈ 1:length(FE_args)]
