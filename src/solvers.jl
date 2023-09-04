@@ -136,7 +136,12 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Array, SC = nothing; unk
 
 				## assemble operators
 				time_assembly += @elapsed for op in PD.operators
-					allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], kwargs...)
+					allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time],kwargs...)
+				end
+
+				## penalize fixed dofs
+				time_assembly += @elapsed for op in PD.operators
+					allocs_assembly += @allocated apply_penalties!(A, b, sol, op, SC; kwargs...)
 				end
 				flush!(A.entries)
 				# end

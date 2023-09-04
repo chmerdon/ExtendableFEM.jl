@@ -51,7 +51,7 @@ function CombineDofs(uX, uY, dofsX, dofsY, factors = ones(Int, length(X)); kwarg
 	return CombineDofs(uX, uY, dofsX, dofsY, factors, nothing, nothing, nothing, parameters)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::CombineDofs{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {Tv, UT}
+function ExtendableFEM.apply_penalties!(A, b, sol, O::CombineDofs{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {Tv, UT}
 	if UT <: Integer
 		ind = [O.ux, O.uY]
 	elseif UT <: Unknown
@@ -60,7 +60,6 @@ function ExtendableFEM.assemble!(A, b, sol, O::CombineDofs{Tv, UT}, SC::SolverCo
 	build_assembler!(O, [sol[j] for j in ind])
 	O.assembler(A.entries, b.entries, assemble_matrix, assemble_rhs)
 end
-
 
 function build_assembler!(O::CombineDofs{Tv}, FE::Array{<:FEVectorBlock, 1}; time = 0.0) where {Tv}
 	## check if FES is the same as last time
@@ -74,7 +73,7 @@ function build_assembler!(O::CombineDofs{Tv}, FE::Array{<:FEVectorBlock, 1}; tim
 		if O.parameters[:verbosity] > 0
 			@info ".... combining $(length(dofsX)) dofs"
 		end
-		function assemble(A::AbstractSparseArray{T}, b::AbstractVector{T}, assemble_matrix::Bool, assemble_rhs::Bool) where {T}
+		function assemble(A::AbstractSparseArray{T}, b::AbstractVector{T}, assemble_matrix::Bool, assemble_rhs::Bool, kwargs...) where {T}
 			if assemble_matrix
 				targetrow::Int = 0
 				sourcerow::Int = 0

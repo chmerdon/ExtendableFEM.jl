@@ -22,6 +22,9 @@ function diffeq_assembly!(sys, ctime)
 	for op in PD.operators
 		ExtendableFEM.assemble!(A, b, sol, op, sys; time = ctime)
 	end
+	for op in PD.operators
+		ExtendableFEM.apply_penalties!(A, b, sol, op, sys; time = ctime)
+	end
 end
 
 """
@@ -66,7 +69,10 @@ function eval_jacobian!(J, u, SC, ctime)
 	fill!(b.entries, 0)
 	sol.entries .= u
 	for op in PD.operators
-		assemble!(A, b, sol, op, SC; time = ctime)
+		assemble!(A, b, sol, op, SC; time = ctime, assemble_rhs = false)
+	end
+	for op in PD.operators
+		apply_penalties!(A, b, sol, op, SC; time = ctime, assemble_rhs = false)
 	end
 	flush!(A.entries)
 	J .= -A.entries.cscmatrix

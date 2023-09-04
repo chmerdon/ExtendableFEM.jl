@@ -62,7 +62,7 @@ function InterpolateBoundaryData(u, data = nothing; kwargs...)
 	return InterpolateBoundaryData{typeof(u), typeof(data)}(u, data, zeros(Int, 0), nothing, nothing, nothing, parameters)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; time = 0, assemble_matrix = true, assemble_rhs = true, kwargs...) where UT
+function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; time = 0, assemble_matrix = true, assemble_rhs = true, assemble_sol = true, kwargs...) where UT
 	if UT <: Integer
 		ind = O.u
 		ind_sol = ind
@@ -97,27 +97,60 @@ function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::
 	time = @elapsed begin
 		bddata = O.bddata
 		data = O.data
-		interpolate!(bddata[1], ON_BFACES, data; time = time, bonus_quadorder = O.parameters[:bonus_quadorder])
-		penalty = O.parameters[:penalty]
-		AE = A.entries
-		BE = b.entries
-		if assemble_matrix
-			for dof in bdofs
-				AE[dof, dof] += penalty
-			end
-			flush!(AE)
+		if assemble_sol || assemble_rhs
+			interpolate!(bddata[1], ON_BFACES, data; time = time, bonus_quadorder = O.parameters[:bonus_quadorder])
 		end
-		if assemble_rhs
-			for dof in bdofs
-				BE[dof] += penalty * bddata.entries[dof-offset]
-			end
-		end
-		for dof in bdofs
-			#sol[ind_sol][dof-offset] = bddata.entries[dof-offset]
-		end
+		# penalty = O.parameters[:penalty]
+		# AE = A.entries
+		# BE = b.entries
+		# if assemble_matrix
+		# 	for dof in bdofs
+		# 		AE[dof, dof] = penalty
+		# 	end
+		# 	flush!(AE)
+		# end
+		# if assemble_rhs
+		# 	for dof in bdofs
+		# 		BE[dof] = penalty * bddata.entries[dof-offset]
+		# 	end
+		# end
+		# for j = 1 : length(bdofs)
+		# 	bvals[j] = bddata.entries[bdofs[j]-offset]
+		# end
 	end
 	if O.parameters[:verbosity] > 1
 		@info ".... assembly of $(O.parameters[:name]) took $time s"
+	end
+end
+
+function ExtendableFEM.apply_penalties!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...) where {UT}
+	time = @elapsed begin
+		if UT <: Integer
+			ind = O.u
+			ind_sol = ind
+		elseif UT <: Unknown
+			ind = get_unknown_id(SC, O.u)
+			ind_sol = findfirst(==(O.u), sol.tags)
+		end
+		offset = SC.offsets[ind]
+		bddata = O.bddata
+		bdofs = O.bdofs
+		penalty = O.parameters[:penalty]
+		AE = A.entries
+		BE = b.entries
+		for dof in bdofs
+			AE[dof, dof] = penalty
+		end
+		flush!(AE)
+		for dof in bdofs
+			BE[dof] = penalty * bddata.entries[dof-offset]
+		end
+		for dof in bdofs
+			sol[ind_sol][dof-offset] = bddata.entries[dof-offset]
+		end
+	end
+	if O.parameters[:verbosity] > 1
+		@info ".... applying penalties of $(O.parameters[:name]) took $time s"
 	end
 end
 

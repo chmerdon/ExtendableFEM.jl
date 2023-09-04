@@ -1,8 +1,8 @@
 mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	PD::ProblemDescription
-	A::AT
-	b::bT
-	sol::xT
+	A::AT					## stores system matrix
+	b::bT					## stores right-hand side
+	sol::xT					## stores solution
 	res::xT
 	LP::LinearProblem
 	linsolver::Any

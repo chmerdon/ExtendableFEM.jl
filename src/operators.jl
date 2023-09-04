@@ -25,7 +25,12 @@ function fixed_dofs(O::AbstractOperator)
 	return []
 end
 
-function assemble!(A::AbstractMatrix, b::AbstractVector, O::AbstractOperator, sol; time = 0, assemble_matrix = true, assemble_rhs = true, kwargs...)
+function assemble!(A, b, sol, O::AbstractOperator, SC; time = 0, assemble_matrix = true, assemble_rhs = true, kwargs...)
 	## assembles operator to full matrix A and b
+	return nothing
+end
+
+function apply_penalties!(A, b, sol, O::AbstractOperator, SC; kwargs...)
+	## applies penalties to full matrix A and b and also sets values in sol
 	return nothing
 end

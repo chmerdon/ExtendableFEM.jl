@@ -442,7 +442,10 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::NonlinearOperator{Tv, UT}, SC::SolverConfiguration; kwargs...) where {Tv, UT}
+function ExtendableFEM.assemble!(A, b, sol, O::NonlinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {Tv, UT}
+	if assemble_matrix * assemble_rhs == false
+		return nothing
+	end
 	if UT <: Integer
 		ind_test = O.u_test
 		ind_args = O.u_args

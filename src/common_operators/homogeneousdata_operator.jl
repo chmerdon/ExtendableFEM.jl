@@ -66,7 +66,7 @@ function HomogeneousBoundaryData(u; entities = ON_BFACES, kwargs...)
 	return HomogeneousData(u; entities = entities, kwargs...)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {UT, AT}
+function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::SolverConfiguration; kwargs...) where {UT, AT}
 	if UT <: Integer
 		ind = O.u
 	elseif UT <: Unknown
@@ -145,18 +145,39 @@ function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::Solv
 		O.bdofs = bdofs
 		O.FES = FES
 	end
-	penalty = O.parameters[:penalty]
-	AE = A.entries
-	#BE = b.entries
-	#SE = sol.entries
-	if assemble_matrix
-		for dof in bdofs
-			AE[dof, dof] += penalty
+end
+
+
+function ExtendableFEM.apply_penalties!(A, b, sol, O::HomogeneousData{UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, assemble_sol = true, kwargs...) where {UT}
+	time = @elapsed begin
+		if UT <: Integer
+			ind = O.u
+			ind_sol = ind
+		elseif UT <: Unknown
+			ind = get_unknown_id(SC, O.u)
+			ind_sol = findfirst(==(O.u), sol.tags)
 		end
-		flush!(AE)
+		bdofs = O.bdofs
+		penalty = O.parameters[:penalty]
+
+		if assemble_matrix
+			penalty = O.parameters[:penalty]
+			AE = A.entries
+			for dof in bdofs
+				AE[dof, dof] = penalty
+			end
+			flush!(AE)
+		end
+		if assemble_rhs
+			BE = b.entries
+			BE[bdofs] .= 0
+		end
+		if assemble_sol
+			SE = sol.entries
+			SE[bdofs] .= 0
+		end
 	end
-	#if assemble_rhs
-		#BE[bdofs] .= 0
-	#end
-	#SE[bdofs] .= 0
+	if O.parameters[:verbosity] > 1
+		@info ".... applying penalties of $(O.parameters[:name]) took $time s"
+	end
 end
