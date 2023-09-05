@@ -206,6 +206,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
            # ],
             "Solving" => Any[
                    "pdesolvers.md",
+                   "pdesolvers_dt.md",
                 ],
             "Postprocessing" => Any[
                     "postprocessing.md",

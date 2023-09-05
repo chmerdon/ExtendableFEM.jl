@@ -33,7 +33,7 @@ default_solver_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:is_linear => ("auto", "linear problem (avoid reassembly of nonlinear operators to check residual)"),
 	:inactive => (Array{Unknown, 1}([]), "inactive unknowns (are made available in assembly, but not updated in solve)"),
 	:maxiterations => (10, "maximal number of nonlinear iterations/linear solves"),
-	:constant_matrix => (false, "matrix is constant (skips refactorization in solver)"),
+	:constant_matrix => (false, "matrix is constant (skips reassembly and refactorization in solver)"),
 	:method_linear => (UMFPACKFactorization(), "any solver or custom LinearSolveFunction compatible with LinearSolve.jl (default = UMFPACKFactorization())"),
 	:precon_linear => (nothing, "function that computes preconditioner for method_linear incase an iterative solver is chosen"),
 	:initialized => (false, "linear system in solver configuration is already assembled (turns true after first solve)"),
@@ -50,17 +50,48 @@ function Base.show(io::IO, PD::SolverConfiguration)
 	end
 end
 
-function SolverConfiguration(Problem::ProblemDescription, FES; kwargs...)
-	SolverConfiguration(Problem, Problem.unknowns, FES; kwargs...)
+
+"""
+````
+function iterate_until_stationarity(
+	SolverConfiguration(Problem::ProblemDescription
+	[FES::Union{<:FESpace, Vector{<:FESpace}}];
+	init = nothing,
+	unknowns = Problem.unknowns,
+	kwargs...)
+````
+
+Returns a solver configuration for the ProblemDescription that can be passed to the solve
+function. Here, FES are the FESpaces that should be used to discretize the
+selected unknowns. If no FES is provided an initial FEVector (see keyword init) must be provided
+(which is used to built the FES).
+
+Keyword arguments:
+$(_myprint(default_solver_kwargs()))
+
+"""
+function SolverConfiguration(Problem::ProblemDescription; init = nothing, unknowns = Problem.unknowns, kwargs...)
+	## try to guess FES from init
+	if typeof(init) <: FEVector
+		FES = [init[u].FES for u in unknowns]
+	end
+	SolverConfiguration(Problem, unknowns, FES; kwargs...)
 end
 
-function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknown, 1}, FES; TvM = Float64, TiM = Int, bT = Float64, kwargs...)
+function SolverConfiguration(Problem::ProblemDescription, FES; unknowns = Problem.unknowns, kwargs...)
+	SolverConfiguration(Problem, unknowns, FES; kwargs...)
+end
+
+function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknown, 1}, FES, default_kwargs = default_solver_kwargs(); TvM = Float64, TiM = Int, bT = Float64, kwargs...)
+	if typeof(FES) <: FESpace
+		FES = [FES]
+	end
 	@assert length(unknowns) <= length(FES) "length of unknowns and FE spaces must coincide"
 	## check if unknowns are part of Problem description
 	for u in unknowns
 		@assert u in Problem.unknowns "unknown $u is not part of the given ProblemDescription"
 	end
-	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_solver_kwargs())
+	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_kwargs)
 	_update_params!(parameters, kwargs)
 	## compute offsets
 	offsets = [0]

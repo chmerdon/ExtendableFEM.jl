@@ -121,7 +121,7 @@ function main(; maxdofs = 4000, μ = 1, order = 2, nlevels = 16, θ = 0.5, Plott
 
 		## create a solution vector and solve the problem
 		FES = FESpace{FEType}(xgrid)
-		sol = solve(PD, [FES])
+		sol = solve(PD, FES)
 		push!(NDofs, length(view(sol[u])))
 		println("\n  SOLVE LEVEL $level")
 		println("    ndofs = $(NDofs[end])")

@@ -60,7 +60,7 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
 	FES = FESpace{H1Pk{1, 2, order}}(xgrid)
 
 	## solve
-	sol = solve(PD, [FES]; kwargs...)
+	sol = solve(PD, FES; kwargs...)
 
 	## plot
 	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (1000, 500))

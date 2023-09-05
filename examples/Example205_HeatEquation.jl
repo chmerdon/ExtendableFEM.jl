@@ -29,7 +29,7 @@ function initial_data!(result, qpinfo)
 end
 
 function main(; nrefs = 4, T = 2.0, τ = 1e-2, order = 2, use_diffeq = true,
-	solver = Rosenbrock23(), Plotter = nothing, kwargs...)
+	solver = Rosenbrock23(autodiff = false), Plotter = nothing, kwargs...)
 
 	## problem description
 	PD = ProblemDescription("Heat Equation")
@@ -45,36 +45,36 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-2, order = 2, use_diffeq = true,
 	FES = FESpace{H1Pk{1, 2, order}}(xgrid)
 	sol = FEVector(FES; tags = PD.unknowns)
 	interpolate!(sol[u], initial_data!; bonus_quadorder = 5)
-	SC = SolverConfiguration(PD, [FES]; init = sol, maxiterations = 1, constant_matrix = true, kwargs...)
 
 	## init plotter and plot u0
 	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (800, 400))
 	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], levels = 7, title = "u_h (t = 0)")
 
-	## generate mass matrix
-	M = FEMatrix(FES)
-	assemble!(M, BilinearOperator([id(1)]))
-
 	if (use_diffeq)
 		## generate DifferentialEquations.ODEProblem
-		prob = ExtendableFEM.generate_ODEProblem(SC, (0.0, T); mass_matrix = M.entries.cscmatrix)
+		prob = generate_ODEProblem(PD, FES, (0.0, T); init = sol)
 
 		## solve ODE problem
-		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-3, dt = τ, dtmin = 1e-6, adaptive = true, initializealg = DifferentialEquations.NoInit())
+		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-3, dt = τ, dtmin = 1e-6, adaptive = true)
 		@info "#tsteps = $(length(de_sol))"
 
 		## get final solution
 		sol.entries .= de_sol[end]
 	else
 		## add backward Euler time derivative
+		M = FEMatrix(FES)
+		assemble!(M, BilinearOperator([id(1)]))
 		assign_operator!(PD, BilinearOperator(M, [u]; factor = 1 / τ, kwargs...))
 		assign_operator!(PD, LinearOperator(M, [u], [u]; factor = 1 / τ, kwargs...))
+
+		## generate solver configuration
+		SC = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, constant_matrix = true, kwargs...)
 
 		## iterate tspan
 		t = 0
 		for it ∈ 1:Int(floor(T / τ))
 			t += τ
-			ExtendableFEM.solve(PD, [FES], SC; time = t)
+			ExtendableFEM.solve(PD, FES, SC; time = t)
 		end
 	end
 

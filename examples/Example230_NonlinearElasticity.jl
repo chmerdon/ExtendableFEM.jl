@@ -121,7 +121,7 @@ function main(;
 	end
 
 	## solve
-	sol = solve(PD, [FES]; kwargs...)
+	sol = solve(PD, FES; kwargs...)
 
 	## displace mesh and plot
 	p = GridVisualizer(; Plotter = Plotter, layout = (3, 1), clear = true, size = (1000, 1500))

@@ -58,7 +58,7 @@ function main(; Plotter = nothing, h = 5e-2, ϵ = 1e-3, order = 2, kwargs...)
 	FES = FESpace{H1Pk{1, 1, order}}(xgrid)
 
 	## generate a solution vector and solve
-	sol = solve(PD, [FES]; kwargs...)
+	sol = solve(PD, FES; kwargs...)
 
 	## plot discrete and exact solution (on finer grid)
 	p = GridVisualizer(Plotter = Plotter, layout = (1, 1))

@@ -55,7 +55,7 @@ function main(;
 	Plotter = nothing,
 	use_diffeq = true,
 	use_masslumping = true,
-	solver = ImplicitEuler(),
+	solver = ImplicitEuler(autodiff = false),
 	kwargs...)
 
 	## load mesh and exact solution
@@ -74,11 +74,10 @@ function main(;
 	FES = FESpace{FEType}(xgrid)
 	sol = FEVector(FES; tags = PD.unknowns)
 	interpolate!(sol[u], u_exact!; time = t0, params = [m])
-	SC = SolverConfiguration(PD, [FES]; init = sol, maxiterations = 1, kwargs...)
 
 	## init plotter and plot u0
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 1))
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1)
+	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), size = (800,400))
+	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1, title = "t = $t0")
 
 	## generate mass matrix (with mass lumping)
 	M = FEMatrix(FES)
@@ -86,10 +85,10 @@ function main(;
 
 	if (use_diffeq)
 		## generate ODE problem
-		prob = ExtendableFEM.generate_ODEProblem(SC, (t0, T); mass_matrix = M.entries.cscmatrix)
+		prob = ExtendableFEM.generate_ODEProblem(PD, FES, (t0, T); init = sol, mass_matrix = M.entries.cscmatrix)
 
 		## solve ODE problem
-		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-3, dt = τ, dtmin = 1e-8, adaptive = true, initializealg = DifferentialEquations.NoInit())
+		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-3, dt = τ, dtmin = 1e-8, adaptive = true)
 		@info "#tsteps = $(length(de_sol))"
 
 		## get final solution
@@ -99,20 +98,22 @@ function main(;
 		assign_operator!(PD, BilinearOperator(M, [u]; factor = 1 / τ, kwargs...))
 		assign_operator!(PD, LinearOperator(M, [u], [u]; factor = 1 / τ, kwargs...))
 
+		## generate solver configuration
+		SC = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, kwargs...)
+
 		## iterate tspan
 		t = 0
 		for it ∈ 1:Int(floor((T - t0) / τ))
 			t += τ
-			ExtendableFEM.solve(PD, [FES], SC; time = t)
-			scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1)
+			ExtendableFEM.solve(PD, FES, SC; time = t)
 		end
 	end
 
 	## plot final state
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1)
+	scalarplot!(p[1, 2], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1, title = "t = $T")
 
 	## plot exact solution
 	interpolate!(sol[1], u_exact!; time = T, params = [m])
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], clear = false, color = :green, label = "u", legend = :best)
+	scalarplot!(p[1, 2], xgrid, nodevalues_view(sol[u])[1], clear = false, color = :green, label = "u", legend = :best)
 end
 end

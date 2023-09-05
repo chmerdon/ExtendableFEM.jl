@@ -76,7 +76,7 @@ function prepare_data(; μ = 1)
 	∇u_eval = build_function(∇u_reshaped, x, y, expression = Val{false})
 	f_eval = build_function(f, x, y, expression = Val{false})
 
-	return f_eval[1], u_eval[1], ∇u_eval[1], p_eval
+	return f_eval[2], u_eval[2], ∇u_eval[2], p_eval
 end
 
 function kernel_stokes_standard!(result, u_ops, qpinfo)
@@ -116,10 +116,10 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
 
 	## prepare problem data
 	f_eval, u_eval, ∇u_eval, p_eval = prepare_data(; μ = μ)
-	rhs!(result, qpinfo) = (result .= f_eval(qpinfo.x[1], qpinfo.x[2]))
-	exact_p!(result, qpinfo) = (result .= p_eval(qpinfo.x[1], qpinfo.x[2]))
-	exact_u!(result, qpinfo) = (result .= u_eval(qpinfo.x[1], qpinfo.x[2]))
-	exact_∇u!(result, qpinfo) = (result .= ∇u_eval(qpinfo.x[1], qpinfo.x[2]))
+	rhs!(result, qpinfo) = (f_eval(result, qpinfo.x[1], qpinfo.x[2]))
+	exact_p!(result, qpinfo) = (result[1] = p_eval(qpinfo.x[1], qpinfo.x[2]))
+	exact_u!(result, qpinfo) = (u_eval(result, qpinfo.x[1], qpinfo.x[2]))
+	exact_∇u!(result, qpinfo) = (∇u_eval(result, qpinfo.x[1], qpinfo.x[2]))
 
 	## prepare unknowns
 	u = Unknown("u"; name = "velocity", dim = 2)

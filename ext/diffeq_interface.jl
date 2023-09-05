@@ -1,9 +1,67 @@
-#
-# Interface to DifferentialEquations.jl
-# via TimeControlSolver struct
+#############################################
+### Interface to DifferentialEquations.jl ###
+#############################################
+
+"""
+````
+function generate_ODEProblem(
+	SC::SolverConfiguration,
+	tspan;
+	mass_matrix = nothing)
+	kwargs...)
+````
+
+Reframes the ProblemDescription inside the SolverConfiguration into an ODEProblem,
+for DifferentialEquations.jl where tspan is the desired time interval.
+
+If no mass matrix is provided the standard mass matrix for the respective
+finite element space(s) for all unknowns is assembled.
+
+Keyword arguments:
+$(ExtendableFEM._myprint(ExtendableFEM.default_diffeq_kwargs()))
+
+"""
+function generate_ODEProblem(PD::ProblemDescription, FES, tspan; unknowns = PD.unknowns, kwargs...)
+	if typeof(FES) <: FESpace
+		FES = [FES]
+	end
+	SC = SolverConfiguration(PD, unknowns, FES, ExtendableFEM.default_diffeq_kwargs(); kwargs...)
+	if SC.parameters[:verbosity] > 0
+		@info ".... init solver configuration\n"
+	end
+	return generate_ODEProblem(SC, tspan; mass_matrix = nothing, kwargs...)
+end
+
+
+function generate_ODEProblem(SC::SolverConfiguration, tspan; mass_matrix = nothing, kwargs...)
+	## update kwargs
+	ExtendableFEM._update_params!(SC.parameters, kwargs)
+
+	## generate default mass matrix if needed
+	if mass_matrix === nothing
+		if SC.parameters[:verbosity] > 0
+			@info ".... generating mass matrix\n"
+		end
+		FES = [SC.sol[u].FES for u in SC.unknowns]
+		M = FEMatrix(FES)
+		assemble!(M, BilinearOperator([id(j) for j ∈ 1:length(SC.unknowns)]))
+		mass_matrix = M.entries.cscmatrix
+	elseif typeof(mass_matrix) <: ExtendableFEMBase.FEMatrix
+		flush!(mass_matrix.entries)
+		mass_matrix = mass_matrix.entries.cscmatrix
+	elseif typeof(mass_matrix) <: ExtendableSparseMatrix
+		flush!(mass_matrix)
+		mass_matrix = mass_matrix.cscmatrix
+	end
+
+	## generate ODE problem
+	f = DifferentialEquations.ODEFunction(eval_rhs!, jac = eval_jacobian!, jac_prototype = jac_prototype(SC), mass_matrix = mass_matrix)
+	prob = DifferentialEquations.ODEProblem(f, SC.sol.entries, tspan, SC)
+	return prob
+end
+
 
 function diffeq_assembly!(sys, ctime)
-
 	# unpack
 	PD = sys.PD
 	A = sys.A
@@ -12,78 +70,83 @@ function diffeq_assembly!(sys, ctime)
 
 	if sys.parameters[:verbosity] > 0
 		@info "DiffEQ-extension: t = $ctime"
-	else
-		@debug "DiffEQ-extension: assembly at t = $ctime"
 	end
 
 	## assemble operators
-	fill!(A.entries.cscmatrix.nzval, 0)
 	fill!(b.entries, 0)
-	for op in PD.operators
-		ExtendableFEM.assemble!(A, b, sol, op, sys; time = ctime)
+	if sys.parameters[:constant_matrix] && sys.parameters[:initialized]
+		for op in PD.operators
+			ExtendableFEM.assemble!(A, b, sol, op, sys; assemble_matrix = false, time = ctime)
+		end
+	else
+		fill!(A.entries.cscmatrix.nzval, 0)
+		for op in PD.operators
+			ExtendableFEM.assemble!(A, b, sol, op, sys; time = ctime)
+		end
 	end
+	flush!(A.entries)
+
 	for op in PD.operators
 		ExtendableFEM.apply_penalties!(A, b, sol, op, sys; time = ctime)
 	end
+	flush!(A.entries)
+
+	## set initialize flag
+	sys.parameters[:initialized] = true
 end
 
 """
-Assume the discrete problem is an ODE problem. Provide the 
-rhs function for DifferentialEquations.jl.
+Provides the rhs function for DifferentialEquations.jl/ODEProblem.
 """
 function eval_rhs!(du, x, sys, ctime)
 	# (re)assemble system
-	@debug "DiffEQ-extension: evaluating ODE rhs @time = $ctime"
+	if sys.parameters[:verbosity] > 0
+		"DiffEQ-extension: evaluating ODE rhs @time = $ctime"
+	end
 
-	PD = sys.PD
 	A = sys.A
 	b = sys.b
 	sol = sys.sol
-	residual = sys.res
 
-	sol.entries .= x
-	diffeq_assembly!(sys, ctime)
+	if norm(sol.entries .- x) > sys.parameters[:sametol] || sys.parameters[:initialized] == false
+		sol.entries .= x
+		diffeq_assembly!(sys, ctime)
+	end
 
-	# calculate residual
-	fill!(residual.entries, 0)
-	mul!(residual.entries, A.entries.cscmatrix, x)
-	residual.entries .-= b.entries
+	## calculate residual res = A*u - b
+	fill!(du, 0)
+	mul!(du, A.entries.cscmatrix, x)
+	du .= b.entries - du
 
-	## set residual as rhs of ODE
-	du .= -vec(residual.entries)
 	nothing
 end
 
 """
-Assume the discrete problem is an ODE problem. Provide the 
-jacobi matrix calculation function for DifferentialEquations.jl.
+Provides the jacobi matrix calculation function for DifferentialEquations.jl/ODEProblem.
 """
 function eval_jacobian!(J, u, SC, ctime)
-	@debug "DiffEQ-extension: evaluating jacobian @time = $ctime"
-	PD = SC.PD
-	A = SC.A
-	b = SC.b
+	if SC.parameters[:verbosity] > 0
+		@info "DiffEQ-extension: evaluating jacobian @time = $ctime"
+	end
+
+	## reassemble if necessary
 	sol = SC.sol
-	## assemble operators
-	fill!(A.entries.cscmatrix.nzval, 0)
-	fill!(b.entries, 0)
-	sol.entries .= u
-	for op in PD.operators
-		assemble!(A, b, sol, op, SC; time = ctime, assemble_rhs = false)
+	if norm(sol.entries .- u) > SC.parameters[:sametol] || SC.parameters[:initialized] == false
+		sol.entries .= u
+		diffeq_assembly!(SC, ctime)
 	end
-	for op in PD.operators
-		apply_penalties!(A, b, sol, op, SC; time = ctime, assemble_rhs = false)
-	end
-	flush!(A.entries)
+
+	## extract jacobian = system matrix
+	A = SC.A
 	J .= -A.entries.cscmatrix
+
 	nothing
 end
 
 """
-Provide the system matrix as prototype for the Jacobian.
+Provides the system matrix as prototype for the jacobian.
 """
 function jac_prototype(sys)
-	@debug "DiffEQ-interface: jac_prototype"
 	ExtendableSparse.flush!(sys.A[1].entries)
 	sys.A[1].entries.cscmatrix
 end

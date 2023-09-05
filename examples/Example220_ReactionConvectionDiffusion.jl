@@ -106,7 +106,7 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
 
 		## generate FESpace and solve
 		FES = FESpace{H1Pk{1, 2, order}}(xgrid)
-		sol = solve(PD, [FES])
+		sol = solve(PD, FES)
 
 		## compute L2 and H1 errors and save data
 		NDofs[level] = length(sol.entries)

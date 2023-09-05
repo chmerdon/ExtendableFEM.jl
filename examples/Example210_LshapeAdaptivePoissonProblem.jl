@@ -106,7 +106,7 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 		@time begin
 			## solve
 			FES = FESpace{H1Pk{1, 2, order}}(xgrid)
-			sol = ExtendableFEM.solve(PD, [FES]; u = [u], kwargs...)
+			sol = ExtendableFEM.solve(PD, FES; u = [u], kwargs...)
 			ndofs = length(sol[1])
 			push!(NDofs, ndofs)
 			println("\t ndof =  $ndofs")

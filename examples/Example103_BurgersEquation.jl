@@ -59,7 +59,6 @@ function main(;
 	FES = FESpace{FEType}(xgrid)
 	sol = FEVector(FES; tags = PD.unknowns)
 	interpolate!(sol[u], initial_data!)
-	SC = SolverConfiguration(PD, [FES]; init = sol, maxiterations = 1, kwargs...)
 
 	## init plotter and plot u0
 	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (800, 400))
@@ -71,10 +70,10 @@ function main(;
 
 	if (use_diffeq)
 		## generate DifferentialEquations.ODEProblem
-		prob = ExtendableFEM.generate_ODEProblem(SC, (0.0, T); mass_matrix = M.entries.cscmatrix)
+		prob = ExtendableFEM.generate_ODEProblem(PD, FES, (0.0, T); init = sol, mass_matrix = M)
 
 		## solve ODE problem
-		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-3, dt = τ, dtmin = 1e-6, adaptive = true, initializealg = DifferentialEquations.NoInit())
+		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-3, dt = τ, dtmin = 1e-6, adaptive = true)
 		@info "#tsteps = $(length(de_sol))"
 
 		## get final solution
@@ -84,12 +83,14 @@ function main(;
 		assign_operator!(PD, BilinearOperator(M, [u]; factor = 1 / τ, kwargs...))
 		assign_operator!(PD, LinearOperator(M, [u], [u]; factor = 1 / τ, kwargs...))
 
+		## generate solver configuration
+		SC = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, kwargs...)
+
 		## iterate tspan
 		t = 0
 		for it ∈ 1:Int(floor(T / τ))
 			t += τ
-			ExtendableFEM.solve(PD, [FES], SC; time = t)
-			scalarplot!(p[1, 2], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75, 2), levels = 0, title = "u_h (t = $t)")
+			ExtendableFEM.solve(PD, FES, SC; time = t)
 		end
 	end
 

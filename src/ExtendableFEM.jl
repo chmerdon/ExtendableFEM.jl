@@ -56,6 +56,8 @@ include("solvers.jl")
 export solve
 export iterate_until_stationarity
 export get_unknown_id
+
+include("solvers_diffeq.jl")
 export generate_ODEProblem
 
 include("jump_operators.jl")

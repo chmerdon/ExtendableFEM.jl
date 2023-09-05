@@ -144,8 +144,8 @@ function main(;
         NDofs[lvl] = length(sol.entries)
 
         ## solve the two problems iteratively [1] >> [2] >> [1] >> [2] ...
-        SC1 = SolverConfiguration(PD, [FES[1]]; init = sol, maxiterations = 1, target_residual = target_residual, constant_matrix = true, kwargs...)
-        SC2 = SolverConfiguration(PDT, [FES[2]]; init = sol, maxiterations = 1, target_residual = target_residual, kwargs...)
+        SC1 = SolverConfiguration(PD; init = sol, maxiterations = 1, target_residual = target_residual, constant_matrix = true, kwargs...)
+        SC2 = SolverConfiguration(PDT; init = sol, maxiterations = 1, target_residual = target_residual, kwargs...)
         sol, nits = iterate_until_stationarity([SC1, SC2]; maxsteps = maxsteps, init = sol, kwargs...)
 
         ## caculate error
@@ -249,15 +249,16 @@ function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, M = 1, c
         area = sum(xgrid[CellVolumes])
 
         function kernel_gravity!(result, input, qpinfo)
-            result .= input[1] * g_eval(qpinfo.x[1], qpinfo.x[2])
+            g_eval(result, qpinfo.x[1], qpinfo.x[2])
+            result .*= input[1]
         end
 
         function kernel_rhs!(result, qpinfo)
-            result .= f_eval(qpinfo.x[1], qpinfo.x[2])
+            f_eval(result, qpinfo.x[1], qpinfo.x[2])
         end
 
-        u2!(result, qpinfo) = (result .= u_eval(qpinfo.x[1], qpinfo.x[2]);)
-        ∇u2!(result, qpinfo) = (result .= ∇u_eval(qpinfo.x[1], qpinfo.x[2]);)
+        u2!(result, qpinfo) = (u_eval(result, qpinfo.x[1], qpinfo.x[2]);)
+        ∇u2!(result, qpinfo) = (∇u_eval(result, qpinfo.x[1], qpinfo.x[2]);)
         return grid_builder, kernel_gravity!, f_eval === nothing ? nothing : kernel_rhs!, u2!, ∇u2!, ϱ2!, ufac
     end
 end
@@ -309,6 +310,6 @@ function prepare_data!(; M = 1, c = 1, μ = 1, ufac = 100, laplacian_in_rhs = tr
 	g_eval = build_function(g, x, y, expression = Val{false})
 	f_eval = build_function(f, x, y, expression = Val{false})
 
-    return ϱ_eval, g_eval[1], f == 0 ? nothing : f_eval[1], u_eval[1], ∇u_eval[1]
+    return ϱ_eval, g_eval[2], f == 0 ? nothing : f_eval[2], u_eval[2], ∇u_eval[2]
 end
 end

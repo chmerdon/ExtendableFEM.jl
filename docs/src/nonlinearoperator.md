@@ -64,14 +64,14 @@ space ``X`` with ``N := \mathrm{dim} X``, i.e., some coefficient
 vector ``x \in \mathbb{R}^N``, such that
 ```math
 \begin{aligned}
-F(x) := \int_\Omega A(O_1u(x)(y)) \cdot O_2v(y) \,\textit{dy} & = 0 \quad \text{for all } v \in X
+F(x) := \int_\Omega A(L_1u(x)(y)) \cdot L_2v(y) \,\textit{dy} & = 0 \quad \text{for all } v \in X
 \end{aligned}
 ```
 for some given nonlinear kernel function ``A : \mathbb{R}^m \rightarrow \mathbb{R}^n``
-where ``m`` is the dimension of the input ``O_1 u(x)(y) \in \mathbb{R}^m``
-and ``n`` is the dimension of the result ``O_2 v(y) \in \mathbb{R}^n``.
-Here, ``O_1`` and ``O_2`` are linear operators, e.g. primitive differential
-operator evaluation of ``u`` or ``v``.
+where ``m`` is the dimension of the input ``L_1 u(x)(y) \in \mathbb{R}^m``
+and ``n`` is the dimension of the result ``L_2 v(y) \in \mathbb{R}^n``.
+Here, ``L_1`` and ``L_2`` are linear operators, e.g. primitive differential
+operator evaluations of ``u`` or ``v``.
 
 Let us consider the Newton scheme to find a root of the residual function ``F : \mathbb{R}^N \rightarrow \mathbb{R}^N``,
 which iterates
@@ -92,15 +92,17 @@ To compute the jacobian of ``F``, observe that its discretisation on a mesh ``\m
 ``(x_{qp}, w_{qp})`` leads to
 ```math
 \begin{aligned}
-F(x) =  \sum_{T \in \mathcal{T}} \lvert T \rvert \sum_{x_{qp}} A(O_1u_h(x)(x_{qp})) \cdot O_2v_h(x_{qp}) w_{qp} & = 0 \quad \text{in } \Omega
+F(x) =  \sum_{T \in \mathcal{T}} \lvert T \rvert \sum_{x_{qp}} A(L_1u_h(x)(x_{qp})) \cdot L_2v_h(x_{qp}) w_{qp} & = 0 \quad \text{in } \Omega
 \end{aligned}
 ```
 Now, by linearity of everything involved other than ``A``, we can evaluate the jacobian by
 ```math
 \begin{aligned}
-D_xF(x) =  \sum_{T \in \mathcal{T}} \lvert T \rvert \sum_{x_{qp}} DA(O_1 u_h(x)(x_{qp})) \cdot O_2 v_h(x_{qp}) w_{qp} & = 0 \quad \text{in } \Omega
+D_xF(x) =  \sum_{T \in \mathcal{T}} \lvert T \rvert \sum_{x_{qp}} DA(L_1 u_h(x)(x_{qp})) \cdot L_2 v_h(x_{qp}) w_{qp} & = 0 \quad \text{in } \Omega
 \end{aligned}
 ```
-Hence, assembly only requires to evaluate the low-dimensional jacobians ``D \in \mathbb{R}^{m \times n}`` of ``A`` evaluates at ``O_1 u_h(x)(x_{qp})``. These jacobians are computed by automatic differentiation via ForwardDiff.jl (or via the user-given jacobian function).
-If ``m`` and ``n`` are a little larger, e.g. when more operator evaluations ``O_1`` and ``O_2`` are involved, there is the option
+Hence, assembly only requires to evaluate the low-dimensional jacobians ``DA \in \mathbb{R}^{m \times n}`` of ``A``
+at ``L_1 u_h(x)(x_{qp})``. These jacobians are computed by automatic differentiation via ForwardDiff.jl (or via the user-given jacobian function).
+If ``m`` and ``n`` are a little larger, e.g. when more operator evaluations ``L_1`` and ``L_2``
+or more unknowns are involved, there is the option
 to use sparse_jacobians (using the sparsity detection of Symbolics.jl).
