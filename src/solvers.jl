@@ -132,18 +132,22 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 			time_total += @elapsed begin
 
 				## assemble operators
-				fill!(b.entries, 0)
-				if SC.parameters[:constant_matrix] && SC.parameters[:initialized]
+				if !SC.parameters[:constant_rhs]
+					fill!(b.entries, 0)
+				end
+				if !SC.parameters[:constant_matrix]
+					fill!(A.entries.cscmatrix.nzval, 0)
+				end
+				if SC.parameters[:initialized]
 					time_assembly += @elapsed for op in PD.operators
-						allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], assemble_matrix = false, kwargs...)
+						allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], assemble_matrix = !SC.parameters[:constant_matrix], assemble_rhs = !SC.parameters[:constant_rhs], kwargs...)
 					end
 				else
-					fill!(A.entries.cscmatrix.nzval, 0)
 					time_assembly += @elapsed for op in PD.operators
 						allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], kwargs...)
 					end
-					flush!(A.entries)
 				end
+				flush!(A.entries)
 
 				## penalize fixed dofs
 				time_assembly += @elapsed for op in PD.operators
@@ -276,16 +280,16 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 
 		time_solve = @elapsed begin
 			allocs_solve = @allocated begin
-				if SC.parameters[:constant_matrix] && SC.parameters[:initialized]
-				else
+				if !SC.parameters[:constant_matrix] || !SC.parameters[:initialized]
 					linsolve.A = A.entries.cscmatrix
-					SC.parameters[:initialized] = true
 				end
-				linsolve.b = b.entries
+				if !SC.parameters[:constant_rhs] || !SC.parameters[:initialized]
+					linsolve.b = b.entries
+				end
+				SC.parameters[:initialized] = true
 
 				## solve
-				x = LinearSolve.solve(linsolve)
-				SC.linsolver = linsolve
+				x = LinearSolve.solve!(linsolve)
 
 				fill!(residual.entries, 0)
 				mul!(residual.entries, A.entries.cscmatrix, x.u)
@@ -466,18 +470,22 @@ function iterate_until_stationarity(
 				time_total += @elapsed begin
 
 					## assemble operators
-					fill!(b.entries, 0)
-					if SC.parameters[:constant_matrix] && SC.parameters[:initialized]
+					if !SC.parameters[:constant_rhs]
+						fill!(b.entries, 0)
+					end
+					if !SC.parameters[:constant_matrix]
+						fill!(A.entries.cscmatrix.nzval, 0)
+					end
+					if SC.parameters[:initialized]
 						time_assembly += @elapsed for op in PD.operators
-							allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], assemble_matrix = false, kwargs...)
+							allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], assemble_matrix = !SC.parameters[:constant_matrix], assemble_rhs = !SC.parameters[:constant_rhs], kwargs...)
 						end
 					else
-						fill!(A.entries.cscmatrix.nzval, 0)
 						time_assembly += @elapsed for op in PD.operators
 							allocs_assembly += @allocated assemble!(A, b, sol, op, SC; time = SC.parameters[:time], kwargs...)
 						end
-						flush!(A.entries)
 					end
+					flush!(A.entries)
 
 					## penalize fixed dofs
 					time_assembly += @elapsed for op in PD.operators
@@ -545,14 +553,17 @@ function iterate_until_stationarity(
 
 				time_solve = @elapsed begin
 					allocs_solve = @allocated begin
-						if !SC.parameters[:constant_matrix] || it == 1
+						if !SC.parameters[:constant_matrix] || !SC.parameters[:initialized]
 							linsolve.A = A.entries.cscmatrix
 						end
-						linsolve.b = b.entries
+						if !SC.parameters[:constant_rhs] || !SC.parameters[:initialized]
+							linsolve.b = b.entries
+						end
+						SC.parameters[:initialized] = true
+						
 
 						## solve
-						x = LinearSolve.solve(linsolve)
-						SC.linsolver = linsolve
+						x = LinearSolve.solve!(linsolve)
 
 						fill!(residual.entries, 0)
 						mul!(residual.entries, A.entries.cscmatrix, x.u)

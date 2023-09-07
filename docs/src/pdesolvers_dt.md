@@ -1,22 +1,29 @@
 # Time-dependent Solvers
 
 For time-dependent (non-stationary) problems the user currently has these options:
-- add custom time derivatives to the problem (i.e. a mass matrix as a BilinearOperator and necessary LinearOperators for evaluating the previous time step(s), if more than one previous time step needs to be remembered, further unknowns must be registered)
-- reframe the ProblemDescription as an ODE problem and evolve it via DifferentialEquations with the following extension
+- fully manual option: add custom time derivatives to the problem (i.e. a mass matrix as a BilinearOperator and necessary LinearOperators for evaluating the previous time step(s), if more than one previous time step needs to be remembered, their memorization must be handled manually, e.g. by registering further unknowns)
+- fully automatic option: reframe the ProblemDescription as an ODE problem and evolve it via DifferentialEquations with ExtendableFEMDiffEQExt.jl extension (see below)
+
+Several time-dependent examples are available where both options are implemented, see e.g. Examples103 (Burger's equation)
+and Example205 (Heat equation).
+
 
 ## Extension ExtendableFEMDiffEQExt.jl
 
 This extension is automatically loaded when also DifferentialEquations.jl is used. It allows to easily reframe
-the ProblemDescription as the right-hand side of an ODE. Here, the ProblemDescription contains
+the ProblemDescription for the spacial differential operator of the PDE
+as the right-hand side of an ODE. Here, the ProblemDescription contains
 the right-hand side description of the ODE
 ```math
 \begin{aligned}
-M u_t(t) & = b(u(t)) - A(u(t))
+M u_t(t) & = b(u(t)) - A(u(t)) u(t)
 \end{aligned}
 ```
-where A and b coresspond to the assembled system matrix and right-hand sides
-of the operators stored in the ProblemDescription. The matrix M is the mass matrix
-and can be customized somewhat (as long as it stays constant).
+where A and b correspond to the assembled (linearized) spacial operator and the right-hand side operators
+in the ProblemDescription. Note, that A comes with a minus sign. The matrix M is the mass matrix
+and can be customized somewhat (as long as it stays constant). The operators in the ProblemDescription
+might depend on time (if their kernels use qpinfo.time) and will be reassembled in each time step unless
+store = true. 
 
 
 ```@autodocs

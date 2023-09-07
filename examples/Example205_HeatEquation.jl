@@ -28,7 +28,7 @@ function initial_data!(result, qpinfo)
 	result[1] = exp(-5 * x[1]^2 - 5 * x[2]^2)
 end
 
-function main(; nrefs = 4, T = 2.0, τ = 1e-2, order = 2, use_diffeq = true,
+function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
 	solver = Rosenbrock23(autodiff = false), Plotter = nothing, kwargs...)
 
 	## problem description
@@ -52,7 +52,7 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-2, order = 2, use_diffeq = true,
 
 	if (use_diffeq)
 		## generate DifferentialEquations.ODEProblem
-		prob = generate_ODEProblem(PD, FES, (0.0, T); init = sol)
+		prob = generate_ODEProblem(PD, FES, (0.0, T); init = sol, constant_matrix = true)
 
 		## solve ODE problem
 		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-3, dt = τ, dtmin = 1e-6, adaptive = true)

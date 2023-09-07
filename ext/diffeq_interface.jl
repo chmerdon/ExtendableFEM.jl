@@ -29,6 +29,7 @@ function generate_ODEProblem(PD::ProblemDescription, FES, tspan; unknowns = PD.u
 	if SC.parameters[:verbosity] > 0
 		@info ".... init solver configuration\n"
 	end
+
 	return generate_ODEProblem(SC, tspan; mass_matrix = nothing, kwargs...)
 end
 
@@ -73,13 +74,17 @@ function diffeq_assembly!(sys, ctime)
 	end
 
 	## assemble operators
-	fill!(b.entries, 0)
-	if sys.parameters[:constant_matrix] && sys.parameters[:initialized]
+	if !sys.parameters[:constant_rhs]
+		fill!(b.entries, 0)
+	end
+	if !sys.parameters[:constant_matrix]
+		fill!(A.entries.cscmatrix.nzval, 0)
+	end
+	if sys.parameters[:initialized]
 		for op in PD.operators
-			ExtendableFEM.assemble!(A, b, sol, op, sys; assemble_matrix = false, time = ctime)
+			ExtendableFEM.assemble!(A, b, sol, op, sys; assemble_matrix = !sys.parameters[:constant_matrix], assemble_rhs = !sys.parameters[:constant_rhs], time = ctime)
 		end
 	else
-		fill!(A.entries.cscmatrix.nzval, 0)
 		for op in PD.operators
 			ExtendableFEM.assemble!(A, b, sol, op, sys; time = ctime)
 		end
