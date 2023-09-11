@@ -166,7 +166,7 @@ function main(;
     scalarplot!(pl[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
     vectorplot!(pl[1,1],xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.1, clear = false, title = "u_h (abs + quiver)")
     scalarplot!(pl[2,1],xgrid, view(nodevalues(sol[ϱ]),1,:), levels = 11, title = "ϱ_h")
-    plot_convergencehistory!(pl[1,2], NDofs, Results[:,1:4]; add_h_powers = [order,order+1], X_to_h = X -> 0.2*X.^(-1/2), legend = :rc, fontsize = 20, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"])
+    plot_convergencehistory!(pl[1,2], NDofs, Results[:,1:4]; add_h_powers = [order,order+1], X_to_h = X -> 0.2*X.^(-1/2), legend = :best, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"])
     gridplot!(pl[2,2],xgrid)
 end
 
@@ -267,8 +267,6 @@ end
 function prepare_data!(; M = 1, c = 1, μ = 1, ufac = 100, laplacian_in_rhs = true)
 
 	@variables x y
-	dx = Differential(x)
-	dy = Differential(y)
 
 	## density
 	ϱ = exp(-x^3/(3*c))/M

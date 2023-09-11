@@ -339,7 +339,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 			BE_test_vals::Array{Array{Tv, 3}, 1},
 			BE_args_vals::Array{Array{Tv, 3}, 1},
 			L2G::L2GTransformer,
-			QPinfos::QPInfos,
+			QPinfos::QPInfos
 		) where {T}
 
 			## prepare parameters
@@ -429,6 +429,11 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 			end
 		end
 		O.assembler = assembler
+	else
+		## update the time
+		for j = 1 : length(O.QP_infos)
+			O.QP_infos[j].time = time
+		end
 	end
 end
 
@@ -597,6 +602,11 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 			end
 		end
 		O.assembler = assembler
+	else
+		## update the time
+		for j = 1 : length(O.QP_infos)
+			O.QP_infos[j].time = time
+		end
 	end
 end
 

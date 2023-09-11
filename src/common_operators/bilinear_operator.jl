@@ -589,6 +589,11 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 			end
 		end
 		O.assembler = assembler
+	else
+		## update the time
+		for j = 1 : length(O.QP_infos)
+			O.QP_infos[j].time = time
+		end
 	end
 end
 
@@ -885,6 +890,11 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 			end
 		end
 		O.assembler = assembler
+	else
+		## update the time
+		for j = 1 : length(O.QP_infos)
+			O.QP_infos[j].time = time
+		end
 	end
 end
 

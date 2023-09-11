@@ -91,7 +91,7 @@ function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true,
 	gridplot!(pl[1, 1], xgrid, linewidth = 1)
 	gridplot!(pl[2, 1], xgrid, linewidth = 1, xlimits = [0, 0.3], ylimits = [0.1, 0.3])
 	scalarplot!(pl[3, 1], xgrid, nodevalues(sol[u]; abs = true)[1, :])
-	#vectorplot!(pl[3,1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.05, clear = false)
+	vectorplot!(pl[3, 1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = (0.2, 0.05), vscale = 0.5, clear = false)
 	scalarplot!(pl[4, 1], xgrid, view(nodevalues(sol[p]), 1, :), levels = 11, title = "p_h")
 end
 

@@ -222,6 +222,11 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 			end
 		end
 		O.assembler = assembler
+	else
+		## update the time
+		for j = 1 : length(O.QP_infos)
+			O.QP_infos[j].time = time
+		end
 	end
 end
 

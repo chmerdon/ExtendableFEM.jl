@@ -52,20 +52,19 @@ function initialgrid_cone()
 	return xgrid
 end
 
-function main(; μ_final = 0.001, nrefs = 5, reconstruct = true, Plotter = nothing, kwargs...)
+function main(; μ_final = 0.001, order = 2, nrefs = 5, Plotter = nothing, kwargs...)
 
 	## prepare parameter field
-	extra_params = Array{Float64, 1}([max(μ_final, 0.01)])
+	extra_params = Array{Float64, 1}([max(μ_final, 0.05)])
 
 	## problem description
 	PD = ProblemDescription()
 	u = Unknown("u"; name = "velocity")
 	p = Unknown("p"; name = "pressure")
-	id_u = reconstruct ? apply(u, Reconstruct{HDIVBDM1{2}, Identity}) : id(u)
 
 	assign_unknown!(PD, u)
 	assign_unknown!(PD, p)
-	assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [id_u, grad(u), id(p)]; params = extra_params, kwargs...))
+	assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [id(u), grad(u), id(p)]; params = extra_params, kwargs...))
 	assign_operator!(PD, InterpolateBoundaryData(u, boundarydata!; regions = 3))
 	assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1, 2]))
 
@@ -73,10 +72,10 @@ function main(; μ_final = 0.001, nrefs = 5, reconstruct = true, Plotter = nothi
 	xgrid = uniform_refine(initialgrid_cone(), nrefs)
 
 	## prepare FESpace
-	FES = [FESpace{H1BR{2}}(xgrid), FESpace{L2P0{1}}(xgrid)]
+	FES = [FESpace{H1Pk{2,2,order}}(xgrid), FESpace{H1Pk{1,2,order-1}}(xgrid)]
 
 	## prepare plots
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 1), clear = true, size = (1200, 1200))
+	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (1600, 800))
 
 	## solve by μ embedding
 	step = 0
@@ -90,9 +89,10 @@ function main(; μ_final = 0.001, nrefs = 5, reconstruct = true, Plotter = nothi
 		if step == 1
 			initialize!(PE, sol)
 		end
-		scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "μ = $(extra_params[1])", Plotter = Plotter)
+		scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity field (μ = $(extra_params[1]))", Plotter = Plotter)
 		vectorplot!(p[1, 1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
-
+		streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, xlimits = (-0.5,0.5), ylimits = (-2,-1.0), title = "eddies below y = -1")
+		
 		if extra_params[1] <= μ_final
 			break
 		else
@@ -101,9 +101,10 @@ function main(; μ_final = 0.001, nrefs = 5, reconstruct = true, Plotter = nothi
 	end
 
 	@info sol
-	scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "μ = $(extra_params[1])", Plotter = Plotter)
+	scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity field (μ = $(extra_params[1]))", Plotter = Plotter)
 	vectorplot!(p[1, 1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
-
+	streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, xlimits = (-0.5,0.5), ylimits = (-2,-1.0), title = "eddies below y = -1")
+		
 	writeVTK("Example250_output.vtu", xgrid; velocity = nodevalues(sol[1]), pressure = nodevalues(sol[2]), cellregions = xgrid[CellRegions])
 end
 

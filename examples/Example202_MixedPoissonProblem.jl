@@ -75,9 +75,9 @@ function main(; nrefs = 5, Plotter = nothing, hdivdg = false, kwargs...)
 
 	## plot
 	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (1000, 500))
-	xgrid_plot = split_grid_into(xgrid, Triangle2D)
-	scalarplot!(p[1, 1], xgrid_plot, nodevalues(sol[u])[:]; Plotter = Plotter, title = "u")
-	scalarplot!(p[1, 2], xgrid_plot, nodevalues(sol[σ]; abs = true)[:]; Plotter = Plotter, title = "|σ|")
+	scalarplot!(p[1, 1], xgrid, nodevalues(sol[u])[:]; Plotter = Plotter, title = "u")
+	scalarplot!(p[1, 2], xgrid, nodevalues(sol[σ]; abs = true)[:]; Plotter = Plotter, title = "σ ≈ -∇u (abs + quiver)")
+	vectorplot!(p[1, 2], xgrid, eval_func(PointEvaluator([id(σ)], sol)), vscale = 0.8, clear = false)
 end
 
 end # module

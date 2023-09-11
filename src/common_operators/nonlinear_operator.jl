@@ -273,7 +273,8 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 			BE_test_vals::Array{Array{Tv, 3}, 1},
 			BE_args_vals::Array{Array{Tv, 3}, 1},
 			L2G::L2GTransformer,
-			K::KernelEvaluator,
+			K::KernelEvaluator;
+			time = 0.0
 		) where {T, Tv, Ti}
 
 			## extract kernel properties
@@ -285,6 +286,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 			jac = K.jac
 			value = K.value
 			kernel_params = K.kernel
+			params.time = time
 
 			ndofs_test::Array{Int, 1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_test]
 			ndofs_args::Array{Int, 1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_args]
@@ -442,7 +444,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::NonlinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {Tv, UT}
+function ExtendableFEM.assemble!(A, b, sol, O::NonlinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, time = 0.0, kwargs...) where {Tv, UT}
 	if assemble_matrix * assemble_rhs == false
 		return nothing
 	end
@@ -454,5 +456,5 @@ function ExtendableFEM.assemble!(A, b, sol, O::NonlinearOperator{Tv, UT}, SC::So
 		ind_args = [findfirst(==(u), sol.tags) for u in O.u_args] #[get_unknown_id(SC, u) for u in O.u_args]
 	end
 	build_assembler!(A.entries, b.entries, O, [sol[j] for j in ind_test], [sol[j] for j in ind_args]; kwargs...)
-	O.assembler(A.entries, b.entries, [sol[j] for j in ind_args])
+	O.assembler(A.entries, b.entries, [sol[j] for j in ind_args]; time = time)
 end
