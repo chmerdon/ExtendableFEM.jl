@@ -155,7 +155,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
-		function assembly_loop(b::AbstractMatrix{T}, sol::Array{<:FEVectorBlock, 1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_args::Array{<:FEEvaluator, 1}, L2G::L2GTransformer, QPinfos::QPInfos; time = 0) where {T}
+		function assembly_loop(b::AbstractMatrix{T}, sol::Array{<:FEVectorBlock, 1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_args::Array{<:FEEvaluator, 1}, L2G::L2GTransformer, QPinfos::QPInfos) where {T}
 
 			## prepare parameters
 			result_kernel = zeros(Tv, resultdim)
@@ -163,7 +163,6 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 			ndofs_args::Array{Int, 1} = [size(BE.cvals, 2) for BE in BE_args]
 			weights, xref = QF.w, QF.xref
 			nweights = length(weights)
-			QPinfos.time = time
 
 			for item::Int in items
 				if itemregions[item] > 0
@@ -243,10 +242,10 @@ function evaluate(
 
 Evaluates the ItemIntegrator for the specified solution into the matrix b.
 """
-function ExtendableFEMBase.evaluate!(b, O::ItemIntegrator, sol::FEVector; time = 0, kwargs...)
+function ExtendableFEMBase.evaluate!(b, O::ItemIntegrator, sol::FEVector; kwargs...)
 	ind_args = [findfirst(==(u), sol.tags) for u in O.u_args]
-	build_assembler!(O, [sol[j] for j in ind_args])
-	O.assembler(b, [sol[j] for j in ind_args]; time = time)
+	build_assembler!(O, [sol[j] for j in ind_args]; kwargs...)
+	O.assembler(b, [sol[j] for j in ind_args])
 end
 
 """
@@ -261,10 +260,10 @@ function evaluate(
 
 Evaluates the ItemIntegrator for the specified solution into the matrix b.
 """
-function ExtendableFEMBase.evaluate!(b, O::ItemIntegrator, sol::Array{<:FEVectorBlock, 1}; time = 0, kwargs...)
+function ExtendableFEMBase.evaluate!(b, O::ItemIntegrator, sol::Array{<:FEVectorBlock, 1}; kwargs...)
 	ind_args = O.u_args
-	build_assembler!(O, [sol[j] for j in ind_args])
-	O.assembler(b, [sol[j] for j in ind_args]; time = time)
+	build_assembler!(O, [sol[j] for j in ind_args]; kwargs...)
+	O.assembler(b, [sol[j] for j in ind_args])
 end
 
 """
@@ -278,13 +277,13 @@ function evaluate(
 
 Evaluates the ItemIntegrator for the specified solution and returns an matrix of size resultdim x num_items.
 """
-function evaluate(O::ItemIntegrator{Tv, UT}, sol; time = 0, kwargs...) where {Tv, UT}
+function evaluate(O::ItemIntegrator{Tv, UT}, sol; kwargs...) where {Tv, UT}
 	if UT <: Integer
 		ind_args = O.u_args
 	elseif UT <: Unknown
 		ind_args = [findfirst(==(u), sol.tags) for u in O.u_args]
 	end
-	build_assembler!(O, [sol[j] for j in ind_args])
+	build_assembler!(O, [sol[j] for j in ind_args]; kwargs...)
 	grid = sol[ind_args[1]].FES.xgrid
 	AT = O.parameters[:entities]
 	if AT <: ON_CELLS
@@ -299,6 +298,6 @@ function evaluate(O::ItemIntegrator{Tv, UT}, sol; time = 0, kwargs...) where {Tv
 		nitems = size(grid[BEdgeNodes], 2)
 	end
 	b = zeros(eltype(sol[1].entries), O.parameters[:resultdim], nitems)
-	O.assembler(b, [sol[j] for j in ind_args]; time = time)
+	O.assembler(b, [sol[j] for j in ind_args])
 	return b
 end

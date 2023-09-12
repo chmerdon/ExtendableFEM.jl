@@ -14,6 +14,17 @@ K^{-1} w + \nabla p & = 0 \quad \text{in } \Omega \times [0,T]
 ```
 and suitable boundary conditions and given initial state.
 
+The discretisation involves an Hdiv-conforming reconstruction operator to avoid
+Poisson locking which results in a scheme similar to the one suggested in the reference below.
+As a test problem the first benchmark problem from the same reference is used.
+
+!!! reference
+
+    "A study of two modes of locking in poroelasticity",\
+    S.-Y. Yi,\
+    SIAM J. Numer. Anal. 55(4) (2017),\
+    [>Journal-Link<](https://epubs.siam.org/doi/10.1137/16M1056109)
+
 =#
 
 module Example290_PoroElasticity
@@ -67,16 +78,17 @@ function prepare_data!(; μ = 1, λ = 1, K = 1, c0 = 1, α = 1)
 end
 
 function linear_kernel!(result, input, qpinfo)
-	∇u, p, w, divw = view(input, 1:4), view(input, 5), view(input, 6:7), view(input,8)
+	∇u, divu, p, w, divw = view(input, 1:4), view(input, 5), view(input, 6), view(input, 7:8), view(input,9)
 	μ, λ, α, K = qpinfo.params[1], qpinfo.params[2], qpinfo.params[3], qpinfo.params[4]
-	result[1] = μ * ∇u[1] + (λ + μ) * (∇u[1] + ∇u[4]) - p[1]
+	result[1] = μ * ∇u[1] + (λ + μ) * divu[1] - p[1]
 	result[2] = μ * ∇u[2]
 	result[3] = μ * ∇u[3]
-	result[4] = μ * ∇u[4] + (λ + μ) * (∇u[1] + ∇u[4]) - p[1]
-	result[5] = divw[1]
-	result[6] = w[1]/K
-	result[7] = w[2]/K
-	result[8] = p[1]
+	result[4] = μ * ∇u[4] + (λ + μ) * divu[1] - p[1]
+	result[5] = divu[1]
+	result[6] = divw[1]
+	result[7] = w[1]/K
+	result[8] = w[2]/K
+	result[9] = -p[1]
 end
 
 ## kernel for exact error calculation
@@ -90,7 +102,7 @@ function exact_error!(u!,∇u!,p!)
     end
 end
 
-function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 5, T = 0.5, τ = 1e-2, c0 = 1, order = 1, Plotter = nothing, kwargs...)
+function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 5, T = 0.5, τ = 1e-2, c0 = 1, order = 1, reconstruct = true, Plotter = nothing, kwargs...)
 
     ## calculate Lame' parameter
     μ = E/(2*(1+ν))
@@ -114,12 +126,22 @@ function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 5, T = 0.5, τ =
 	assign_unknown!(PD, u)
 	assign_unknown!(PD, p)
 	assign_unknown!(PD, w)
+
+	## prepare reconstruction operator
+	if reconstruct
+		FES_Reconst = order == 1 ? HDIVBDM1{2} : HDIVBDM2{2}
+		divu = apply(u, Reconstruct{FES_Reconst, Divergence})
+		idu = apply(u, Reconstruct{FES_Reconst, Identity})
+	else
+		divu = div(u)
+		idu = id(u)
+	end
 	
 	## linear operator
-	assign_operator!(PD, BilinearOperator(linear_kernel!, [grad(u), id(p), id(w), div(w)]; params = [μ, λ, α,K], store = true, kwargs...))
+	assign_operator!(PD, BilinearOperator(linear_kernel!, [grad(u), divu, id(p), id(w), div(w)]; params = [μ, λ, α,K], store = true, kwargs...))
 
 	## right-hand side data
-	assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
+	assign_operator!(PD, LinearOperator(f!, [idu]; kwargs...))
 	assign_operator!(PD, LinearOperator(g!, [id(p)]; kwargs...))
 
 	## boundary conditions
@@ -141,8 +163,8 @@ function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 5, T = 0.5, τ =
 	interpolate!(sol[u], exact_u!; bonus_quadorder = 5, time = 0)
     interpolate!(sol[p], exact_p!; bonus_quadorder = 5, time = 0)
 
-	## init plotter and plot u0
-	plt = GridVisualizer(; Plotter = Plotter, layout = (3, 2), clear = true, size = (1200, 800))
+	## init plotter and plot initial data and grid
+	plt = GridVisualizer(; Plotter = Plotter, layout = (3, 2), clear = true, size = (800, 1200))
 	scalarplot!(plt[1, 1], xgrid, nodevalues_view(sol[u])[1], levels = 5, title = "u_h (t = 0)")
 	scalarplot!(plt[2, 1], xgrid, nodevalues(sol[p])[:], levels = 5, title = "p_h (t = 0)")
 	gridplot!(plt[3, 1], xgrid; linewidth = 1)
@@ -157,12 +179,13 @@ function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 5, T = 0.5, τ =
 	assign_operator!(PD, LinearOperator(M, [u,p,w], [u,p,w]; factor = 1 / τ, kwargs...))
 
 	## generate solver configuration
-	SC = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, constant_matrix = true, kwargs...)
+	SC = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, verbosity = -1, constant_matrix = true, kwargs...)
 
 	## iterate tspan
 	t = 0
 	for it ∈ 1:Int(floor(T / τ))
 		t += τ
+		@info "t = $t"
 		ExtendableFEM.solve(PD, FES, SC; time = t)
 	end
 
