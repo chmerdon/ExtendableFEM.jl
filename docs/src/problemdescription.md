@@ -12,7 +12,7 @@ ProblemDescription
 ```@autodocs
 Modules = [ExtendableFEM]
 Pages = ["problemdescription.jl"]
-Order   = [:type, :function]
+Order   = [:function]
 ```
 
 

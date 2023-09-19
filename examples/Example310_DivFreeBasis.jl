@@ -3,15 +3,16 @@
 # 310 : Div-free RT0 basis
 ([source code](SOURCE_URL))
 
-This example computes the best-approximation ``\mathbf{\psi}_h`` of the 3D stream function ``\mathbf{\psi}`` by solving
-for a curl-potential ``\mathbf{\phi} \in N_0`` with
+This example computes the best-approximation ``\mathbf{\psi}_h`` of a divergence-free velocity
+``\mathbf{u} = \mathrm{curl} \mathbf{\psi}`` by solving
+for a curl-potential ``\mathbf{\phi}_h \in N_0`` with
 ```math
 \begin{aligned}
-(\mathrm{curl} \mathbf{\phi}, \mathrm{curl} \mathbf{\theta}) & = (\mathbf{\psi}, \mathrm{curl} \mathbf{\theta}) \quad \text{for all } \mathbf{\theta} \in N_0
+(\mathrm{curl} \mathbf{\phi}_h, \mathrm{curl} \mathbf{\theta}_h) & = (\mathbf{u}, \mathrm{curl} \mathbf{\theta}_h) \quad \text{for all } \mathbf{\theta} \in N_0
 \end{aligned}
 ```
 Here, ``N_0`` denotes the lowest-order Nedelec space which renders the problem ill-posed unless one selects
-a linear independent basis. This is done after the algorithm suggested in the reference below.
+a linear independent basis. This is done with the algorithm suggested in the reference below.
 
 !!! reference
 

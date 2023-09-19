@@ -11,7 +11,7 @@ This example solves the DFG Navier-Stokes benchmark problem
 \end{aligned}
 ```
 on a rectangular 2D domain with a circular obstacle, see
-[here](www.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html) for details.
+[here](https://www.mathematik.tu-dortmund.de/~featflow/en/benchmarks/cfdbenchmarking/flow/dfg_benchmark1_re20.html) for details.
 
 This script demonstrates the employment of external grid generators and the computation of drag and lift coefficients.
 
