@@ -22,8 +22,9 @@ M u_t(t) & = b(u(t)) - A(u(t)) u(t)
 where A and b correspond to the assembled (linearized) spacial operator and the right-hand side operators
 in the ProblemDescription. Note, that A comes with a minus sign. The matrix M is the mass matrix
 and can be customized somewhat (as long as it stays constant). The operators in the ProblemDescription
-might depend on time (if their kernels use qpinfo.time) and will be reassembled in each time step unless
-store = true. 
+might depend on time (if their kernels use qpinfo.time) and will be reassembled in each time step. To avoid
+this single operator reassemblies can be switched off by using the store = true argument. The full matrix
+reassembly can be skipped if constant_matrix = true is used in the SolverConfiguration.
 
 
 ```@autodocs

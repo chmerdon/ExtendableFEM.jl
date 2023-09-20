@@ -53,6 +53,7 @@ end
 function main(;
 	nrefs = 4,                      ## number of refinement levels
 	bonus_quadorder = 2,            ## additional quadrature order for data evaluations
+	divfree_basis = true,			## if true uses curl(N0), if false uses mixed FEM RT0xP0
 	Plotter = nothing,              ## Plotter (e.g. PyPlot)
 	kwargs...)
 
@@ -69,56 +70,76 @@ function main(;
 		result .-= u
 		result .= result .^ 2
 	end
-	ErrorIntegratorExact = ItemIntegrator(exact_error!, [curl3(1)]; bonus_quadorder = 2 + bonus_quadorder, kwargs...)
+	ErrorIntegratorExact = ItemIntegrator(exact_error!, [divfree_basis ? curl3(1) : id(1)]; bonus_quadorder = 2 + bonus_quadorder, kwargs...)
 	NDofs = zeros(Int, nrefs)
-	L2error = zeros(Float64, nrefs, 5)
+	L2error = zeros(Float64, nrefs)
 
-	sol = nothing
-	xgrid = nothing
 	for lvl ∈ 1:nrefs
 		## grid
 		xgrid = uniform_refine(grid_unitcube(Tetrahedron3D), lvl)
 
-		## get subset of edges, spanning the node graph
-		spanning_tree = get_spanning_edge_subset(xgrid)
+		if divfree_basis
+			## get subset of edges, spanning the node graph
+			spanning_tree = get_spanning_edge_subset(xgrid)
 
-		## get all other edges = linear independent degrees of freedom
-		subset = setdiff(1:num_edges(xgrid), spanning_tree)
+			## get all other edges = linear independent degrees of freedom
+			@time subset = setdiff(1:num_edges(xgrid), spanning_tree)
 
-		## Generate lowest order Nedelec FESpace
-		FES = FESpace{HCURLN0{3}}(xgrid)
-		NDofs[lvl] = length(subset)
+			## generate lowest order Nedelec FESpace
+			FES = FESpace{HCURLN0{3}}(xgrid)
+			NDofs[lvl] = length(subset)
 
-		## assemble full Nedelec mass matrix
-		M = FEMatrix(FES)
-		b = FEVector(FES)
-		assemble!(M, BilinearOperator([curl3(1)]))
-		assemble!(b, LinearOperator(exact_u!, [curl3(1)]; bonus_quadorder = bonus_quadorder))
+			## assemble full Nedelec mass matrix
+			A = FEMatrix(FES)
+			b = FEVector(FES)
+			assemble!(A, BilinearOperator([curl3(1)]))
+			assemble!(b, LinearOperator(exact_u!, [curl3(1)]; bonus_quadorder = bonus_quadorder))
 
-		## restrict to linear independent basis
-		Z = ExtendableSparseMatrix{Float64, Int64}(length(subset), FES.ndofs)
-		for j = 1 : length(subset)
-			Z[j,subset[j]] = 1
+			## restrict to linear independent basis
+			Z = ExtendableSparseMatrix{Float64, Int64}(length(subset), FES.ndofs)
+			for j = 1 : length(subset)
+				Z[j,subset[j]] = 1
+			end
+			Ared = Z * (A.entries * Z')
+			bred = Z * b.entries
+
+			## solve
+			sol = FEVector(FES)
+			@time sol.entries[subset] .= Ared\bred
+		else
+			## use RT0 functions + side constraint for divergence
+			FES = [FESpace{HDIVRT0{3}}(xgrid), FESpace{L2P0{1}}(xgrid)]
+			NDofs[lvl] = FES[1].ndofs + FES[2].ndofs
+
+			A = FEMatrix(FES)
+			b = FEVector(FES)
+			assemble!(A, BilinearOperator([id(1)]))
+			assemble!(A, BilinearOperator([div(1)], [id(2)]; transposed_copy = 1))
+			assemble!(b, LinearOperator(exact_u!, [id(1)]; bonus_quadorder = bonus_quadorder))
+
+			## solve
+			sol = FEVector(FES)
+			@time sol.entries .= A.entries\b.entries
 		end
-		M2 = Z * (M.entries * Z')
-		b2 = Z * b.entries
 
-		## solve
-		sol = FEVector(FES)
-		sol.entries[subset] .= M2\b2
 
 		## check residual
-		@info "residual = $(norm(M.entries * sol.entries - b.entries))"
+		@info "residual = $(norm(A.entries * sol.entries - b.entries))"
 
 		## evalute error
 		error = evaluate(ErrorIntegratorExact, sol)
 		L2error[lvl] = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :)))
-		@info "|| curl(ϕ - ϕ_h) || = $(L2error[lvl])"
+		if divfree_basis
+			@info "|| u - curl(ϕ_h) || = $(L2error[lvl])"
+			scalarplot!(pl[1, 1], xgrid, nodevalues(sol[1], Curl3D; abs = true)[1, :]; Plotter = Plotter)
+		else
+			@info "|| u - u_h || = $(L2error[lvl])"
+			scalarplot!(pl[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; Plotter = Plotter)
+		end
 	end
 
-	## plot and print convergence history as table
-	scalarplot!(pl[1, 1], xgrid, nodevalues(sol[1], Curl3D; abs = true)[1, :]; Plotter = Plotter)
-	print_convergencehistory(NDofs, L2error; X_to_h = X -> X .^ (-1 / 3), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| uR ||", "|| p - p_h ||", "|| div(u + uR) ||"], xlabel = "ndof")
+	## print convergence history as table
+	print_convergencehistory(NDofs, L2error; X_to_h = X -> X .^ (-1 / 3), ylabels = ["|| u - u_h ||"], xlabel = "ndof")
 end
 
 
@@ -126,7 +147,7 @@ end
 function get_spanning_edge_subset(xgrid)
 	nnodes = num_nodes(xgrid)
 	edgenodes = xgrid[EdgeNodes]
-	@time bedgenodes = xgrid[BEdgeNodes]
+	bedgenodes = xgrid[BEdgeNodes]
 	bedgeedges = xgrid[BEdgeEdges]
 
 	## boolean arrays to memorize which nodes are visited
