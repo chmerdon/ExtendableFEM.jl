@@ -5,7 +5,7 @@
 
 This example studies the optimal control problem for the Stokes operator
 with divergence-free velocity space ``\mathbf{V}_0 \subset \mathbf{H}^1_0``, i.e.,
-for given data ``\mathbf{u}`` minimize the functional
+for given data ``\mathbf{u}^d`` minimize the functional
 ```math
 \begin{aligned}
 \min_{(\mathbf{u},\mathbf{q}) \in \mathbf{V}_0 \times \mathbf{L}^2} \| \mathbf{u} - \mathbf{u}^d \|^2 + \frac{\alpha}{2} \| \mathbf{q} \|^2
