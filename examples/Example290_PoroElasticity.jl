@@ -3,13 +3,13 @@
 # 290 : Poro-Elasticity
 ([source code](SOURCE_URL))
 
-This example concerns the three-field solution ``(w,u,p)`` of Biot's consolidation
+This example concerns the three-field solution ``(\mathbf{w},\mathbf{u},p)`` of Biot's consolidation
 model in poroelasticity given by
 ```math
 \begin{aligned}
--(\lambda + \mu) \nabla (\mathrm{div} u) - \mu \Delta u + \alpha \nabla p & = f \quad \text{in } \Omega \times [0,T]\\
-\partial_t (c_o + α \mathrm{div}(u)) + \mathrm{div}(w) & = g \quad \text{in } \Omega \times [0,T]\\
-K^{-1} w + \nabla p & = 0 \quad \text{in } \Omega \times [0,T]
+-(\lambda + \mu) \nabla (\mathrm{div} \mathbf{v}) - \mu \Delta \mathbf{v} + \alpha \nabla p & = f \quad \text{in } \Omega \times [0,T]\\
+\partial_t (c_o + α \mathrm{div}(\mathbf{v})) + \mathrm{div}(w\mathbf{w}) & = g \quad \text{in } \Omega \times [0,T]\\
+K^{-1} \mathbf{w} + \nabla p & = 0 \quad \text{in } \Omega \times [0,T]
 \end{aligned}
 ```
 and suitable boundary conditions and given initial state.

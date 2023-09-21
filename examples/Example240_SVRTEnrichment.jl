@@ -7,7 +7,7 @@ This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of
 ```math
 \begin{aligned}
 - \mu \Delta \mathbf{u} + \nabla p & = \mathbf{f}\\
-\mathrm{div}(u) & = 0
+\mathrm{div}(\mathbf{u}) & = 0
 \end{aligned}
 ```
 with exterior force ``\mathbf{f}`` and some parameter ``\mu`` and inhomogeneous Dirichlet boundary data.

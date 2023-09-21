@@ -12,6 +12,7 @@ DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 SimplexGridFactory = "57bfcd06-606e-45d6-baf4-4ba06da0efd5"
 Triangulate = "f7e6ffb2-c36d-4f8f-a77e-16e897189344"
+KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
 
 [compat]
 Literate = ">=0.2.7"

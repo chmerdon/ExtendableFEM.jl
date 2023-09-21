@@ -7,7 +7,7 @@ This example computes a velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of t
 ```math
 \begin{aligned}
 - \mu \Delta \mathbf{u} + \nabla p & = \mathbf{0}\\
-\mathrm{div}(u) & = 0
+\mathrm{div}(\mathbf{u}) & = 0
 \end{aligned}
 ```
 with some μ parameter ``\mu``.

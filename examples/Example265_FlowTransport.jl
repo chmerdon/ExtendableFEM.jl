@@ -8,7 +8,7 @@ Altogether, we are looking for a velocity ``\mathbf{u}``, a pressure ``\mathbf{p
 ```math
 \begin{aligned}
 - \mu \Delta \mathbf{u} + \nabla p & = 0\\
-\mathrm{div}(u) & = 0\\
+\mathrm{div}(\mathbf{u}) & = 0\\
 \mathbf{c}_t - \kappa \Delta \mathbf{c} + \mathbf{u} \cdot \nabla \mathbf{c} & = 0
 \end{aligned}
 ```

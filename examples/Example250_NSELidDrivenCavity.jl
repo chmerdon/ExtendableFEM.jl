@@ -6,11 +6,11 @@
 This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem
 ```math
 \begin{aligned}
-- \mu \Delta \mathbf{u} + \left(\vecb{u} \cdot \nabla\right) \vecb{u}+ \nabla p & = \mathbf{f}\\
-\mathrm{div}(u) & = 0
+- \mu \Delta \mathbf{u} + \left(\mathbf{u} \cdot \nabla\right) \mathbf{u}+ \nabla p & = \mathbf{f}\\
+\mathrm{div}(\mathbf{u}) & = 0
 \end{aligned}
 ```
-with exterior force ``\mathbf{f}`` and some parameter ``\mu`` and inhomogeneous Dirichlet boundary data.
+in a lid driven cavity example over a cone and plots the solution and the formed eddies.
 
 =#
 
@@ -52,7 +52,7 @@ function initialgrid_cone()
 	return xgrid
 end
 
-function main(; μ_final = 0.001, order = 2, nrefs = 5, Plotter = nothing, kwargs...)
+function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwargs...)
 
 	## prepare parameter field
 	extra_params = Array{Float64, 1}([max(μ_final, 0.05)])
@@ -91,7 +91,7 @@ function main(; μ_final = 0.001, order = 2, nrefs = 5, Plotter = nothing, kwarg
 		end
 		scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity field (μ = $(extra_params[1]))", Plotter = Plotter)
 		vectorplot!(p[1, 1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
-		streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, xlimits = (-0.5,0.5), ylimits = (-2,-1.0), title = "eddies below y = -1")
+		streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, title = "eddies below y = -1")
 		
 		if extra_params[1] <= μ_final
 			break
@@ -103,9 +103,7 @@ function main(; μ_final = 0.001, order = 2, nrefs = 5, Plotter = nothing, kwarg
 	@info sol
 	scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity field (μ = $(extra_params[1]))", Plotter = Plotter)
 	vectorplot!(p[1, 1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
-	streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, xlimits = (-0.5,0.5), ylimits = (-2,-1.0), title = "eddies below y = -1")
-		
-	writeVTK("Example250_output.vtu", xgrid; velocity = nodevalues(sol[1]), pressure = nodevalues(sol[2]), cellregions = xgrid[CellRegions])
+	streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, title = "eddies below y = -1")
 end
 
 end # module

@@ -7,7 +7,7 @@ This example solves the DFG Navier-Stokes benchmark problem
 ```math
 \begin{aligned}
 - \mu \Delta \mathbf{u} + (\mathbf{u} \cdot \nabla) \mathbf{u} + \nabla p & = 0\\
-\mathrm{div}(u) & = 0
+\mathrm{div}(\mathbf{u}) & = 0
 \end{aligned}
 ```
 on a rectangular 2D domain with a circular obstacle, see

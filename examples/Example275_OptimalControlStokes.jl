@@ -84,7 +84,7 @@ end
 ## everything is wrapped in a main function
 function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1e-6, ϵ = 0, kwargs...)
     
-    ## prepare data
+    ## prepare target data
     d_eval = prepare_data!(; ϵ = ϵ)
     data!(result, qpinfo) = (d_eval(result, qpinfo.x[1], qpinfo.x[2]);)
 
@@ -93,14 +93,14 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1
 
     ## define unknowns
     u = Unknown("u"; name = "velocity", dim = 2)
-    z = Unknown("u"; name = "control", dim = 2)
+    z = Unknown("z"; name = "control", dim = 2)
     p = Unknown("p"; name = "pressure", dim = 1)
     λ = Unknown("λ"; name = "control pressure", dim = 1)
 
-    ## prepare reconstructio operator (if reconstruct = true)
+    ## prepare reconstruction operator (if reconstruct = true)
     idR(u) = reconstruct ? apply(u, Reconstruct{HDIVBDM1{2}, Identity}) : id(u)
 
-    ## define first sub-problem: Stokes equations to solve for velocity u
+    ## define optimal control problem
     PD = ProblemDescription("Stokes optimal control problem")
     assign_unknown!(PD, u)
     assign_unknown!(PD, z)
@@ -113,19 +113,19 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(z; regions = 1:4, kwargs...))
 
-    ## solve the two problems separately
+    ## solve with Bernardi--Raugel method
     FETypes = [H1BR{2}, L2P0{1}]
     FES = [FESpace{FETypes[j]}(xgrid) for j = 1 : 2]
     sol = solve(PD, [FES[1],FES[1],FES[2],FES[2]]; kwargs...)
 
-    ## plot
+    ## plot solution
     plt = GridVisualizer(; Plotter = Plotter, layout = (3,2), clear = true, size = (800,800))
     scalarplot!(plt[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 7, title = "|u_h|")
     scalarplot!(plt[1,2],xgrid, view(nodevalues(sol[p]),1,:)[:], levels = 7, title = "p_h")
     scalarplot!(plt[2,1],xgrid, view(nodevalues(sol[z]; abs = true),1,:), levels = 7, title = "|z_h|")
     scalarplot!(plt[2,2],xgrid, view(nodevalues(sol[λ]),1,:)[:], levels = 7, title = "λ_h")
 
-    ## plot data
+    ## plot target data
     I = FEVector(FES[1])
     interpolate!(I[1], data!)
     scalarplot!(plt[3,1],xgrid, view(nodevalues(I[1]; abs = true),1,:), levels = 7, title = "u^d")

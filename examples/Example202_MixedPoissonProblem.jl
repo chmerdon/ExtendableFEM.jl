@@ -3,12 +3,12 @@
 # 202 : Poisson-Problem (Mixed)
 ([source code](SOURCE_URL))
 
-This example computes the solution ``u`` of the two-dimensional Poisson problem
-in the mixed form
+This example computes the solution ``u`` and its stress ``\mathbf{\sigma} := - \mu \nabla u``
+of the two-dimensional Poisson problem in the mixed form
 ```math
 \begin{aligned}
-\sigma + \mu \nabla u = 0\\
-\mathrm{div} \sigma & = f \quad \text{in } \Omega
+\mathbf{\sigma} + \mu \nabla u &= 0\\
+\mathrm{div} \mathbf{\sigma} & = f \quad \text{in } \Omega
 \end{aligned}
 ```
 with right-hand side ``f(x,y) \equiv xy`` and homogeneous Dirichlet boundary conditions
