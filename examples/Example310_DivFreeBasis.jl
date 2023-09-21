@@ -79,29 +79,33 @@ function main(;
 		xgrid = uniform_refine(grid_unitcube(Tetrahedron3D), lvl)
 
 		if divfree_basis
-			## get subset of edges, spanning the node graph
-			spanning_tree = get_spanning_edge_subset(xgrid)
+			@time begin
+				## get subset of edges, spanning the node graph
+				spanning_tree = get_spanning_edge_subset(xgrid)
 
-			## get all other edges = linear independent degrees of freedom
-			@time subset = setdiff(1:num_edges(xgrid), spanning_tree)
+				## get all other edges = linear independent degrees of freedom
+				subset = setdiff(1:num_edges(xgrid), spanning_tree)
+			end
 
 			## generate lowest order Nedelec FESpace
 			FES = FESpace{HCURLN0{3}}(xgrid)
 			NDofs[lvl] = length(subset)
 
-			## assemble full Nedelec mass matrix
-			A = FEMatrix(FES)
-			b = FEVector(FES)
-			assemble!(A, BilinearOperator([curl3(1)]))
-			assemble!(b, LinearOperator(exact_u!, [curl3(1)]; bonus_quadorder = bonus_quadorder))
+			## assemble full Nedelec curl-curl matrix
+			@time begin
+				A = FEMatrix(FES)
+				b = FEVector(FES)
+				assemble!(A, BilinearOperator([curl3(1)]))
+				assemble!(b, LinearOperator(exact_u!, [curl3(1)]; bonus_quadorder = bonus_quadorder))
 
-			## restrict to linear independent basis
-			Z = ExtendableSparseMatrix{Float64, Int64}(length(subset), FES.ndofs)
-			for j = 1 : length(subset)
-				Z[j,subset[j]] = 1
+				## restrict to linear independent basis
+				Z = ExtendableSparseMatrix{Float64, Int64}(length(subset), FES.ndofs)
+				for j = 1 : length(subset)
+					Z[j,subset[j]] = 1
+				end
+				Ared = Z * (A.entries * Z')
+				bred = Z * b.entries
 			end
-			Ared = Z * (A.entries * Z')
-			bred = Z * b.entries
 
 			## solve
 			sol = FEVector(FES)
@@ -111,11 +115,14 @@ function main(;
 			FES = [FESpace{HDIVRT0{3}}(xgrid), FESpace{L2P0{1}}(xgrid)]
 			NDofs[lvl] = FES[1].ndofs + FES[2].ndofs
 
-			A = FEMatrix(FES)
-			b = FEVector(FES)
-			assemble!(A, BilinearOperator([id(1)]))
-			assemble!(A, BilinearOperator([div(1)], [id(2)]; transposed_copy = 1))
-			assemble!(b, LinearOperator(exact_u!, [id(1)]; bonus_quadorder = bonus_quadorder))
+			## assemble full RT0 mass matrix and div-pressure constraint
+			@time begin
+				A = FEMatrix(FES)
+				b = FEVector(FES)
+				assemble!(A, BilinearOperator([id(1)]))
+				assemble!(A, BilinearOperator([div(1)], [id(2)]; transposed_copy = 1))
+				assemble!(b, LinearOperator(exact_u!, [id(1)]; bonus_quadorder = bonus_quadorder))
+			end
 
 			## solve
 			sol = FEVector(FES)

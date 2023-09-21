@@ -1,6 +1,6 @@
 #= 
 
-# 240 : Compressible Stokes 2D
+# 280 : Compressible Stokes 2D
 ([source code](SOURCE_URL))
 
 This example solves the compressible Stokes equations where one seeks a (vector-valued) velocity ``\mathbf{u}``, a density ``\varrho`` and a pressure ``p`` such that
@@ -227,7 +227,7 @@ function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, M = 1, c
         xgrid = grid_builder(3)
         u1!(result, qpinfo) = (fill!(result, 0);)
         ∇u1!(result, qpinfo) = (fill!(result, 0);)
-        M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[2]/c);), 1; quadorder = 20)
+        M_exact = integrate(xgrid, ON_CELLS, (result, qpinfo) -> (result[1] = exp(-qpinfo.x[2]/c)/M;), 1; quadorder = 20)
         area = sum(xgrid[CellVolumes])
         ϱ1!(result, qpinfo) = (result[1] = exp(-qpinfo.x[2]/c)/(M_exact/area);)
         return grid_builder, standard_gravity!, nothing, u1!, ∇u1!, ϱ1!, 1

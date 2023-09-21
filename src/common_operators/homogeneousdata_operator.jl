@@ -66,28 +66,19 @@ function HomogeneousBoundaryData(u; entities = ON_BFACES, kwargs...)
 	return HomogeneousData(u; entities = entities, kwargs...)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::SolverConfiguration; kwargs...) where {UT, AT}
-	if UT <: Integer
-		ind = O.u
-	elseif UT <: Unknown
-		ind = get_unknown_id(SC, O.u)
-	end
-	offset = SC.offsets[ind]
-	FES = sol[ind].FES
-	regions = O.parameters[:regions]
-	bdofs::Array{Int, 1} = O.bdofs
+function assemble!(FES, O::HomogeneousData{UT, AT}; offset = 0, kwargs...) where {UT,AT}
 	if O.FES !== FES
-		offset = SC.offsets[ind]
+		regions = O.parameters[:regions]
 		if AT <: ON_BFACES
-			itemdofs = sol[ind].FES[ExtendableFEMBase.BFaceDofs]
+			itemdofs = FES[ExtendableFEMBase.BFaceDofs]
 			itemregions = FES.xgrid[BFaceRegions]
 			uniquegeometries = FES.xgrid[UniqueBFaceGeometries]
 		elseif AT <: ON_CELLS
-			itemdofs = sol[ind].FES[ExtendableFEMBase.CellDofs]
+			itemdofs = FES[ExtendableFEMBase.CellDofs]
 			itemregions = FES.xgrid[CellRegions]
 			uniquegeometries = FES.xgrid[UniqueCellGeometries]
 		elseif AT <: ON_FACES
-			itemdofs = sol[ind].FES[ExtendableFEMBase.FaceDofs]
+			itemdofs = FES[ExtendableFEMBase.FaceDofs]
 			itemregions = FES.xgrid[FaceRegions]
 			uniquegeometries = FES.xgrid[UniqueFaceGeometries]
 		end
@@ -133,8 +124,8 @@ function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::Solv
 			for item ∈ 1:nitems
 				if itemregions[item] in regions
 					for k ∈ 1:ndofs4item
-						dof = itemdofs[k, item] + offset
-						push!(bdofs, dof)
+						dof = itemdofs[k, item]
+						push!(bdofs, dof + offset)
 					end
 				end
 			end
@@ -145,6 +136,16 @@ function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::Solv
 		O.bdofs = bdofs
 		O.FES = FES
 	end
+end
+
+function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::SolverConfiguration; kwargs...) where {UT, AT}
+	if UT <: Integer
+		ind = O.u
+	elseif UT <: Unknown
+		ind = get_unknown_id(SC, O.u)
+	end
+	FES = sol[ind].FES
+	assemble!(FES, O; offset = SC.offsets[ind], kwargs...)
 end
 
 
