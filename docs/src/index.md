@@ -43,7 +43,7 @@ Note that these grids generate boundary regions from 1 to 4 (bottom, left, top, 
 to assign boundary conditions.
 
 More complex grids can be created via the mesh generators in [SimplexGridFactory.jl](https://github.com/j-fu/SimplexGridFactory.jl),
-see e.g. [Example 245](examples/Example245_NSEFlowAroundCylinder) or [Example 265](examples/Example265_FlowTransport), or by loading a Gmsh grid file via the corresponding [ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl) extension.
+see e.g. Examples 245 or 265, or by loading a Gmsh grid file via the corresponding [ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl) extension.
 
 #### 2. Problem description
 
@@ -102,7 +102,7 @@ and solve via DifferentialEquations.jl, see
 Also note, that the use can bypass the problem description
 and control the algebraic level manually via
 assembling the operators directly into an FEMatrix,
-see e.g. [Example310](examples/Example310_DivFreeBasis).
+see e.g. Example310.
 It is also possible to take control over the low-level
 assembly of the operators, see [ExtendableFEMBase.jl](https://github.com/chmerdon/ExtendableFEMBase.jl)
 for details.

@@ -29,6 +29,7 @@ using ExtendableFEM
 using GridVisualize
 using ExtendableGrids
 using ExtendableSparse
+using LinearAlgebra
 using Symbolics
 
 ## exact data for problem by symbolics
