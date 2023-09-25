@@ -133,6 +133,6 @@ function plot_convergencehistory(X, Y; Plotter = nothing, size = (800, 600), add
 end
 
 
-function nodevalues(op, sol)
-	return nodevalues(sol[op[1]], op[2])
+function ExtendableFEMBase.nodevalues(op, sol; kwargs...)
+	return nodevalues(sol[op[1]], op[2]; kwargs...)
 end
