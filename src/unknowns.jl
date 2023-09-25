@@ -79,6 +79,8 @@ hessian(u) = (u, Hessian)
 ExtendableFEMBase.div(u) = (u, Divergence)
 normalflux(u) = (u, NormalFlux)
 
+grid(u) = (u, "grid")
+
 Δ(u) = (u, Laplacian)
 apply(u, FO::Type{<:AbstractFunctionOperator}) = (u, FO)
 

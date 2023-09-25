@@ -17,9 +17,7 @@ on the unit cube domain ``\Omega`` on a given grid.
 module Example301_PoissonProblem
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
-using GridVisualize
 
 function f!(fval, qpinfo)
 	fval[1] = qpinfo.x[1] * qpinfo.x[2] * qpinfo.x[3] 
@@ -43,7 +41,7 @@ function main(; μ = 1.0, nrefs = 3, Plotter = nothing, kwargs...)
 	sol = solve(PD, FES; kwargs...)
 
 	## plot
-	scalarplot(xgrid, nodevalues_view(sol[u])[1], levels = 7, Plotter = Plotter, title = "u_h", size = (800,800))
+	plot([id(u)], sol; Plotter = Plotter)
 end
 
 end # module

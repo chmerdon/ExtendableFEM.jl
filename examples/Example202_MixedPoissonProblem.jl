@@ -19,33 +19,30 @@ on the unit square domain ``\Omega`` on a given grid.
 module Example202_MixedPoissonProblem
 
 using ExtendableFEM
-using ExtendableFEMBase
-using GridVisualize
 using ExtendableGrids
 
-
-const μ = 0.25          # coefficient for laplacian!
+## bilinearform kernel for mixed Poisson problem
 function blf!(result, u_ops, qpinfo)
 	σ, divσ, u = view(u_ops, 1:2), view(u_ops, 3), view(u_ops, 4)
+	μ = qpinfo.params[1]
 	result[1] = σ[1] / μ
-	result[2] = σ[2] / μ
+	result[2] = σ[2] / μ 
 	result[3] = -u[1]
 	result[4] = divσ[1]
 	return nothing
 end
-
+## right-hand side data
 function f!(fval, qpinfo)
 	fval[1] = qpinfo.x[1] * qpinfo.x[2]
 	return nothing
 end
-
 ## boundary data
 function boundarydata!(result, qpinfo)
 	result[1] = 0
 	return nothing
 end
 
-function main(; nrefs = 5, Plotter = nothing, hdivdg = false, kwargs...)
+function main(; nrefs = 5, μ = 0.25, Plotter = nothing, hdivdg = false, kwargs...)
 
 	## problem description
 	PD = ProblemDescription()
@@ -59,13 +56,13 @@ function main(; nrefs = 5, Plotter = nothing, hdivdg = false, kwargs...)
 		assign_operator!(PD, BilinearOperator([jump(normalflux(σ))], [id(p)]; transposed_copy = 1, entities = ON_IFACES, kwargs...))
 		assign_operator!(PD, HomogeneousData(p; regions = 1:4))
 	end
-	assign_operator!(PD, BilinearOperator(blf!, [id(σ), div(σ), id(u)]; kwargs...))
+	assign_operator!(PD, BilinearOperator(blf!, [id(σ), div(σ), id(u)]; params = [μ], kwargs...))
 	assign_operator!(PD, LinearOperator(boundarydata!, [normalflux(σ)]; entities = ON_BFACES, regions = 1:4, kwargs...))
 	assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
 	assign_operator!(PD, FixDofs(u; dofs = [1], vals = [0]))
 
 	## discretize
-	xgrid = uniform_refine(grid_unitsquare_mixedgeometries(), nrefs)
+	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
 	FES = Dict(u => FESpace{L2P0{1}}(xgrid),
 		σ => FESpace{HDIVRT0{2}}(xgrid; broken = hdivdg),
 		p => hdivdg ? FESpace{L2P0{1}, ON_FACES}(xgrid) : nothing)
@@ -74,10 +71,7 @@ function main(; nrefs = 5, Plotter = nothing, hdivdg = false, kwargs...)
 	sol = ExtendableFEM.solve(PD, FES; kwargs...)
 
 	## plot
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (1000, 500))
-	scalarplot!(p[1, 1], xgrid, nodevalues(sol[u])[:]; Plotter = Plotter, title = "u")
-	scalarplot!(p[1, 2], xgrid, nodevalues(sol[σ]; abs = true)[:]; Plotter = Plotter, title = "σ ≈ -∇u (abs + quiver)")
-	vectorplot!(p[1, 2], xgrid, eval_func(PointEvaluator([id(σ)], sol)), vscale = 0.8, clear = false)
+	plot([id(u), id(σ)], sol; Plotter = Plotter)
 end
 
 end # module

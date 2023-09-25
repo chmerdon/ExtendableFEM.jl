@@ -18,7 +18,6 @@ The following minimal example demonstrates how to setup a Poisson problem.
 
 ```julia
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 
 # build/load any grid (here: a uniform-refined 2D unit square into triangles)
@@ -50,4 +49,8 @@ FES = FESpace{FEType}(xgrid)
 
 # solve
 sol = solve!(Problem, [FES])
+
+# plot
+using PyPlot
+plot(id(u), sol; Plotter = PyPlot)
 ```

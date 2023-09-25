@@ -17,9 +17,9 @@ in a lid driven cavity example over a cone and plots the solution and the formed
 module Example250_NSELidDrivenCavity
 
 using ExtendableFEM
-using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
+using LinearAlgebra
 
 function kernel_nonlinear!(result, u_ops, qpinfo)
 	u, ∇u, p = view(u_ops, 1:2), view(u_ops, 3:6), view(u_ops, 7)
@@ -89,9 +89,9 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 		if step == 1
 			initialize!(PE, sol)
 		end
-		scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity field (μ = $(extra_params[1]))", Plotter = Plotter)
+		scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity (μ = $(extra_params[1]))", Plotter = Plotter)
 		vectorplot!(p[1, 1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
-		streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, title = "eddies below y = -1")
+		streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, title = "streamlines")
 		
 		if extra_params[1] <= μ_final
 			break
@@ -100,10 +100,9 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 		end
 	end
 
-	@info sol
-	scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity field (μ = $(extra_params[1]))", Plotter = Plotter)
+	scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity (μ = $(extra_params[1]))", Plotter = Plotter)
 	vectorplot!(p[1, 1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
-	streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, title = "eddies below y = -1")
+	streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, title = "streamlines")
 end
 
 end # module

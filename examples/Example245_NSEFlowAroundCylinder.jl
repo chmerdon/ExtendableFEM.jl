@@ -23,11 +23,11 @@ Note: This example needs the additional packages Triangulate and SimplexGridFact
 module Example245_NSEFlowAroundCylinder
 
 using ExtendableFEM
-using ExtendableFEMBase
 using Triangulate
 using SimplexGridFactory
 using ExtendableGrids
 using GridVisualize
+using LinearAlgebra
 
 ## inlet data for Karman vortex street example
 ## as in DFG benchmark 2D-1 (Re = 20, laminar)
@@ -139,7 +139,7 @@ function get_draglift(sol::FEVector, μ)
 	DLIntegrator = ItemIntegrator(draglift_kernel, [id(1), grad(1), id(2), id(3), grad(3)]; quadorder = 4)
 
 	## test for drag
-	TestFunction = FEVector("drag testfunction", sol[1].FES)
+	TestFunction = FEVector(sol[1].FES; name = "drag/lift testfunction")
 	interpolate!(TestFunction[1], ON_BFACES, DL_testfunction(1))
 	drag = sum(evaluate(DLIntegrator, [sol[1], sol[2], TestFunction[1]]))
 

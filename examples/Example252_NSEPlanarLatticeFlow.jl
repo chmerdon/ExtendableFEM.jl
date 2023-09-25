@@ -28,9 +28,8 @@ and the nonlinear convection term (that involves reconstruction operators) is au
 module Example252_NSEPlanarLatticeFlow
 
 using ExtendableFEM
-using ExtendableFEMBase
-using GridVisualize
 using ExtendableGrids
+using LinearAlgebra
 
 ## exact velocity (and Dirichlet data)
 function u!(result, qpinfo)
@@ -112,9 +111,7 @@ function main(; μ = 0.001, nrefs = 5, reconstruct = true, Plotter = nothing, kw
 	@info "L2error(p) = $L2errorP"
 
 	## plot
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 1), clear = true, size = (1200, 1200))
-	scalarplot!(p[1, 1], xgrid, nodevalues(sol[u]; abs = true)[1, :]; Plotter = Plotter)
-	vectorplot!(p[1, 1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.05, clear = false)
+	plot([id(u), id(p)], sol; Plotter = Plotter)
 end
 
 end # module

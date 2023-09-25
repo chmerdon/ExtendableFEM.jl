@@ -47,7 +47,7 @@ function CallbackOperator(
 ````
 
 Generates an operator that simply passes the matrix and rhs to
-a user-specifide call back function. The callback function needs to be conform
+a user-specified call back function. The callback function needs to be conform
 to the interface
 
 	callback!(A, b, args; assemble_matrix = true, assemble_rhs = true, time = 0, kwargs...)

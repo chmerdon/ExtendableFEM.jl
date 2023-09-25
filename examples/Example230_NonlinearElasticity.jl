@@ -19,7 +19,6 @@ This example demonstrates how to setup a (parameter- and region-dependent) nonli
 module Example230_NonlinearElasticity
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 using GridVisualize
 
@@ -114,7 +113,6 @@ function main(;
 				closest = j
 			end
 		end
-		@show closest mindist scale
 		assign_operator!(PD, FixDofs(u; dofs = [closest], vals = [0]))
 	else
 		assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1], mask = [1, 0], kwargs...))
@@ -125,16 +123,16 @@ function main(;
 
 	## displace mesh and plot
 	p = GridVisualizer(; Plotter = Plotter, layout = (3, 1), clear = true, size = (1000, 1500))
-	grad_nodevals = nodevalues(sol[1], Gradient)
+	grad_nodevals = nodevalues(grad(u), sol)
 	strain_nodevals = zeros(Float64, 3, num_nodes(xgrid))
 	for j in 1:num_nodes(xgrid)
 		strain!(view(strain_nodevals, :, j), view(grad_nodevals, :, j))
 	end
 	scalarplot!(p[1, 1], xgrid, view(strain_nodevals, 1, :), levels = 3, colorbarticks = 7, xlimits = [-scale[2] / 2 - 10, scale[2] / 2 + 10], ylimits = [-30, scale[1] + 20], title = "ϵ(u)_xx + displacement")
 	scalarplot!(p[2, 1], xgrid, view(strain_nodevals, 2, :), levels = 1, colorbarticks = 7, xlimits = [-scale[2] / 2 - 10, scale[2] / 2 + 10], ylimits = [-30, scale[1] + 20], title = "ϵ(u)_yy + displacement")
-	vectorplot!(p[1, 1], xgrid, eval_func(PointEvaluator([id(1)], sol)), spacing = [50, 25], clear = false)
-	vectorplot!(p[2, 1], xgrid, eval_func(PointEvaluator([id(1)], sol)), spacing = [50, 25], clear = false)
-	displace_mesh!(xgrid, sol[1])
+	vectorplot!(p[1, 1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = [50, 25], clear = false)
+	vectorplot!(p[2, 1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = [50, 25], clear = false)
+	displace_mesh!(xgrid, sol[u])
 	gridplot!(p[3, 1], xgrid, linewidth = 1, title = "displaced mesh")
 	println(stdout, unicode_gridplot(xgrid))
 end

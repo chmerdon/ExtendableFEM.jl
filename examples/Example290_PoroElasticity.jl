@@ -30,7 +30,6 @@ As a test problem the first benchmark problem from the same reference is used.
 module Example290_PoroElasticity
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 using DifferentialEquations
 using GridVisualize
@@ -102,12 +101,11 @@ function exact_error!(u!, ∇u!, p!)
 	end
 end
 
-function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 5, T = 0.5, τ = 1e-2, c0 = 1, order = 1, reconstruct = true, Plotter = nothing, kwargs...)
+function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 6, T = 0.5, τ = 1e-2, c0 = 1, order = 1, reconstruct = true, Plotter = nothing, kwargs...)
 
 	## calculate Lame' parameter
 	μ = E / (2 * (1 + ν))
 	λ = E * ν / ((1 - 2 * ν) * (1 + ν))
-	@info μ, λ
 
 	## initial and exact state for u and p at time t0
 	f_eval, g_eval, u_eval, ∇u_eval, p_eval, ∇p_eval = prepare_data!(; μ = μ, λ = λ, K = K, c0 = c0, α = α)
@@ -165,8 +163,8 @@ function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 5, T = 0.5, τ =
 
 	## init plotter and plot initial data and grid
 	plt = GridVisualizer(; Plotter = Plotter, layout = (3, 2), clear = true, size = (800, 1200))
-	scalarplot!(plt[1, 1], xgrid, nodevalues_view(sol[u])[1], levels = 5, title = "u_h (t = 0)")
-	scalarplot!(plt[2, 1], xgrid, nodevalues(sol[p])[:], levels = 5, title = "p_h (t = 0)")
+	scalarplot!(plt[1, 1], id(u), sol; abs = true, title = "u_h (t = 0)")
+	scalarplot!(plt[2, 1], id(p), sol; title = "p_h (t = 0)")
 	gridplot!(plt[3, 1], xgrid; linewidth = 1)
 
 	## compute mass matrix
@@ -200,9 +198,9 @@ function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 5, T = 0.5, τ =
 	|| p - p_h || = $L2errorP"
 
 	## plot final state
-	scalarplot!(plt[1, 2], xgrid, nodevalues_view(sol[u])[1], levels = 5, title = "u_h (t = $T)")
-	scalarplot!(plt[2, 2], xgrid, nodevalues(sol[p])[:], levels = 5, title = "p_h (t = $T)")
-	scalarplot!(plt[3, 2], xgrid, nodevalues(sol[w]; abs = true)[:], levels = 5, title = "|w_h| (t = $T)")
+	scalarplot!(plt[1, 2], id(u), sol; abs = true, title = "u_h (t = $T)")
+	scalarplot!(plt[2, 2], id(p), sol; title = "p_h (t = $T)")
+	scalarplot!(plt[3, 2], id(w), sol; abs = true, title = "|w_h| (t = $T)")
 end
 
 end # module

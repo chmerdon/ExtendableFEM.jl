@@ -34,7 +34,6 @@ enrichment dofs can be eliminated from the system.
 module Example240_SVRTEnrichment
 
 using ExtendableFEM
-using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
 using ExtendableSparse
@@ -372,24 +371,21 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
 		#############
 		### PLOTS ###
 		#############
-		scalarplot!(pl[1, 1], xgrid, nodevalues(sol[u]; abs = true)[1, :]; Plotter = Plotter)
-		scalarplot!(pl[1, 2], xgrid, nodevalues(sol[pfull])[1, :]; Plotter = Plotter)
+		scalarplot!(pl[1, 1], id(u), sol; abs = true)
+		scalarplot!(pl[1, 2], id(pfull), sol)
 		if order == 1 && enrich
-			scalarplot!(pl[2, 2], xgrid, nodevalues(sol[uR]; abs = true)[1, :]; Plotter = Plotter)
-		end
-		if lvl > 1
-			plot_convergencehistory!(
-				pl[2, 1],
-				NDofs[1:lvl],
-				Results[1:lvl, 1:4];
-				add_h_powers = [order, order + 1],
-				X_to_h = X -> 8 * X .^ (-1 / 2),
-				legend = :lb,
-				fontsize = 20,
-				ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| uR ||", "|| p - p_h ||", "|| div(u + uR) ||"],
-			)
+			scalarplot!(pl[2, 2], id(uR), sol)
 		end
 	end
+	plot_convergencehistory!(
+		pl[2, 1],
+		NDofs,
+		Results[:,1:4];
+		add_h_powers = [order, order + 1],
+		X_to_h = X -> 8 * X .^ (-1 / 2),
+		legend = :best,
+		ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| uR ||", "|| p - p_h ||", "|| div(u + uR) ||"],
+	)
 
 	print_convergencehistory(NDofs, Results; X_to_h = X -> X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| uR ||", "|| p - p_h ||", "|| div(u + uR) ||"], xlabel = "ndof")
 end
@@ -397,25 +393,23 @@ end
 function div_projector(V1, VR)
 
 	## setup interpolation matrix
-	celldofs_V1::VariableTargetAdjacency{Int32} = V1[CellDofs]
-	celldofs_VR::VariableTargetAdjacency{Int32} = VR[CellDofs]
+	celldofs_V1 = V1[CellDofs]
+	celldofs_VR = VR[CellDofs]
 	ndofs_V1 = max_num_targets_per_source(celldofs_V1)
 	ndofs_VR = max_num_targets_per_source(celldofs_VR)
 
 	DD_RR = FEMatrix(VR)
 	assemble!(DD_RR, BilinearOperator([div(1)]))
-	DD_RRE::ExtendableSparseMatrix{Float64, Int64} = DD_RR.entries
+	DD_RRE = DD_RR.entries
 	DD_1R = FEMatrix(V1, VR)
 	assemble!(DD_1R, BilinearOperator([div(1)]))
-	DD_1RE::ExtendableSparseMatrix{Float64, Int64} = DD_1R.entries
+	DD_1RE = DD_1R.entries
 	Ap = zeros(Float64, ndofs_VR, ndofs_VR)
 	bp = zeros(Float64, ndofs_VR)
 	xp = zeros(Float64, ndofs_VR)
-	dof::Int = 0
-	dof2::Int = 0
-	ncells::Int = num_sources(celldofs_V1)
+	ncells = num_sources(celldofs_V1)
 	F = FEMatrix(V1, VR)
-	FE::ExtendableSparseMatrix{Float64, Int64} = F.entries
+	FE = F.entries
 	for cell ∈ 1:ncells
 
 		## solve local pressure reconstruction for RTk part

@@ -34,12 +34,9 @@ parallel until the outlet is reached, possibly due to articifial diffusion.
 module Example265_FlowTransport
 
 using ExtendableFEM
-using ExtendableFEMBase
-using ExtendableSparse
 using ExtendableGrids
 using SimplexGridFactory
 using Triangulate
-using GridVisualize
 
 ## boundary data
 function u_inlet!(result, qpinfo)
@@ -125,10 +122,7 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     println("\n[min(c),max(c)] = [$(minimum(view(sol[T]))),$(maximum(view(sol[T])))]")
 
     ## plot
-    p = GridVisualizer(; Plotter = Plotter, layout = (2,1), clear = true, size = (800,800))
-    scalarplot!(p[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
-    vectorplot!(p[1,1],xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.25, clear = false, title = "u_h (abs + quiver)")
-    scalarplot!(p[2,1],xgrid, view(nodevalues(sol[T]),1,:), limits = (0,0.25), levels = 11, title = "c_h")
+    plot([id(u), id(T)], sol; Plotter = Plotter, ncols = 1, spacing = 0.25)
 end
 
 ## pure convection finite volume operator for transport

@@ -46,9 +46,9 @@ Further explanations and discussion on this example can be found in the referenc
 module Example270_NaturalConvectionProblem
 
 using ExtendableFEM
-using ExtendableFEMBase
-using GridVisualize
 using ExtendableGrids
+using GridVisualize
+using LinearAlgebra
 
 function kernel_nonlinear!(result, u_ops, qpinfo)
     u, ∇u, p, ∇T, T = view(u_ops, 1:2), view(u_ops,3:6), view(u_ops, 7), view(u_ops, 8:9), view(u_ops, 10)
@@ -116,10 +116,10 @@ function main(;
         sol, SC = ExtendableFEM.solve(PD, FES, SC; init = sol, return_config = true, target_residual = 1e-6, params = params, kwargs...)
         
         ## plot
-        scalarplot!(plt[1,1], xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
-        vectorplot!(plt[1,1], xgrid, eval_func(PointEvaluator([id(u)], sol)), clear = false, title = "|u| + quiver (Ra = $(params[1]))")
-        scalarplot!(plt[1,2], xgrid, view(nodevalues(sol[T]),1,:), title = "T (Ra = $(params[1]))")
-        scalarplot!(plt[1,3], xgrid, view(nodevalues(sol[p]),1,:), title = "p (Ra = $(params[1]))")
+        scalarplot!(plt[1,1], id(u), sol; levels = 0, colorbarticks = 7, abs = true)
+        vectorplot!(plt[1,1], id(u), sol; clear = false, title = "|u| + quiver (Ra = $(params[1]))")
+        scalarplot!(plt[1,2], id(T), sol; title = "T (Ra = $(params[1]))")
+        scalarplot!(plt[1,3], id(p), sol; title = "p (Ra = $(params[1]))")
 
         ## stop if Ra_final is reached
 		if params[1] >= Ra_final
@@ -132,7 +132,7 @@ function main(;
 		@info "Step $step : solving for Ra=$(params[1])"
 	end
 
-    ## compute Nusselt number
+    ## compute Nusselt number along bottom (= boundary region 1)
     ∇T_faces = FaceInterpolator([jump(grad(T))]; order = 0, kwargs...)
 	NuIntegrator = ItemIntegrator((result, input, qpinfo) -> (result[1] = -input[2]), [id(1)]; entities = ON_FACES, regions = [1])
 	@info "Nu = $(sum(evaluate(NuIntegrator, evaluate!(∇T_faces, sol))))"

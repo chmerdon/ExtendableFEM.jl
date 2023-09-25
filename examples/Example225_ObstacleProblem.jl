@@ -29,9 +29,7 @@ that is added to the energy above and is automatically differentiated for a Newt
 module Example225_ObstacleProblem
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
-using GridVisualize
 
 ## define obstacle and penalty kernel
 const χ! = (result, x) -> (result[1] = (cos(4 * x[1] * π) * cos(4 * x[2] * π) - 1) / 20)
@@ -54,7 +52,6 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
 	assign_operator!(PD, BilinearOperator([grad(u)]; kwargs...))
 	assign_operator!(PD, LinearOperator([id(u)]; factor = -1, kwargs...))
 	assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
-	@show PD
 
 	## create finite element space
 	FES = FESpace{H1Pk{1, 2, order}}(xgrid)
@@ -63,9 +60,6 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
 	sol = solve(PD, FES; kwargs...)
 
 	## plot
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (1000, 500))
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], levels = 6, title = "u_h")
-	scalarplot!(p[1, 2], xgrid, view(nodevalues(sol[u], Gradient; abs = true), 1, :), levels = 0, colorbarticks = 8, title = "∇u_h (abs + quiver)")
-	vectorplot!(p[1, 2], xgrid, eval_func(PointEvaluator([grad(u)], sol)), spacing = 0.1, clear = false)
+	plot([id(u), grad(u)], sol; Plotter = Plotter)
 end
 end

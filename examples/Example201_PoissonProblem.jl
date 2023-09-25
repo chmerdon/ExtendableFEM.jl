@@ -17,12 +17,10 @@ on the unit square domain ``\Omega`` on a given grid.
 module Example201_PoissonProblem
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
-using GridVisualize
 
 function f!(fval, qpinfo)
-	fval[1] = 1#qpinfo.x[1] * qpinfo.x[2]
+	fval[1] = qpinfo.x[1] * qpinfo.x[2]
 end
 
 function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, kwargs...)
@@ -43,10 +41,7 @@ function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, kwargs...)
 	sol = solve(PD, FES; kwargs...)
 
 	## plot
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (1000, 500))
-	scalarplot!(p[1, 1], xgrid, nodevalues(sol[u])[:]; title = "u")
-	scalarplot!(p[1, 2], xgrid, view(nodevalues(sol[u], Gradient; abs = true), 1, :), title = "∇u (abs + quiver)")
-	vectorplot!(p[1, 2], xgrid, eval_func(PointEvaluator([grad(u)], sol)), vscale = 0.8, clear = false)
+	plot([id(u), grad(u)], sol; Plotter = Plotter)
 end
 
 end # module

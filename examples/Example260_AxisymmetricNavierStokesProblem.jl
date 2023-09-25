@@ -49,10 +49,7 @@ integral over the rotation angle drops out on both sides.
 module Example260_AxisymmetricNavierStokesProblem
 
 using ExtendableFEM
-using ExtendableFEMBase
-using GridVisualize
 using ExtendableGrids
-using ExtendableSparse
 using SimplexGridFactory
 using Triangulate
 
@@ -131,12 +128,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     @info "||div(u)|| = $(sqrt(sum(evaluate(DivIntegrator, sol))))"
 
     ## plot
-    pl=GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, size = (1200,1200))
-    scalarplot!(pl[1,1], xgrid, nodevalues_view(sol[u])[1]; Plotter = Plotter)
-    scalarplot!(pl[1,2], xgrid, nodevalues_view(sol[u])[2]; Plotter = Plotter)
-    gridplot!(pl[2,1], xgrid; Plotter = Plotter)
-    scalarplot!(pl[2,2], xgrid, nodevalues(sol[u]; abs = true)[:]; Plotter = Plotter)
-    vectorplot!(pl[2,2], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.05, clear = false)
+    plot([id(u)], sol; Plotter = Plotter)
 end
 
 end # module

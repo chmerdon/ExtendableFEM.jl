@@ -17,10 +17,8 @@ on the unit square domain ``\Omega`` on a given grid.
 module Example205_HeatEquation
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 using DifferentialEquations
-using GridVisualize
 
 ## initial state u at time t0
 function initial_data!(result, qpinfo)
@@ -33,7 +31,7 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
 
 	## problem description
 	PD = ProblemDescription("Heat Equation")
-	u = Unknown("u"; name = "temperature")
+	u = Unknown("u")
 	assign_unknown!(PD, u)
 	assign_operator!(PD, BilinearOperator([grad(u)]; store = true, kwargs...))
 	assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
@@ -47,8 +45,7 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
 	interpolate!(sol[u], initial_data!; bonus_quadorder = 5)
 
 	## init plotter and plot u0
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (800, 400))
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], levels = 7, title = "u_h (t = 0)")
+	p = plot([id(u)], sol; add = 1, Plotter = Plotter, title_add = " (t = 0)")
 
 	if (use_diffeq)
 		## generate DifferentialEquations.ODEProblem
@@ -79,7 +76,7 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
 	end
 
 	## plot final state
-	scalarplot!(p[1, 2], xgrid, nodevalues_view(sol[u])[1], levels = 7, title = "u_h (t = $T)")
+	plot!(p, [id(u)], sol; keep = 1, title_add = " (t = $T)")
 end
 
 end # module

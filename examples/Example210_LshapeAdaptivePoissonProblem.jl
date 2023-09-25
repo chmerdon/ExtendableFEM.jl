@@ -16,9 +16,9 @@ This example script showcases the evaluation of 2nd order derivatives like the L
 module Example210_LshapeAdaptivePoissonProblem
 
 using ExtendableFEM
-using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
+using LinearAlgebra
 
 ## exact solution u for the Poisson problem
 function u!(result, qpinfo)
@@ -162,10 +162,10 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 
 	## plot
 	p = GridVisualizer(; Plotter = Plotter, layout = (2, 2), clear = true, size = (1000, 1000))
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], levels = 7, title = "u_h")
+	scalarplot!(p[1, 1], id(u), sol; levels = 7, title = "u_h")
 	plot_convergencehistory!(p[1, 2], NDofs, [ResultsL2 ResultsH1 Resultsη]; add_h_powers = [order, order + 1], X_to_h = X -> order * X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
 	gridplot!(p[2, 1], xgrid; linewidth = 1)
-	gridplot!(p[2, 2], xgrid; linewidth = 1, xlimits = [-0.0001, 0.0001], ylimits = [-0.0001, 0.0001])
+	gridplot!(p[2, 2], xgrid; linewidth = 1, xlimits = [-0.0005, 0.0005], ylimits = [-0.0005, 0.0005])
 
 	## print convergence history
 	print_convergencehistory(NDofs, [ResultsL2 ResultsH1 Resultsη]; X_to_h = X -> X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])

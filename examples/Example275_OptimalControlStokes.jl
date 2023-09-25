@@ -44,18 +44,13 @@ an example in the reference below.
 module Example275_OptimalControlStokes
 
 using ExtendableFEM
-using ExtendableFEMBase
-using ExtendableSparse
 using ExtendableGrids
-using SimplexGridFactory
-using Triangulate
-using GridVisualize
 using Symbolics
 
 function prepare_data!(; ϵ = 0)
 	@variables x y
 
-	## stream function ξ, d = curl ξ
+	## stream function ξ
 	ξ = x^4*y^4*(x-1)^4*(y-1)^4
 	∇ξ = Symbolics.gradient(ξ, [x,y])
 
@@ -119,16 +114,12 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1
     sol = solve(PD, [FES[1],FES[1],FES[2],FES[2]]; kwargs...)
 
     ## plot solution
-    plt = GridVisualizer(; Plotter = Plotter, layout = (3,2), clear = true, size = (800,800))
-    scalarplot!(plt[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 7, title = "|u_h|")
-    scalarplot!(plt[1,2],xgrid, view(nodevalues(sol[p]),1,:)[:], levels = 7, title = "p_h")
-    scalarplot!(plt[2,1],xgrid, view(nodevalues(sol[z]; abs = true),1,:), levels = 7, title = "|z_h|")
-    scalarplot!(plt[2,2],xgrid, view(nodevalues(sol[λ]),1,:)[:], levels = 7, title = "λ_h")
+    plt = plot([id(u), id(p), id(z), id(λ)], sol; add = 1, Plotter = Plotter)
 
     ## plot target data
-    I = FEVector(FES[1])
+    I = FEVector(FES[1]; name = "u^d")
     interpolate!(I[1], data!)
-    scalarplot!(plt[3,1],xgrid, view(nodevalues(I[1]; abs = true),1,:), levels = 7, title = "u^d")
+    plot!(plt, [id(1)], I; keep = 1:4)
 end
 
 end

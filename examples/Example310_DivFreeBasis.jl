@@ -26,7 +26,6 @@ a linear independent basis. This is done with the algorithm suggested in the ref
 module Example310_DivFreeBasis
 
 using ExtendableFEM
-using ExtendableFEMBase
 using GridVisualize
 using ExtendableGrids
 using ExtendableSparse
@@ -138,10 +137,10 @@ function main(;
 		L2error[lvl] = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :)))
 		if divfree_basis
 			@info "|| u - curl(ϕ_h) || = $(L2error[lvl])"
-			scalarplot!(pl[1, 1], xgrid, nodevalues(sol[1], Curl3D; abs = true)[1, :]; Plotter = Plotter)
+			scalarplot!(pl[1, 1], curl3(1), sol; abs = true)
 		else
 			@info "|| u - u_h || = $(L2error[lvl])"
-			scalarplot!(pl[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; Plotter = Plotter)
+			scalarplot!(pl[1, 1], id(1), sol; abs = true)
 		end
 	end
 

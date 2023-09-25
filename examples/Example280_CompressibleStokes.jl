@@ -1,9 +1,11 @@
 #= 
 
-# 280 : Compressible Stokes 2D
+# 280 : Compressible Stokes
 ([source code](SOURCE_URL))
 
-This example solves the compressible Stokes equations where one seeks a (vector-valued) velocity ``\mathbf{u}``, a density ``\varrho`` and a pressure ``p`` such that
+This example solves the two-dimensional
+compressible Stokes equations where one seeks a (vector-valued) velocity
+``\mathbf{u}``, a density ``\varrho`` and a pressure ``p`` such that
 ```math
 \begin{aligned}
 - \mu \Delta \mathbf{u} + \lambda \nabla(\mathrm{div}(\mathbf{u})) + \nabla p & = \mathbf{f} + \varrho \mathbf{g}\\
@@ -47,13 +49,12 @@ See reference below for more details.
 module Example280_CompressibleStokes
 
 using ExtendableFEM
-using ExtendableFEMBase
-using ExtendableSparse
 using ExtendableGrids
 using Triangulate
 using SimplexGridFactory
 using GridVisualize
 using Symbolics
+using LinearAlgebra
 
 ## everything is wrapped in a main function
 ## testcase = 1 : well-balanced test (stratified no-flow over mountain)
@@ -112,7 +113,8 @@ function main(;
        assign_operator!(PDT, BilinearOperator(kernel_continuity!,[grad(ϱ)],[id(ϱ)],[id(u)]; quadorder = 2*order, factor = -1, kwargs...))    
     end
     if pressure_stab > 0
-        assign_operator!(PDT, BilinearOperator(stab_kernel!, [jump(id(ϱ))]; entities = ON_IFACES, factor = pressure_stab, kwargs...))    
+        psf = pressure_stab #* xgrid[CellVolumes][1]
+        assign_operator!(PDT, BilinearOperator(stab_kernel!, [jump(id(ϱ))], [jump(id(ϱ))], [id(u)]; entities = ON_IFACES, factor = psf, kwargs...))    
     end
     assign_operator!(PDT, BilinearOperator([id(ϱ)]; quadorder = 2*(order-1), factor = 1/τ, store = true, kwargs...))
     assign_operator!(PDT, LinearOperator([id(ϱ)], [id(ϱ)]; quadorder = 2*(order-1), factor = 1/τ, kwargs...))
@@ -170,8 +172,8 @@ function main(;
     gridplot!(pl[2,2],xgrid)
 end
 
-function stab_kernel!(result, p, qpinfo)
-    result .= p ./ qpinfo.volume
+function stab_kernel!(result, p, u, qpinfo)
+    result[1] = p[1] #*abs(u[1] + u[2])
 end
 
 ## kernel for (uϱ, ∇λ) ON_CELLS in continuity equation

@@ -17,7 +17,6 @@ tested with data ``f(x) = e^{2x}``, ``g = 2`` and ``u_D = e`` such that ``u(x) =
 module Example108_RobinBoundaryCondition
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 using GridVisualize
 
@@ -81,7 +80,7 @@ function main(; Plotter = nothing, h = 1e-1, h_fine = 1e-3, order = 2, kwargs...
 
 	## plot discrete and exact solution (on finer grid)
 	p = GridVisualizer(Plotter = Plotter, layout = (1, 1))
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], color = (0, 0.7, 0), label = "u_h", markershape = :x, markersize = 10, markevery = 1)
+	scalarplot!(p[1, 1], id(u), sol; color = :black, label = "u_h", markershape = :circle, markersize = 10, markevery = 1)
 	xgrid_fine = simplexgrid(0:h_fine:1)
 	scalarplot!(p[1, 1], xgrid_fine, view(nodevalues(xgrid_fine, u!), 1, :), clear = false, color = (1, 0, 0), label = "u", legend = :rb, markershape = :none)
 end

@@ -22,9 +22,7 @@ on the domain ``\Omega := (0,1)`` with Dirichlet boundary conditions ``u(0) = 0`
 module Example105_NonlinearPoissonEquation
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
-using GridVisualize
 
 ## rigt-hand side data
 function f!(result, qpinfo)
@@ -61,7 +59,6 @@ function main(; Plotter = nothing, h = 5e-2, ϵ = 1e-3, order = 2, kwargs...)
 	sol = solve(PD, FES; kwargs...)
 
 	## plot discrete and exact solution (on finer grid)
-	p = GridVisualizer(Plotter = Plotter, layout = (1, 1))
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], color = (0, 0.7, 0), label = "u_h", markershape = :circle, markersize = 8, markevery = 1)
+	plot([id(u)], sol; Plotter = Plotter)
 end
 end

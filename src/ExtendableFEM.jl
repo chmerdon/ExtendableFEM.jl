@@ -21,18 +21,43 @@ if !isdefined(Base, :get_extension)
 	using Requires
 end
 
+## reexport stuff from ExtendableFEMBase
+export FESpace, FEMatrix, FEVector
+export H1P1, H1P2, H1P3, H1Pk
+export H1Q1, H1Q2
+export H1CR, H1BR, H1P2B, H1MINI,H1P1TEB, H1BUBBLE
+export HDIVRT0, HDIVRT1
+export HDIVBDM1, HDIVBDM2
+export HCURLN0, HCURLN1
+export HDIVRTkENRICH
+export L2P0, L2P1
+export nodevalues, nodevalues!, nodevalues_view, nodevalues_subset!
+export interpolate!, lazy_interpolate!
+export PointEvaluator, evaluate, evaluate!, eval_func
+export SegmentIntegrator, integrate_segment!, initialize!
+export integrate!, integrate, QuadratureRule
+export unicode_gridplot, unicode_scalarplot
+export CellDofs, BFaceDofs, FaceDofs, EdgeDofs, BEdgeDofs
+export get_polynomialorder
+export displace_mesh, displace_mesh!
+export Reconstruct, Identity, Divergence, Gradient
+export _addnz
+export addblock!, addblock_matmul!
+
+
 include("io.jl")
 export print_convergencehistory
 export print_table
 
 include("unknowns.jl")
 export Unknown
+export grid
+export id, grad, hessian, div, normalflux, Δ, apply, curl1, curl2, curl3, laplace
+export id_jump, grad_jump, normalflux_jump
 
 include("operators.jl")
 export AbstractOperator
 export AssemblyInformation
-export id, grad, hessian, div, normalflux, Δ, apply, curl1, curl2, curl3, laplace
-export id_jump, grad_jump, normalflux_jump
 export assemble!, apply_penalties!
 
 include("common_operators/reduction_operator.jl")
@@ -95,6 +120,9 @@ export FaceInterpolator
 
 include("plots.jl")
 export plot_convergencehistory!
+export scalarplot!
+export vectorplot!
+export plot, plot!
 
 @static if !isdefined(Base, :get_extension)
 	function __init__()

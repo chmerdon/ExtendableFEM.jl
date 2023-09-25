@@ -16,10 +16,8 @@ with periodic boundary conditions.
 module Example103_BurgersEquation
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 using DifferentialEquations
-using GridVisualize
 
 function kernel_nonlinear!(result, u, qpinfo)
 	result[1] = u[1]^2 / 2
@@ -44,9 +42,6 @@ function main(;
 	## load mesh and exact solution
 	xgrid = simplexgrid(-2:h:2)
 
-	## set finite element types [surface height, velocity]
-	FEType = H1Pk{1, 1, order}
-
 	## generate empty PDEDescription for three unknowns (h, u)
 	PD = ProblemDescription("Burger's Equation")
 	u = Unknown("u"; name = "u")
@@ -56,13 +51,12 @@ function main(;
 	assign_operator!(PD, CombineDofs(u, u, [1], [num_nodes(xgrid)], [1.0]; kwargs...))
 
 	## prepare solution vector and initial data
-	FES = FESpace{FEType}(xgrid)
+	FES = FESpace{H1Pk{1, 1, order}}(xgrid)
 	sol = FEVector(FES; tags = PD.unknowns)
 	interpolate!(sol[u], initial_data!)
 
 	## init plotter and plot u0
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (800, 400))
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75, 2), levels = 0, title = "u_h (t = 0)")
+	p = plot([id(u), id(u)], sol; Plotter = Plotter, title_add = " (t = 0)")
 
 	## generate mass matrix
 	M = FEMatrix(FES)
@@ -95,6 +89,6 @@ function main(;
 	end
 
 	## plot final state
-	scalarplot!(p[1, 2], xgrid, nodevalues_view(sol[u])[1], flimits = (-0.75, 2), levels = 0, title = "u_h (t = $T)")
+	plot!(p, [id(u)], sol; keep = 1, title_add = " (t = $T)")
 end
 end

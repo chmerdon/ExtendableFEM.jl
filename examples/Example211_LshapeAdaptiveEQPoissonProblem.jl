@@ -157,10 +157,10 @@ function main(; maxdofs = 4000, μ = 1, order = 2, nlevels = 16, θ = 0.5, Plott
 
 	## plot
 	p = GridVisualizer(; Plotter = Plotter, layout = (2, 2), clear = true, resolution = (1000, 1000))
-	scalarplot!(p[1, 1], xgrid, view(nodevalues(sol[u]), 1, :), levels = 11, title = "u_h")
+	scalarplot!(p[1, 1], id(u), sol; levels = 11, title = "u_h")
 	plot_convergencehistory!(p[1, 2], NDofs, [ResultsL2 ResultsH1 Resultsη]; add_h_powers = [order, order + 1], X_to_h = X -> order * X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
 	gridplot!(p[2, 1], xgrid; linewidth = 1)
-	gridplot!(p[2, 2], xgrid; linewidth = 1, xlimits = [-0.001, 0.001], ylimits = [-0.001, 0.001])
+	gridplot!(p[2, 2], xgrid; linewidth = 1, xlimits = [-0.0005, 0.0005], ylimits = [-0.0005, 0.0005])
 
 	## print/plot convergence history
 	print_convergencehistory(NDofs, [ResultsL2 ResultsH1 Resultsη]; X_to_h = X -> X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])

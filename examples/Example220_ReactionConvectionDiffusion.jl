@@ -20,9 +20,8 @@ simple gradient jump (interior penalty) stabilisation is added to improve things
 module Example220_ReactionConvectionDiffusion
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
-using GridVisualize
+using LinearAlgebra
 
 const α = 0.01
 const β = [1.0, 0]
@@ -115,7 +114,7 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
 		Results[level, 3] = sqrt(sum(view(error, 2, :)) + sum(view(error, 3, :)))
 
 		## interpolate (just for comparison)
-		I = FEVector("I(u)", FES)
+		I = FEVector(FES)
 		interpolate!(I[1], u!)
 		error = evaluate(ErrorIntegratorExact, I)
 		Results[level, 2] = sqrt(sum(view(error, 1, :)))
@@ -123,11 +122,8 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
 	end
 
 	## plot
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 3), clear = true, size = (1600, 500))
-	scalarplot!(p[1, 1], xgrid, view(nodevalues(sol[u]), 1, :), levels = 7, title = "u_h")
-	scalarplot!(p[1, 2], xgrid, view(nodevalues(sol[u], Gradient; abs = true), 1, :), levels = 7, colorbarticks = 9, title = "∇u_h (abs + quiver)")
-	vectorplot!(p[1, 2], xgrid, eval_func(PointEvaluator([grad(u)], sol)), vscale = 0.8, clear = false)
-	plot_convergencehistory!(p[1, 3], NDofs, Results; add_h_powers = [order, order + 1], X_to_h = X -> X .^ (-1 / 2), legend = :lb, ylabels = ["|| u - u_h ||", "|| u - Iu ||", "|| ∇(u - u_h) ||", "|| ∇(u - Iu) ||"], limits = (1e-8, 1e-1))
+	p = plot([id(u), grad(u)], sol; add = 1, Plotter = Plotter)
+	plot_convergencehistory!(p[2,1], NDofs, Results; add_h_powers = [order, order + 1], X_to_h = X -> X .^ (-1 / 2), legend = :lb, ylabels = ["|| u - u_h ||", "|| u - Iu ||", "|| ∇(u - u_h) ||", "|| ∇(u - Iu) ||"], limits = (1e-8, 1e-1))
 
 	## print convergence history
 	print_convergencehistory(NDofs, Results; X_to_h = X -> X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| u - Iu ||", "|| ∇(u - u_h) ||", "|| ∇(u - Iu) ||"])

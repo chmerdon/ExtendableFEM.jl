@@ -17,7 +17,6 @@ with homogeneous Neumann boundary conditions.
 module Example106_NonlinearDiffusion
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 using DifferentialEquations
 using GridVisualize
@@ -77,7 +76,7 @@ function main(;
 
 	## init plotter and plot u0
 	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), size = (800,400))
-	scalarplot!(p[1, 1], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1, title = "t = $t0")
+	scalarplot!(p[1, 1], id(u), sol; label = "u_h", markershape = :circle, markevery = 1, title = "t = $t0")
 
 	## generate mass matrix (with mass lumping)
 	M = FEMatrix(FES)
@@ -109,11 +108,9 @@ function main(;
 		end
 	end
 
-	## plot final state
-	scalarplot!(p[1, 2], xgrid, nodevalues_view(sol[u])[1], label = "u_h", markershape = :circle, markevery = 1, title = "t = $T")
-
-	## plot exact solution
+	## plot final state and exact solution for comparison
+	scalarplot!(p[1, 2], id(u), sol; label = "u_h", markershape = :circle, markevery = 1, title = "t = $T")
 	interpolate!(sol[1], u_exact!; time = T, params = [m])
-	scalarplot!(p[1, 2], xgrid, nodevalues_view(sol[u])[1], clear = false, color = :green, label = "u", legend = :best)
+	scalarplot!(p[1, 2], id(u), sol; clear = false, color = :green, label = "u", legend = :best)
 end
 end

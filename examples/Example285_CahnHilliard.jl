@@ -19,7 +19,6 @@ initial concentration as defined in the code below.
 module Example285_CahnHilliard
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 using GridVisualize
 using ForwardDiff
@@ -97,7 +96,7 @@ function main(;
 	## advance in time, plot from time to time
 	t = 0
 	for j ∈ 1:20
-		# do some timesteps until next plot
+		## do some timesteps until next plot
 		for it ∈ 1:iterations_until_next_plot
 			t += τ
 			## update time derivative

@@ -19,9 +19,9 @@ with the help of an iterative solver from [KrylovKit.jl](https://github.com/Juth
 module Example204_LaplaceEVProblem
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
 using ExtendableSparse
+using LinearAlgebra
 using GridVisualize
 using KrylovKit
 
@@ -54,11 +54,9 @@ function main(; which = 1:12, ncols = 3, nrefs = 4, order = 1, Plotter = nothing
             col, row = 1, row + 1
         end
 		λ = λs[j]
-		@info "λ[$j] = $λ"
+		@info "λ[$j] = $λ, residual = $(sum(info.residual[j]))"
 		u.entries .= Real.(x[j])
-		## check residual
-		@info "residual[$j] = $(norm(A.entries*u.entries - λ*B.entries*u.entries))"
-        scalarplot!(p[row,col], xgrid, nodevalues_view(u[1])[1]; Plotter = Plotter, title = "λ[$j] = $(Float16(λ))")
+        scalarplot!(p[row,col], id(1), u; Plotter = Plotter, title = "λ[$j] = $(Float16(λ))")
     end
 end
 
