@@ -10,6 +10,7 @@ end
 default_homdata_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:penalty => (1e30, "penalty for fixed degrees of freedom"),
 	:name => ("HomogeneousData", "name for operator used in printouts"),
+	:value => (0, "constant value of the data"),
 	:mask => ([], "array of zeros/ones to set which components should be set by the operator (only works with componentwise dofs, add a 1 or 0 to mask additional dofs)"),
 	:regions => ([], "subset of regions where operator should be assembly only"),
 	:verbosity => (0, "verbosity level"),
@@ -160,6 +161,7 @@ function ExtendableFEM.apply_penalties!(A, b, sol, O::HomogeneousData{UT}, SC::S
 		end
 		bdofs = O.bdofs
 		penalty = O.parameters[:penalty]
+		value = O.parameters[:value]
 
 		if assemble_matrix
 			penalty = O.parameters[:penalty]
@@ -171,11 +173,11 @@ function ExtendableFEM.apply_penalties!(A, b, sol, O::HomogeneousData{UT}, SC::S
 		end
 		if assemble_rhs
 			BE = b.entries
-			BE[bdofs] .= 0
+			BE[bdofs] .= value * penalty
 		end
 		if assemble_sol
 			SE = sol.entries
-			SE[bdofs] .= 0
+			SE[bdofs] .= value
 		end
 	end
 	if O.parameters[:verbosity] > 1
