@@ -25,11 +25,6 @@ function ExtendableFEM.dependencies_when_linearized(O::InterpolateBoundaryData)
 	return O.u
 end
 
-function ExtendableFEM.fixed_dofs(O::InterpolateBoundaryData)
-	## assembles operator to full matrix A and b
-	return O.bdofs
-end
-
 # informs solver when operator needs reassembly in a time dependent setting
 function ExtendableFEM.is_timedependent(O::InterpolateBoundaryData)
 	return O.parameters[:time_dependent]
