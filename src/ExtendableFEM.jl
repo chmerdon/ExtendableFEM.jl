@@ -113,6 +113,7 @@ export InterpolateBoundaryData
 include("common_operators/homogeneousdata_operator.jl")
 export HomogeneousBoundaryData
 export HomogeneousData
+export assemble!, fixed_dofs, fixed_vals
 include("common_operators/fixdofs_operator.jl")
 export FixDofs
 include("common_operators/discface_interpolator.jl")

@@ -8,6 +8,9 @@ mutable struct InterpolateBoundaryData{UT, DFT} <: AbstractOperator
 	parameters::Dict{Symbol, Any}
 end
 
+ExtendableFEM.fixed_dofs(O::InterpolateBoundaryData) = O.bdofs
+fixed_vals(O::InterpolateBoundaryData) = O.bddata.entries
+
 default_bndop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:penalty => (1e30, "penalty for fixed degrees of freedom"),
 	:name => ("BoundaryData", "name for operator used in printouts"),
@@ -62,7 +65,7 @@ function InterpolateBoundaryData(u, data = nothing; kwargs...)
 	return InterpolateBoundaryData{typeof(u), typeof(data)}(u, data, zeros(Int, 0), nothing, nothing, nothing, parameters)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; time = 0, assemble_matrix = true, assemble_rhs = true, assemble_sol = true, kwargs...) where UT
+function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...) where UT
 	if UT <: Integer
 		ind = O.u
 		ind_sol = ind
@@ -70,14 +73,16 @@ function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::
 		ind = get_unknown_id(SC, O.u)
 		ind_sol = findfirst(==(O.u), sol.tags)
 	end
-	offset = SC.offsets[ind]
-	FES = b[ind].FES
+	assemble(b[ind].FES, O; ind = ind, offset = SC.offsets[ind], kwargs...)
+end
+
+function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0, kwargs...)
 	regions = O.parameters[:regions]
 	bdofs::Array{Int, 1} = O.bdofs
 	if O.FES !== FES
 		bddata = FEVector(FES)
 		Ti = eltype(FES.xgrid[CellNodes])
-		bfacedofs::Adjacency{Ti} = b[ind].FES[ExtendableFEMBase.BFaceDofs]
+		bfacedofs::Adjacency{Ti} = FES[ExtendableFEMBase.BFaceDofs]
 		bfaceregions = FES.xgrid[BFaceRegions]
 		nbfaces = num_sources(bfacedofs)
 		ndofs4bface = max_num_targets_per_source(bfacedofs)
@@ -97,26 +102,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::
 	time = @elapsed begin
 		bddata = O.bddata
 		data = O.data
-		if assemble_sol || assemble_rhs
-			interpolate!(bddata[1], ON_BFACES, data; time = time, bonus_quadorder = O.parameters[:bonus_quadorder])
-		end
-		# penalty = O.parameters[:penalty]
-		# AE = A.entries
-		# BE = b.entries
-		# if assemble_matrix
-		# 	for dof in bdofs
-		# 		AE[dof, dof] = penalty
-		# 	end
-		# 	flush!(AE)
-		# end
-		# if assemble_rhs
-		# 	for dof in bdofs
-		# 		BE[dof] = penalty * bddata.entries[dof-offset]
-		# 	end
-		# end
-		# for j = 1 : length(bdofs)
-		# 	bvals[j] = bddata.entries[bdofs[j]-offset]
-		# end
+		interpolate!(bddata[1], ON_BFACES, data; time = time, bonus_quadorder = O.parameters[:bonus_quadorder])
 	end
 	if O.parameters[:verbosity] > 1
 		@info ".... assembly of $(O.parameters[:name]) took $time s"
@@ -153,4 +139,3 @@ function ExtendableFEM.apply_penalties!(A, b, sol, O::InterpolateBoundaryData{UT
 		@info ".... applying penalties of $(O.parameters[:name]) took $time s"
 	end
 end
-

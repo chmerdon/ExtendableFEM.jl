@@ -12,6 +12,8 @@ mutable struct FixDofs{UT, AT, VT} <: AbstractOperator
 	parameters::Dict{Symbol, Any}
 end
 
+ExtendableFEM.fixed_dofs(O::FixDofs) = O.dofs
+fixed_vals(O::FixDofs) = O.vals
 
 default_fixdofs_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:penalty => (1e30, "penalty for fixed degrees of freedom"),
@@ -22,11 +24,6 @@ default_fixdofs_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 # informs solver in which blocks the operator assembles to
 function ExtendableFEM.dependencies_when_linearized(O::FixDofs)
 	return O.u
-end
-
-function ExtendableFEM.fixed_dofs(O::FixDofs)
-	## assembles operator to full matrix A and b
-	return O.dofs .+ O.offset
 end
 
 function Base.show(io::IO, O::FixDofs)

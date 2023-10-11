@@ -6,6 +6,9 @@ mutable struct HomogeneousData{UT, AT} <: AbstractOperator
 	parameters::Dict{Symbol, Any}
 end
 
+ExtendableFEM.fixed_dofs(O::HomogeneousData) = O.bdofs
+fixed_vals(O::HomogeneousData) = O.parameters[:value]
+
 
 default_homdata_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:penalty => (1e30, "penalty for fixed degrees of freedom"),
@@ -19,11 +22,6 @@ default_homdata_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 # informs solver in which blocks the operator assembles to
 function ExtendableFEM.dependencies_when_linearized(O::HomogeneousData)
 	return O.u
-end
-
-function ExtendableFEM.fixed_dofs(O::HomogeneousData)
-	## assembles operator to full matrix A and b
-	return O.bdofs
 end
 
 function Base.show(io::IO, O::HomogeneousData)
@@ -67,7 +65,7 @@ function HomogeneousBoundaryData(u; entities = ON_BFACES, kwargs...)
 	return HomogeneousData(u; entities = entities, kwargs...)
 end
 
-function assemble!(FES, O::HomogeneousData{UT, AT}; offset = 0, kwargs...) where {UT,AT}
+function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs...) where {UT,AT}
 	if O.FES !== FES
 		regions = O.parameters[:regions]
 		if AT <: ON_BFACES
@@ -146,7 +144,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::Solv
 		ind = get_unknown_id(SC, O.u)
 	end
 	FES = sol[ind].FES
-	assemble!(FES, O; offset = SC.offsets[ind], kwargs...)
+	assemble!(O, FES; offset = SC.offsets[ind], kwargs...)
 end
 
 
