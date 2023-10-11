@@ -68,7 +68,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::
 		ind = get_unknown_id(SC, O.u)
 		ind_sol = findfirst(==(O.u), sol.tags)
 	end
-	assemble(b[ind].FES, O; ind = ind, offset = SC.offsets[ind], kwargs...)
+	assemble!(O, b[ind].FES; ind = ind, offset = SC.offsets[ind], kwargs...)
 end
 
 function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0, kwargs...)
