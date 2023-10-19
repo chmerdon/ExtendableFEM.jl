@@ -31,18 +31,19 @@ mutable struct NonlinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT,
 end
 
 default_nlop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
+	:bonus_quadorder => (0, "additional quadrature order added to quadorder"),
 	:entities => (ON_CELLS, "assemble operator on these grid entities (default = ON_CELLS)"),
+	:entry_tolerance => (0, "threshold to add entry to sparse matrix"),
+	:factor => (1, "factor that should be multiplied during assembly"),
 	:name => ("NonlinearOperator", "name for operator used in printouts"),
 	:parallel_groups => (false, "assemble operator in parallel using CellAssemblyGroups"),
-	:factor => (1, "factor that should be multiplied during assembly"),
-	:sparse_jacobians => (true, "use sparse jacobians"),
-	:entry_tolerance => (0, "threshold to add entry to sparse matrix"),
 	:params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
 	:quadorder => ("auto", "quadrature order"),
-	:bonus_quadorder => (0, "additional quadrature order added to quadorder"),
+	:regions => ([], "subset of regions where operator should be assembly only"),
+	:sparse_jacobians => (true, "use sparse jacobians"),
+	:sparse_jacobians_pattern => (nothing, "user provided sparsity pattern for the sparse jacobians (in case automatic detection fails)"),
 	:time_dependent => (false, "operator is time-dependent ?"),
 	:verbosity => (0, "verbosity level"),
-	:regions => ([], "subset of regions where operator should be assembly only"),
 )
 
 # informs solver when operator needs reassembly
@@ -215,6 +216,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 		Kj = Array{KernelEvaluator, 1}([])
 
 		sparse_jacobians = O.parameters[:sparse_jacobians]
+		sparsity_pattern = O.parameters[:sparse_jacobians_pattern]
 		use_autodiff = O.jacobian === nothing
 		for EG in EGs
 			## prepare parameters
@@ -223,7 +225,9 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 			if sparse_jacobians
 				input_args = zeros(Tv, op_offsets_args[end])
 				result_kernel = zeros(Tv, op_offsets_test[end])
-				sparsity_pattern = Symbolics.jacobian_sparsity(kernel_params, result_kernel, input_args)
+				if sparsity_pattern === nothing
+					sparsity_pattern = Symbolics.jacobian_sparsity(kernel_params, result_kernel, input_args)
+				end
 				jac = Float64.(sparse(sparsity_pattern))
 				value = zeros(Tv, op_offsets_test[end])
 				colors = matrix_colors(jac)
