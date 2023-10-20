@@ -96,7 +96,7 @@ function main(;
 	PD = ProblemDescription()
 	u = Unknown("u"; name = "displacement")
 	assign_unknown!(PD, u)
-	assign_operator!(PD, ExtendableFEM.NonlinearOperator(op, [grad(u)]; kwargs...))
+	assign_operator!(PD, NonlinearOperator(op, [grad(u)]; kwargs...))
 	if periodic
 		## periodic boundary conditions
 		## 1) couple dofs left (bregion 1) and right (bregion 3) in y-direction

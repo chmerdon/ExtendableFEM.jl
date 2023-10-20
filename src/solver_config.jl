@@ -1,3 +1,14 @@
+mutable struct SolverStatistics{Tv}
+	assembly_times::Vector{Tv}
+	solver_times::Vector{Tv}
+	assembly_allocs::Vector{Tv}
+	solver_allocs::Vector{Tv}
+	linear_residuals::Vector{Tv}
+	nonlinear_residuals::Vector{Tv}
+end
+
+residual(S::SolverStatistics) = S.nonlinear_residuals[end]
+
 mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	PD::ProblemDescription
 	A::AT					## stores system matrix
@@ -5,6 +16,7 @@ mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	sol::xT					## stores solution
 	res::xT
 	LP::LinearProblem
+	statistics::SolverStatistics{Float64}
 	linsolver::Any
 	unknown_ids_in_sol::Array{Int, 1}
 	unknowns::Array{Unknown, 1}
@@ -113,5 +125,5 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 	end
 	res = deepcopy(b)
 	LP = LinearProblem(A.entries.cscmatrix, b.entries)
-	return SolverConfiguration{typeof(A), typeof(b), typeof(x)}(Problem, A, b, x, res, LP, nothing, unknown_ids_in_sol, unknowns, copy(unknowns), offsets, parameters)
+	return SolverConfiguration{typeof(A), typeof(b), typeof(x)}(Problem, A, b, x, res, LP, SolverStatistics(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[]), nothing, unknown_ids_in_sol, unknowns, copy(unknowns), offsets, parameters)
 end

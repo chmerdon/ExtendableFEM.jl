@@ -202,8 +202,6 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
                 "combinedofs.md",
                 "callbackoperator.md",
             ],
-           # "Discretisation" => Any[
-           # ],
             "Solving" => Any[
                    "pdesolvers.md",
                    "pdesolvers_dt.md",
@@ -211,7 +209,6 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
             "Postprocessing" => Any[
                     "postprocessing.md",
                     "itemintegrators.md",
-           #         "viewers.md",
                 ],
             #"Tutorial Notebooks" => notebooks,
             "Examples" => generated_examples,

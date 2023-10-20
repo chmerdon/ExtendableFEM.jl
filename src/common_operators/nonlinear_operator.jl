@@ -34,6 +34,7 @@ default_nlop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:bonus_quadorder => (0, "additional quadrature order added to quadorder"),
 	:entities => (ON_CELLS, "assemble operator on these grid entities (default = ON_CELLS)"),
 	:entry_tolerance => (0, "threshold to add entry to sparse matrix"),
+	:extra_inputsize => (0, "additional entries in input vector (e.g. for type-stable storage for intermediate resutls)"),
 	:factor => (1, "factor that should be multiplied during assembly"),
 	:name => ("NonlinearOperator", "name for operator used in printouts"),
 	:parallel_groups => (false, "assemble operator in parallel using CellAssemblyGroups"),
@@ -223,7 +224,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 			QPj = QPInfos(xgrid; time = time, x = ones(Tv, size(xgrid[Coordinates], 1)), params = O.parameters[:params])
 			kernel_params = (result, input) -> (O.kernel(result, input, QPj))
 			if sparse_jacobians
-				input_args = zeros(Tv, op_offsets_args[end])
+				input_args = zeros(Tv, op_offsets_args[end] + O.parameters[:extra_inputsize])
 				result_kernel = zeros(Tv, op_offsets_test[end])
 				if sparsity_pattern === nothing
 					sparsity_pattern = Symbolics.jacobian_sparsity(kernel_params, result_kernel, input_args)
@@ -237,7 +238,7 @@ function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVec
 					colorvec = colors,
 					sparsity = sparsity_pattern)
 			else
-				input_args = zeros(Tv, op_offsets_args[end])
+				input_args = zeros(Tv, op_offsets_args[end] + O.parameters[:extra_inputsize])
 				result_kernel = zeros(Tv, op_offsets_test[end])
 				Dresult = DiffResults.JacobianResult(result_kernel, input_args)
 				jac = DiffResults.jacobian(Dresult)

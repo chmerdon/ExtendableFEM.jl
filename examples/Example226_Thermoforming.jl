@@ -47,10 +47,10 @@ function g(r,κ,s)
 end
 
 
-# The smooth bump function in [0,1]
+## The smooth bump function in [0,1]
 bump(x) = (0.0 <= x <= 1.0) ? exp(-0.25 / (x - x^2)) : 0.0
 
-# Bump in [0,1]^2
+## Bump in [0,1]^2
 bumpInUnitSquare(x) = begin
 	r = sqrt((x[1] - 0.5)^2 + (x[2] - 0.5)^2)
 	return bump(0.5 + r)
@@ -59,7 +59,7 @@ end
 
 ## nonlinear kernel
 function nonlinear_kernel!(result, input, qpinfo )
-	# results and input contain 7 variables (u,∇u,T,∇T,y)
+	## results and input contain 7 variables (u,∇u,T,∇T,y)
 	u  = view(input, 1)
 	∇u = view(input, 2:3)
 	T  = view(input, 4)
@@ -80,8 +80,8 @@ function nonlinear_kernel!(result, input, qpinfo )
 	result[7]   = y[1] - Φ0(qpinfo.x) - β * bumpInUnitSquare( qpinfo.x ) * T[1]           # pattern: 4 7
 end
 
-# custom sparsity pattern for the jacobians of the nonlinear_kernel (Symbolcs cannot handle conditional jumps)
-# note: jacobians are defined row-wise
+## custom sparsity pattern for the jacobians of the nonlinear_kernel (Symbolcs cannot handle conditional jumps)
+## note: jacobians are defined row-wise
 rows = [1, 1, 2, 3, 4, 4, 4, 5, 6, 7, 7]
 cols = [1 ,7, 2, 3, 1, 4, 7, 5, 6, 4, 7]
 vals = ones(Bool, length(cols))

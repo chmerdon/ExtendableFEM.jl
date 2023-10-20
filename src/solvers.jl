@@ -76,6 +76,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 	residual = SC.res
 	method_linear = SC.parameters[:method_linear]
 	precon_linear = SC.parameters[:precon_linear]
+	stats = SC.statistics
 
 	## unpack solver parameters
 	maxits = SC.parameters[:maxiterations]
@@ -241,6 +242,9 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 			time_final += time_assembly
 			allocs_final += allocs_assembly
 		end
+		push!(stats.assembly_allocs, allocs_assembly)
+		push!(stats.assembly_times, time_assembly)
+		push!(stats.nonlinear_residuals, nlres)
 		if nlres < nltol
 			if SC.parameters[:verbosity] > -1
 				@printf " END\t"
@@ -303,6 +307,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				end
 				#@info residual.entries, norms(residual)
 				linres = norm(residual.entries)
+				push!(stats.linear_residuals, linres)
 				offset = 0
 				for u in unknowns
 					ndofs_u = length(view(sol[u]))
@@ -318,6 +323,8 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 		time_total += time_solve
 		time_final += time_solve
 		allocs_final += allocs_solve
+		push!(stats.solver_allocs, allocs_solve)
+		push!(stats.solver_times, time_solve)
 		if SC.parameters[:verbosity] > -1
 			@printf "%.3e\t" linres
 			@printf "%.2f\t%.2f\t%.2f\t" time_assembly time_solve time_total
