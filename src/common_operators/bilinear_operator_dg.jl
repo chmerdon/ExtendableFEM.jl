@@ -261,7 +261,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 		for op in O.ops_ansatz
 			push!(coeffs_ops_ansatz, coeffs(op))
 		end
-		for op in O.ops_ansatz
+		for op in O.ops_args
 			push!(coeffs_ops_args, coeffs(op))
 		end
 
@@ -428,8 +428,9 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 
+                boundary_face = itemcells[2, item] == 0
 				if AT <: ON_IFACES
-					if itemcells[2, item] == 0
+					if boundary_face
 						continue
 					end
 				end
@@ -497,11 +498,12 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 
 							# update matrix
 							for id ∈ 1:nansatz
+								coeff_ansatz = boundary_face ? 1 : coeffs_ops_ansatz[id][c2]
 								for j ∈ 1:ndofs_ansatz[id]
 									# evaluate kernel for ansatz basis function on cell 2
 									fill!(input_ansatz, 0)
 									for d ∈ 1:op_lengths_ansatz[id]
-										input_ansatz[d+op_offsets_ansatz[id]] = BE_ansatz_vals[id][itempos2, orientation2][d, j, qp] * coeffs_ops_ansatz[id][c2]
+										input_ansatz[d+op_offsets_ansatz[id]] = BE_ansatz_vals[id][itempos2, orientation2][d, j, qp] * coeff_ansatz
 									end
 
 									# evaluate kernel
@@ -510,9 +512,10 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 
 									# multiply test function operator evaluation on cell 1
 									for idt in couples_with[id]
+										coeff_test = boundary_face ? 1 : coeffs_ops_test[idt][c1]
 										for k ∈ 1:ndofs_test[idt]
 											for d ∈ 1:op_lengths_test[idt]
-												Aloc[idt, id][k, j] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeffs_ops_test[idt][c1]
+												Aloc[idt, id][k, j] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeff_test
 											end
 										end
 									end
@@ -647,8 +650,8 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 		FETypes_ansatz = [eltype(F) for F in FES_ansatz]
 		EGs = xgrid[UniqueCellGeometries]
 
-		coeffs_ops_test = Array{Array{Int, 1}, 1}([])
-		coeffs_ops_ansatz = Array{Array{Int, 1}, 1}([])
+		coeffs_ops_test = Array{Array{Float64, 1}, 1}([])
+		coeffs_ops_ansatz = Array{Array{Float64, 1}, 1}([])
 		for op in O.ops_test
 			push!(coeffs_ops_test, coeffs(op))
 		end
@@ -808,8 +811,9 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 
+                boundary_face = itemcells[2, item] == 0
 				if AT <: ON_IFACES
-					if itemcells[2, item] == 0
+					if boundary_face
 						continue
 					end
 				end
@@ -818,7 +822,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 					cell1 = itemcells[c1, item] # current cell of test function
 					cell2 = itemcells[c2, item] # current cell of ansatz function
 					if (cell1 > 0) && (cell2 > 0)
-						QPinfos.cell = cell2
+						QPinfos.cell = cell2 # give cell of input for kernel
 						itempos1 = 1
 						while !(cellitems[itempos1, cell1] == item)
 							itempos1 += 1
@@ -849,11 +853,12 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 							# update matrix
 							for id ∈ 1:nansatz
 								if coeffs_ops_ansatz[id][c2] != 0
+									coeff_ansatz = boundary_face ? 1 : coeffs_ops_ansatz[id][c2]
 									for j ∈ 1:ndofs_ansatz[id]
 										# evaluate kernel for ansatz basis function on cell 2
 										fill!(input_ansatz, 0)
 										for d ∈ 1:op_lengths_ansatz[id]
-											input_ansatz[d+op_offsets_ansatz[id]] = BE_ansatz_vals[id][itempos2, orientation2][d, j, qp] * coeffs_ops_ansatz[id][c2]
+											input_ansatz[d+op_offsets_ansatz[id]] = BE_ansatz_vals[id][itempos2, orientation2][d, j, qp] * coeff_ansatz
 										end
 
 										# evaluate kernel
@@ -862,9 +867,10 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 
 										# multiply test function operator evaluation on cell 1
 										for idt in couples_with[id]
+											coeff_test = boundary_face ? 1 : coeffs_ops_test[idt][c1]
 											for k ∈ 1:ndofs_test[idt]
 												for d ∈ 1:op_lengths_test[idt]
-													Aloc[idt, id][k, j] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeffs_ops_test[idt][c1]
+													Aloc[idt, id][k, j] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeff_test
 												end
 											end
 										end

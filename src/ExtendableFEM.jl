@@ -76,6 +76,7 @@ export get_periodic_coupling_info
 
 include("solver_config.jl")
 export SolverConfiguration
+export SolverStatistics, residual
 
 include("solvers.jl")
 export solve
@@ -97,6 +98,8 @@ export evaluate, evaluate!
 export L2NormIntegrator
 include("common_operators/linear_operator.jl")
 export LinearOperator
+include("common_operators/linear_operator_dg.jl")
+export LinearOperatorDG
 include("common_operators/bilinear_operator.jl")
 export BilinearOperator
 include("common_operators/bilinear_operator_dg.jl")

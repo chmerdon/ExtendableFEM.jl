@@ -5,7 +5,7 @@ function GridVisualize.vectorplot!(p, op::Tuple{Union{Unknown, Int}, DataType}, 
 	GridVisualize.vectorplot!(p, sol[op[1]].FES.xgrid, eval_func(PointEvaluator([op], sol)); title = title, kwargs...)
 end
 
-function plot!(p, ops, sol; spacing = 0.1, keep = [], ncols = size(p.subplots, 2), do_abs = true, do_vector_plots = true, title_add = "", kwargs...)
+function plot!(p::GridVisualizer, ops, sol; spacing = 0.1, keep = [], ncols = size(p.subplots, 2), do_abs = true, do_vector_plots = true, title_add = "", kwargs...)
 	col, row, id = 0, 1, 0
 	for op in ops
 		col += 1
@@ -28,9 +28,9 @@ function plot!(p, ops, sol; spacing = 0.1, keep = [], ncols = size(p.subplots, 2
 			resultdim = Length4Operator(op[2], edim, ncomponents)
 			title = op[2] == Identity ? sol[op[1]].name : "$(op[2])(" * sol[op[1]].name * ")"
 			if resultdim == 1
-				scalarplot!(p[row, col], sol[op[1]].FES.xgrid, view(nodevalues(sol[op[1]], op[2]; abs = false), 1, :), title = title * title_add, kwargs...)
+				GridVisualize.scalarplot!(p[row, col], sol[op[1]].FES.xgrid, view(nodevalues(sol[op[1]], op[2]; abs = false), 1, :), title = title * title_add; kwargs...)
 			elseif do_abs == true
-				scalarplot!(p[row, col], sol[op[1]].FES.xgrid, view(nodevalues(sol[op[1]], op[2]; abs = true), 1, :), title = "|" * title * "|" * title_add, kwargs...)
+				GridVisualize.scalarplot!(p[row, col], sol[op[1]].FES.xgrid, view(nodevalues(sol[op[1]], op[2]; abs = true), 1, :), title = "|" * title * "|" * title_add; kwargs...)
 			else
 				nv = nodevalues(sol[op[1]], op[2]; abs = false)
 				for k ∈ 1:resultdim
@@ -40,11 +40,11 @@ function plot!(p, ops, sol; spacing = 0.1, keep = [], ncols = size(p.subplots, 2
 							col, row = 1, row + 1
 						end
 					end
-					scalarplot!(p[row, col], sol[op[1]].FES.xgrid, view(nv, k, :), title = title * " (component $k)" * title_add, kwargs...)
+					GridVisualize.scalarplot!(p[row, col], sol[op[1]].FES.xgrid, view(nv, k, :), title = title * " (component $k)" * title_add, kwargs...)
 				end
 			end
 			if resultdim > 1 && do_vector_plots && do_abs == true && edim > 1
-				vectorplot!(p[row, col], sol[op[1]].FES.xgrid, eval_func(PointEvaluator([op], sol)); spacing = spacing, title = "|" * title * "|" * " + quiver" * title_add, clear = false, kwargs...)
+				GridVisualize.vectorplot!(p[row, col], sol[op[1]].FES.xgrid, eval_func(PointEvaluator([op], sol)); spacing = spacing, title = "|" * title * "|" * " + quiver" * title_add, clear = false, kwargs...)
 			end
 		end
 	end
