@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 245 : Flow around a cylinder
-([source code](SOURCE_URL))
 
 This example solves the DFG Navier-Stokes benchmark problem
 ```math
@@ -17,6 +16,8 @@ This script demonstrates the employment of external grid generators and the comp
 
 Note: This example needs the additional packages Triangulate and SimplexGridFactory to generate the mesh.
 
+![](example245.svg)
+
 =#
 
 
@@ -28,6 +29,7 @@ using SimplexGridFactory
 using ExtendableGrids
 using GridVisualize
 using LinearAlgebra
+using Test # hide
 
 ## inlet data for Karman vortex street example
 ## as in DFG benchmark 2D-1 (Re = 20, laminar)
@@ -87,27 +89,25 @@ function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true,
 	println("p difference = $pdiff")
 
 	## plots via GridVisualize
-	pl = GridVisualizer(; Plotter = Plotter, layout = (4, 1), clear = true, size = (800, 1200))
-	gridplot!(pl[1, 1], xgrid, linewidth = 1)
-	gridplot!(pl[2, 1], xgrid, linewidth = 1, xlimits = [0, 0.3], ylimits = [0.1, 0.3])
-	scalarplot!(pl[3, 1], xgrid, nodevalues(sol[u]; abs = true)[1, :])
-	vectorplot!(pl[3, 1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = (0.2, 0.05), vscale = 0.5, clear = false)
-	scalarplot!(pl[4, 1], xgrid, view(nodevalues(sol[p]), 1, :), levels = 11, title = "p_h")
+	plt = GridVisualizer(; Plotter = Plotter, layout = (4, 1), clear = true, size = (800, 1200))
+	gridplot!(plt[1, 1], xgrid, linewidth = 1)
+	gridplot!(plt[2, 1], xgrid, linewidth = 1, xlimits = [0, 0.3], ylimits = [0.1, 0.3])
+	scalarplot!(plt[3, 1], xgrid, nodevalues(sol[u]; abs = true)[1, :])
+	vectorplot!(plt[3, 1], xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), spacing = (0.2, 0.05), vscale = 0.5, clear = false)
+	scalarplot!(plt[4, 1], xgrid, view(nodevalues(sol[p]), 1, :), levels = 11, title = "p_h")
+
+	return [draglift[1], draglift[2], pdiff[1]], plt
 end
 
 function get_pressure_difference(sol::FEVector)
 	xgrid = sol[2].FES.xgrid
 	PE = PointEvaluator([id(2)], sol)
-	CF = CellFinder(xgrid)
-	xref = zeros(Float64, 2)
 	p_left = zeros(Float64, 1)
-	x1 = [0.1, 0.2]
+	x1 = [0.15, 0.2]
 	p_right = zeros(Float64, 1)
 	x2 = [0.25, 0.2]
-	cell::Int = gFindLocal!(xref, CF, x1; icellstart = 1)
-	evaluate!(p_left, PE, xref, cell)
-	cell = gFindLocal!(xref, CF, x2; icellstart = 1)
-	evaluate!(p_right, PE, xref, cell)
+	evaluate!(p_left, PE, x1)
+	evaluate!(p_right, PE, x2)
 	@show p_left, p_right
 	return p_left - p_right
 end
@@ -196,4 +196,11 @@ function make_grid(W, H; n = 20, maxvol = 0.1)
 	simplexgrid(builder, maxvolume = 16 * maxvol, unsuitable = unsuitable)
 end
 
+generateplots = default_generateplots(Example245_NSEFlowAroundCylinder, "example245.svg") # hide
+function runtests() # hide
+	dragliftpdiff, plt = main(; maxvol = 5e-3) # hide
+	@test dragliftpdiff[1] ≈ 5.484046680249255 # hide
+	@test dragliftpdiff[2] ≈ 0.006508486071976145 # hide
+	@test dragliftpdiff[3] ≈ 0.1203441600631075 # hide
+end # hide
 end

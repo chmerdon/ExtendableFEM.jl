@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 204 : Eigenvalue problem for the Laplacian
-([source code](SOURCE_URL))
 
 This example computes the pairs of eigenvalues and eigenvectors
 ``(\lambda,u) \in \mathbb{R} \times H^1_0(\Omega)``
@@ -13,7 +12,9 @@ of the Laplacian, i.e,
 ```
 on a two-dimensional L-shaped domain with homogeneous boundary conditions
 with the help of an iterative solver from [KrylovKit.jl](https://github.com/Jutho/KrylovKit.jl).
+The first twelve computed eigenvectors look like this:
 
+![](example204.svg)
 =#
 
 module Example204_LaplaceEVProblem
@@ -38,7 +39,7 @@ function main(; which = 1:12, ncols = 3, nrefs = 4, order = 1, Plotter = nothing
 	assemble!(A, BilinearOperator([grad(1)]; kwargs...))
 	assemble!(A, BilinearOperator([id(1)]; entities = ON_BFACES, factor = 1e5, kwargs...))
 	assemble!(B, BilinearOperator([id(1)]; kwargs...))
-	
+
 	## solver generalized eigenvalue problem iteratively with KrylovKit
 	λs, x, info = geneigsolve((A.entries, B.entries), maximum(which), :SR; maxiter = 2000, issymmetric = true, tol = 1e-8)
 	@assert info.converged >= maximum(which)
@@ -46,18 +47,21 @@ function main(; which = 1:12, ncols = 3, nrefs = 4, order = 1, Plotter = nothing
 	## plot requested eigenvalue pairs
 	nEVs = length(which)
 	nrows = Int(ceil(nEVs / ncols))
-    p = GridVisualizer(; Plotter = Plotter, layout = (nrows, ncols), clear = true, resolution = (900,900/ncols*nrows))
-    col, row = 0, 1
-    for j in which
-        col += 1
-        if col == ncols + 1
-            col, row = 1, row + 1
-        end
+	plt = GridVisualizer(; Plotter = Plotter, layout = (nrows, ncols), clear = true, resolution = (900, 900 / ncols * nrows))
+	col, row = 0, 1
+	for j in which
+		col += 1
+		if col == ncols + 1
+			col, row = 1, row + 1
+		end
 		λ = λs[j]
 		@info "λ[$j] = $λ, residual = $(sum(info.residual[j]))"
 		u.entries .= Real.(x[j])
-        scalarplot!(p[row,col], id(1), u; Plotter = Plotter, title = "λ[$j] = $(Float16(λ))")
-    end
+		scalarplot!(plt[row, col], id(1), u; Plotter = Plotter, title = "λ[$j] = $(Float16(λ))")
+	end
+
+	return u, plt
 end
 
+generateplots = default_generateplots(Example204_LaplaceEVProblem, "example204.svg") # hide
 end # module

@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 205 : Heat equation
-([source code](SOURCE_URL))
 
 This example computes the solution ``u`` of the two-dimensional heat equation
 ```math
@@ -12,6 +11,10 @@ u_t - \Delta u & = 0 \quad \text{in } \Omega
 for homogeneous Dirichlet boundary conditions and some given initial state
 on the unit square domain ``\Omega`` on a given grid.
 
+The initial condition and the final solution for the default parameters looks like this:
+
+![](example205.svg)
+
 =#
 
 module Example205_HeatEquation
@@ -19,6 +22,7 @@ module Example205_HeatEquation
 using ExtendableFEM
 using ExtendableGrids
 using DifferentialEquations
+using Test # hide
 
 ## initial state u at time t0
 function initial_data!(result, qpinfo)
@@ -45,7 +49,7 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
 	interpolate!(sol[u], initial_data!; bonus_quadorder = 5)
 
 	## init plotter and plot u0
-	p = plot([id(u)], sol; add = 1, Plotter = Plotter, title_add = " (t = 0)")
+	plt = plot([id(u)], sol; add = 1, Plotter = Plotter, title_add = " (t = 0)")
 
 	if (use_diffeq)
 		## generate DifferentialEquations.ODEProblem
@@ -76,7 +80,14 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
 	end
 
 	## plot final state
-	plot!(p, [id(u)], sol; keep = 1, title_add = " (t = $T)")
+	plot!(plt, [id(u)], sol; keep = 1, title_add = " (t = $T)")
+
+	return sol, plt
 end
 
+generateplots = default_generateplots(Example205_HeatEquation, "example205.svg") # hide
+function runtests() # hide
+	sol, plt = main(; nrefs = 2, T = 1, use_diffeq = false) # hide	
+	@test maximum(sol.entries) ≈ 0.041490419236077006 # hide
+end # hide
 end # module

@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 210 : Poisson L-shape Adaptive Mesh Refinement
-([source code](SOURCE_URL))
 
 This example computes the standard-residual error estimator for the $H^1$ error ``e = u - u_h`` of some $H^1$-conforming
 approximation ``u_h`` to the solution ``u`` of some Poisson problem ``-\Delta u = f`` on an L-shaped domain, i.e.
@@ -11,6 +10,10 @@ approximation ``u_h`` to the solution ``u`` of some Poisson problem ``-\Delta u 
 ```
 This example script showcases the evaluation of 2nd order derivatives like the Laplacian and adaptive mesh refinement.
 
+The resulting mesh and error convergence history for the default parameters looks like:
+
+![](example210.svg)
+
 =#
 
 module Example210_LshapeAdaptivePoissonProblem
@@ -19,6 +22,7 @@ using ExtendableFEM
 using GridVisualize
 using ExtendableGrids
 using LinearAlgebra
+using Test # hide
 
 ## exact solution u for the Poisson problem
 function u!(result, qpinfo)
@@ -161,14 +165,21 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 	end
 
 	## plot
-	p = GridVisualizer(; Plotter = Plotter, layout = (2, 2), clear = true, size = (1000, 1000))
-	scalarplot!(p[1, 1], id(u), sol; levels = 7, title = "u_h")
-	plot_convergencehistory!(p[1, 2], NDofs, [ResultsL2 ResultsH1 Resultsη]; add_h_powers = [order, order + 1], X_to_h = X -> order * X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
-	gridplot!(p[2, 1], xgrid; linewidth = 1)
-	gridplot!(p[2, 2], xgrid; linewidth = 1, xlimits = [-0.0005, 0.0005], ylimits = [-0.0005, 0.0005])
+	plt = GridVisualizer(; Plotter = Plotter, layout = (2, 2), clear = true, size = (1000, 1000))
+	scalarplot!(plt[1, 1], id(u), sol; levels = 7, title = "u_h")
+	plot_convergencehistory!(plt[1, 2], NDofs, [ResultsL2 ResultsH1 Resultsη]; add_h_powers = [order, order + 1], X_to_h = X -> order * X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
+	gridplot!(plt[2, 1], xgrid; linewidth = 1)
+	gridplot!(plt[2, 2], xgrid; linewidth = 1, xlimits = [-0.0005, 0.0005], ylimits = [-0.0005, 0.0005])
 
 	## print convergence history
 	print_convergencehistory(NDofs, [ResultsL2 ResultsH1 Resultsη]; X_to_h = X -> X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
+
+	return sol, plt
 end
 
+generateplots = default_generateplots(Example210_LshapeAdaptivePoissonProblem, "example210.svg") # hide
+function runtests() # hide
+	sol, plt = main(; maxdofs = 1000, order = 2) # hide	
+	@test length(sol.entries) == 1007 # hide
+end # hide
 end # module

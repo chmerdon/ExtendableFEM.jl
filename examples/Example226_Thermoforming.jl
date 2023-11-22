@@ -1,10 +1,11 @@
 #=
 
 # 226 : Thermoforming
-([source code](SOURCE_URL))
 
-This implements the thermoforming simulation taken from https://arxiv.org/abs/1802.03564 Section 6.4
+This implements the thermoforming simulation taken from https://arxiv.org/abs/1802.03564 Section 6.4.
+The computed solution for the default parameters looks like this:
 
+![](example226.svg)
 =#
 
 module Example226_Thermoforming
@@ -13,6 +14,7 @@ using ExtendableFEM
 using ExtendableGrids
 using SparseArrays
 using LinearAlgebra
+using Test # hide
 
 function w(r)
 	if 0.1 ≤ r ≤ 0.3
@@ -87,8 +89,6 @@ cols = [1 ,7, 2, 3, 1, 4, 7, 5, 6, 4, 7]
 vals = ones(Bool, length(cols))
 sparsity_pattern = sparse(rows,cols,vals)
 
-
-
 function main(;
 	κ = 10,
 	s = 1,
@@ -130,10 +130,16 @@ function main(;
 	sol = solve(PD, FESs; init = sol, maxiterations=420, target_residual=1e-8, kwargs...)
 
 	## plot
-	plot([id(1),id(2),id(3)], sol; Plotter = Plotter)
+	plt = plot([id(u),id(T),id(y)], sol; Plotter = Plotter)
 
-	return sol
+	return sol, plt
 end
 
+generateplots = default_generateplots(Example226_Thermoforming, "example226.svg") # hide
+function runtests() # hide
+	sol1, ~ =  Example226_Thermoforming.main(; sparse_jacobians=true, N = 20) # hide
+	sol2, ~ =  Example226_Thermoforming.main(; sparse_jacobians=false, N = 20) # hide
+	@test norm(sol1.entries - sol2.entries) ≈ 0 # hide
+end # hide
 end # module
 

@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 290 : Poro-Elasticity
-([source code](SOURCE_URL))
 
 This example concerns the three-field solution ``(\mathbf{w},\mathbf{u},p)`` of Biot's consolidation
 model in poroelasticity given by
@@ -25,6 +24,10 @@ As a test problem the first benchmark problem from the same reference is used.
 	SIAM J. Numer. Anal. 55(4) (2017),\
 	[>Journal-Link<](https://epubs.siam.org/doi/10.1137/16M1056109)
 
+The computed solution for the default parameters looks like this:
+
+![](example290.svg)
+
 =#
 
 module Example290_PoroElasticity
@@ -34,6 +37,7 @@ using ExtendableGrids
 using DifferentialEquations
 using GridVisualize
 using Symbolics
+using Test # hide
 
 
 ## exact data for testcase 2 computed by Symbolics
@@ -201,6 +205,13 @@ function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 6, T = 0.5, τ =
 	scalarplot!(plt[1, 2], id(u), sol; abs = true, title = "u_h (t = $T)")
 	scalarplot!(plt[2, 2], id(p), sol; title = "p_h (t = $T)")
 	scalarplot!(plt[3, 2], id(w), sol; abs = true, title = "|w_h| (t = $T)")
+
+	return L2errorU, plt
 end
 
+generateplots = default_generateplots(Example290_PoroElasticity, "example290.svg") # hide
+function runtests() # hide
+	L2errorU, plt = main(; nrefs = 4) # hide
+	@test L2errorU ≈ 0.18232484430836826 # hide
+end # hide
 end # module

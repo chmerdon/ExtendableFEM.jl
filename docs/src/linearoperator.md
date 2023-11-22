@@ -27,3 +27,16 @@ u = Unknown("u")
 NonlinearOperator(kernel!, [id(u)])
 ```
 The second argument triggers that the ```result``` vector of the kernel is multiplied with the Identity evaluation of the test function.
+
+
+## DG LinearOperator
+
+LinearOperatorDG is intended for bilinear forms that involves jumps of discontinuous quantities
+on faces whose assembly requires evaluation of all degrees of freedom on the neighbouring cells,
+e.g. gradient jumps for H1 conforming functions.
+
+```@autodocs
+Modules = [ExtendableFEM]
+Pages = ["common_operators/linear_operator_dg.jl"]
+Order   = [:type, :function]
+```

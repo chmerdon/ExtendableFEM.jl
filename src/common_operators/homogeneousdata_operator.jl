@@ -147,6 +147,13 @@ function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::Solv
 	assemble!(O, FES; offset = SC.offsets[ind], kwargs...)
 end
 
+function apply!(U::FEVectorBlock, O::HomogeneousData; offset = 0, kwargs...)
+	bdofs = O.bdofs
+	value = O.parameters[:value]
+	UE = U.entries
+	UE[bdofs] .= value
+end
+
 
 function ExtendableFEM.apply_penalties!(A, b, sol, O::HomogeneousData{UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, assemble_sol = true, kwargs...) where {UT}
 	time = @elapsed begin

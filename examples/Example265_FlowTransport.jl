@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 265 : Flow + Transport
-([source code](SOURCE_URL))
 
 This example solve the Stokes problem in an Omega-shaped pipe and then uses the velocity in a transport equation for a species with a certain inlet concentration.
 Altogether, we are looking for a velocity ``\mathbf{u}``, a pressure ``\mathbf{p}`` and a stationary species concentration ``\mathbf{c}`` such that
@@ -29,6 +28,11 @@ upwind discretisation ensures mass conservation.
 Note, that the transport equation is very convection-dominated and no stabilisation in the finite element discretisations was used here (but instead a nonzero ``\kappa``).
 Also note, that only the finite volume discretisation perfectly obeys the maximum principle for the concentration but the isolines do no stay
 parallel until the outlet is reached, possibly due to articifial diffusion.
+
+The computed solution for the default parameters looks like this:
+
+![](example265.svg)
+
 =#
 
 module Example265_FlowTransport
@@ -37,6 +41,7 @@ using ExtendableFEM
 using ExtendableGrids
 using SimplexGridFactory
 using Triangulate
+using Test # hide
 
 ## boundary data
 function u_inlet!(result, qpinfo)
@@ -122,7 +127,9 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     println("\n[min(c),max(c)] = [$(minimum(view(sol[T]))),$(maximum(view(sol[T])))]")
 
     ## plot
-    plot([id(u), id(T)], sol; Plotter = Plotter, ncols = 1, spacing = 0.25)
+    plt = plot([id(u), id(T)], sol; Plotter = Plotter, ncols = 1, spacing = 0.25)
+
+    return sol, plt
 end
 
 ## pure convection finite volume operator for transport
@@ -203,6 +210,10 @@ function kernel_inflow!(result, input, qpinfo)
     end
 end
 
-
-
-end
+generateplots = default_generateplots(Example265_FlowTransport, "example265.svg") # hide
+function runtests() # hide
+	sol, plt = main(;) # hide
+	@test minimum(view(sol[3])) >= 0 # hide
+	@test maximum(view(sol[3])) <= 0.25 # hide
+end # hide
+end # module

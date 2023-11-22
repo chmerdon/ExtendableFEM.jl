@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 284 : Level Set Method
-([source code](SOURCE_URL))
 
 This example studies the level-set method of some level function ``\mathbf{\phi}`` convected in time via the equation
 ```math
@@ -13,7 +12,10 @@ Here this is tested with the (conservative) initial level set function ``\phi(x)
 such that the level ``\phi \equiv 0.5`` forms a circle which is then convected by the velocity
 ``\mathbf{u} = (0.5,1)^T``. No reinitialisation step is performed.
 
-In each couple of timestep the plot is updated (where an upscaled P1 interpolation of the higher order solution is used).
+The initial condition and the final solution for the default parameters looks like this:
+
+![](example284.svg)
+
 =#
 
 module Example284_LevelSetMethod
@@ -53,8 +55,8 @@ function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 0.4, order = 2, nre
 	interpolate!(sol[ϕ], ϕ_init!; params = [ϵ])
 
 	## prepare plot and plot init solution
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, resolution = (800, 400))
-	scalarplot!(p[1, 1], id(ϕ), sol; levels = [0.5], flimits = [-0.05, 1.05], colorbarticks = [0, 0.25, 0.5, 0.75, 1], title = "ϕ (t = 0)")
+	plt = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, resolution = (800, 400))
+	scalarplot!(plt[1, 1], id(ϕ), sol; levels = [0.5], flimits = [-0.05, 1.05], colorbarticks = [0, 0.25, 0.5, 0.75, 1], title = "ϕ (t = 0)")
 
 	if (use_diffeq)
 		## generate DifferentialEquations.ODEProblem
@@ -85,7 +87,10 @@ function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 0.4, order = 2, nre
 	end
 
 	## plot final state
-	scalarplot!(p[1, 2], id(ϕ), sol; levels = [0.5], flimits = [-0.05, 1.05], colorbarticks = [0, 0.25, 0.5, 0.75, 1], title = "ϕ (t = $T)")
+	scalarplot!(plt[1, 2], id(ϕ), sol; levels = [0.5], flimits = [-0.05, 1.05], colorbarticks = [0, 0.25, 0.5, 0.75, 1], title = "ϕ (t = $T)")
+
+	return sol, plt
 end
 
+generateplots = default_generateplots(Example284_LevelSetMethod, "example284.svg") # hide
 end

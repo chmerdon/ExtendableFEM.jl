@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 230 : Nonlinear Elasticity
-([source code](SOURCE_URL))
 
 This example computes the displacement field ``u`` of the nonlinear elasticity problem
 ```math
@@ -14,6 +13,10 @@ and a misfit strain  ``\epsilon_T := \Delta T \alpha`` due to thermal load cause
 in the two regions of the bimetal.
 
 This example demonstrates how to setup a (parameter- and region-dependent) nonlinear expression and how to assign it to the problem description.
+
+The computed solution for the default parameters looks like this:
+
+![](example230.svg)
 =#
 
 module Example230_NonlinearElasticity
@@ -21,6 +24,7 @@ module Example230_NonlinearElasticity
 using ExtendableFEM
 using ExtendableGrids
 using GridVisualize
+using Test # hide
 
 ## parameter-dependent nonlinear operator uses a callable struct to reduce allocations
 mutable struct nonlinear_operator{T}
@@ -122,19 +126,21 @@ function main(;
 	sol = solve(PD, FES; kwargs...)
 
 	## displace mesh and plot
-	p = GridVisualizer(; Plotter = Plotter, layout = (3, 1), clear = true, size = (1000, 1500))
+	plt = GridVisualizer(; Plotter = Plotter, layout = (3, 1), clear = true, size = (1000, 1500))
 	grad_nodevals = nodevalues(grad(u), sol)
 	strain_nodevals = zeros(Float64, 3, num_nodes(xgrid))
 	for j in 1:num_nodes(xgrid)
 		strain!(view(strain_nodevals, :, j), view(grad_nodevals, :, j))
 	end
-	scalarplot!(p[1, 1], xgrid, view(strain_nodevals, 1, :), levels = 3, colorbarticks = 7, xlimits = [-scale[2] / 2 - 10, scale[2] / 2 + 10], ylimits = [-30, scale[1] + 20], title = "ϵ(u)_xx + displacement")
-	scalarplot!(p[2, 1], xgrid, view(strain_nodevals, 2, :), levels = 1, colorbarticks = 7, xlimits = [-scale[2] / 2 - 10, scale[2] / 2 + 10], ylimits = [-30, scale[1] + 20], title = "ϵ(u)_yy + displacement")
-	vectorplot!(p[1, 1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = [50, 25], clear = false)
-	vectorplot!(p[2, 1], xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = [50, 25], clear = false)
+	scalarplot!(plt[1, 1], xgrid, view(strain_nodevals, 1, :), levels = 3, colorbarticks = 7, xlimits = [-scale[2] / 2 - 10, scale[2] / 2 + 10], ylimits = [-30, scale[1] + 20], title = "ϵ(u)_xx + displacement")
+	scalarplot!(plt[2, 1], xgrid, view(strain_nodevals, 2, :), levels = 1, colorbarticks = 7, xlimits = [-scale[2] / 2 - 10, scale[2] / 2 + 10], ylimits = [-30, scale[1] + 20], title = "ϵ(u)_yy + displacement")
+	vectorplot!(plt[1, 1], xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), spacing = [50, 25], clear = false)
+	vectorplot!(plt[2, 1], xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), spacing = [50, 25], clear = false)
 	displace_mesh!(xgrid, sol[u])
-	gridplot!(p[3, 1], xgrid, linewidth = 1, title = "displaced mesh")
+	gridplot!(plt[3, 1], xgrid, linewidth = 1, title = "displaced mesh")
 	println(stdout, unicode_gridplot(xgrid))
+
+	return sol, plt
 end
 
 ## grid
@@ -154,4 +160,9 @@ function bimetal_strip2D(; scale = [1, 1], n = 2, anisotropy_factor::Int = Int(c
 	return xgrid
 end
 
+generateplots = default_generateplots(Example230_NonlinearElasticity, "example230.svg") # hide
+function runtests() # hide
+	sol, plt = main(;) # hide
+	@test maximum(sol.entries) ≈ 6.533607973691427 # hide
+end # hide
 end

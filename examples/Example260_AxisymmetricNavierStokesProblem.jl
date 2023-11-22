@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 260 : Axisymmetric Stokes
-([source code](SOURCE_URL))
 
 This example solves the 3D stagnation point flow via 
 the 2.5D axisymmetric formulation of the Navier--Stokes problem that seeks a velocity ``\mathbf{u} = (u_z, u_r)``
@@ -43,6 +42,9 @@ b(q,v) := \int_{\Omega} q \left( \mathrm{div}(v) + r^{-1} u_r \right) r dr dz
 where the usual Cartesian differential operators can be used. The factor ``2\pi`` from the
 integral over the rotation angle drops out on both sides.
 
+The computed solution for the default parameters looks like this:
+
+![](example260.svg)
 
 =#
 
@@ -52,6 +54,7 @@ using ExtendableFEM
 using ExtendableGrids
 using SimplexGridFactory
 using Triangulate
+using Test # hide
 
 
 function kernel_convection!(result, input, qpinfo)
@@ -104,7 +107,6 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = 1:2))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [4], mask = (1,0,1)))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1], mask = (0,1,1)))
-    @show PD
 
     ## grid
     if uniform
@@ -125,10 +127,18 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
 
     ## compute divergence in cylindrical coordinates by volume integrals
     DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 2, resultdim = 1)
-    @info "||div(u)|| = $(sqrt(sum(evaluate(DivIntegrator, sol))))"
+    div_error = sqrt(sum(evaluate(DivIntegrator, sol)))
+    @info "||div(u)|| = $div_error"
 
     ## plot
-    plot([id(u)], sol; Plotter = Plotter)
+    plt = plot([id(u)], sol; Plotter = Plotter)
+
+    return div_error, plt
 end
 
+generateplots = default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.svg") # hide
+function runtests() # hide
+	div_error, plt = main(; nrefs = 2) # hide
+	@test div_error <= 1e-14 # hide
+end # hide
 end # module

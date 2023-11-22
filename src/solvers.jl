@@ -244,7 +244,9 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 		end
 		push!(stats.assembly_allocs, allocs_assembly)
 		push!(stats.assembly_times, time_assembly)
-		push!(stats.nonlinear_residuals, nlres)
+		if !is_linear
+			push!(stats.nonlinear_residuals, nlres)
+		end
 		if nlres < nltol
 			if SC.parameters[:verbosity] > -1
 				@printf " END\t"
@@ -308,6 +310,9 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				#@info residual.entries, norms(residual)
 				linres = norm(residual.entries)
 				push!(stats.linear_residuals, linres)
+				if is_linear
+					push!(stats.nonlinear_residuals, linres)
+				end
 				offset = 0
 				for u in unknowns
 					ndofs_u = length(view(sol[u]))

@@ -441,42 +441,6 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 	end
 end
 
-
-function generate_DG_master_quadrule(quadorder, EG; T = Float64)
-	EGface = facetype_of_cellface(EG, 1)
-	nfaces4cell = num_faces(EG)
-	for j ∈ 1:nfaces4cell
-		@assert facetype_of_cellface(EG, j) == EGface "all faces of cell must have the same face geometry!"
-	end
-
-	return QuadratureRule{T, EGface}(quadorder)
-end
-
-function generate_DG_operators(operator, FE, quadorder, EG; T = Float64)
-	## prototype quadrature rule on face geometry
-	qf4face = generate_DG_master_quadrule(quadorder, EG; T = T)
-
-	EGface = facetype_of_cellface(EG, 1)
-	nfaces4cell = num_faces(EG)
-
-	# generate new quadrature rules on cell
-	# where quadrature points of face are mapped to quadrature points of cells
-	xrefFACE2CELL = xrefFACE2xrefCELL(EG)
-	xrefFACE2OFACE = xrefFACE2xrefOFACE(EGface)
-	norientations = length(xrefFACE2OFACE)
-	basisevaler4EG = Array{FEEvaluator, 2}(undef, nfaces4cell, norientations)
-	xrefdim = length(qf4face.xref)
-	qf4cell = ExtendableFEMBase.SQuadratureRule{T, EG, xrefdim, length(qf4face.xref)}(qf4face.name * " (shape faces)", Array{Array{T, 1}, 1}(undef, length(qf4face.xref)), qf4face.w)
-	for f ∈ 1:nfaces4cell, orientation ∈ 1:norientations
-		## modify quadrature rule for this local face and local orientation
-		for i ∈ 1:length(qf4face.xref)
-			qf4cell.xref[i] = xrefFACE2CELL[f](xrefFACE2OFACE[orientation](qf4face.xref[i]))
-		end
-		basisevaler4EG[f, orientation] = FEEvaluator(FE, operator, deepcopy(qf4cell); T = T, AT = ON_CELLS)
-	end
-	return basisevaler4EG
-end
-
 function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0) where {Tv}
 	## check if FES is the same as last time
 	FES_test = [getFEStest(FE_test[j]) for j ∈ 1:length(FE_test)]
@@ -598,11 +562,8 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0) where
 			weights, xref = QF.w, QF.xref
 			nweights = length(weights)
 			cell1::Int = 0
-			cell2::Int = 0
 			orientation1::Int = 0
-			orientation2::Int = 0
 			itempos1::Int = 0
-			itempos2::Int = 0
 
 			## loop over faces
 			## got into neighbouring cells and evaluate each operator according to
@@ -620,7 +581,6 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0) where
 						continue
 					end
 				end
-
 				for c1 ∈ 1:2
 					cell1 = itemcells[c1, item] # current cell of test function
 					if (cell1 > 0)

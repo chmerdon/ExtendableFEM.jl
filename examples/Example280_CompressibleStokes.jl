@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 280 : Compressible Stokes
-([source code](SOURCE_URL))
 
 This example solves the two-dimensional
 compressible Stokes equations where one seeks a (vector-valued) velocity
@@ -44,6 +43,10 @@ See reference below for more details.
     [>Journal-Link<](https://doi.org/10.1016/j.cma.2020.113069)
     [>Preprint-Link<](https://arxiv.org/abs/1911.01295)
 
+The computed solution for the default parameters looks like this:
+
+![](example280.svg)
+
 =#
 
 module Example280_CompressibleStokes
@@ -55,6 +58,7 @@ using SimplexGridFactory
 using GridVisualize
 using Symbolics
 using LinearAlgebra
+using Test # hide
 
 ## everything is wrapped in a main function
 ## testcase = 1 : well-balanced test (stratified no-flow over mountain)
@@ -164,12 +168,14 @@ function main(;
     
     
     ## plot
-    pl = GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, size = (1000,1000))
-    scalarplot!(pl[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
-    vectorplot!(pl[1,1],xgrid, eval_func(PointEvaluator([id(u)], sol)), spacing = 0.1, clear = false, title = "u_h (abs + quiver)")
-    scalarplot!(pl[2,1],xgrid, view(nodevalues(sol[ϱ]),1,:), levels = 11, title = "ϱ_h")
-    plot_convergencehistory!(pl[1,2], NDofs, Results[:,1:4]; add_h_powers = [order,order+1], X_to_h = X -> 0.2*X.^(-1/2), legend = :best, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"])
-    gridplot!(pl[2,2],xgrid)
+    plt = GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, size = (1000,1000))
+    scalarplot!(plt[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
+    vectorplot!(plt[1,1],xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), spacing = 0.1, clear = false, title = "u_h (abs + quiver)")
+    scalarplot!(plt[2,1],xgrid, view(nodevalues(sol[ϱ]),1,:), levels = 11, title = "ϱ_h")
+    plot_convergencehistory!(plt[1,2], NDofs, Results[:,1:4]; add_h_powers = [order,order+1], X_to_h = X -> 0.2*X.^(-1/2), legend = :best, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"])
+    gridplot!(plt[2,2],xgrid)
+
+    return Results, plt
 end
 
 function stab_kernel!(result, p, u, qpinfo)
@@ -312,4 +318,10 @@ function prepare_data!(; M = 1, c = 1, μ = 1, ufac = 100, laplacian_in_rhs = tr
 
     return ϱ_eval, g_eval[2], f == 0 ? nothing : f_eval[2], u_eval[2], ∇u_eval[2]
 end
+
+generateplots = default_generateplots(Example280_CompressibleStokes, "example280.svg") # hide
+function runtests(;) # hide
+	Results, plt = main(; nrefs = 2) # hide
+	@test Results[end,1] ≈ 6.732891488265023e-7 # hide
+end # hide
 end

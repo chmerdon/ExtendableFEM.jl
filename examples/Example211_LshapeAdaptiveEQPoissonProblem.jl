@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 211 : Poisson L-shape Local Equilibrated Fluxes
-([source code](SOURCE_URL))
 
 This example computes a local equilibration error estimator for the $H^1$ error of some $H^1$-conforming
 approximation ``u_h`` to the solution ``u`` of some Poisson problem ``-\Delta u = f`` on an L-shaped domain, i.e.
@@ -25,6 +24,11 @@ and a strategy to solve several small problems in parallel by use of non-overlap
 	Lecture Notes by M. Vohralik
 	[>Link<](https://who.rocq.inria.fr/Martin.Vohralik/Enseig/APost/a_posteriori.pdf)
 
+
+The resulting mesh and error convergence history for the default parameters looks like:
+
+![](example211.svg)
+
 =#
 
 module Example211_LshapeAdaptiveEQPoissonProblem
@@ -34,6 +38,7 @@ using ExtendableFEMBase
 using ExtendableGrids
 using ExtendableSparse
 using GridVisualize
+using Test # hide
 
 ## exact solution u for the Poisson problem
 function u!(result, qpinfo)
@@ -156,16 +161,17 @@ function main(; maxdofs = 4000, μ = 1, order = 2, nlevels = 16, θ = 0.5, Plott
 	end
 
 	## plot
-	p = GridVisualizer(; Plotter = Plotter, layout = (2, 2), clear = true, resolution = (1000, 1000))
-	scalarplot!(p[1, 1], id(u), sol; levels = 11, title = "u_h")
-	plot_convergencehistory!(p[1, 2], NDofs, [ResultsL2 ResultsH1 Resultsη]; add_h_powers = [order, order + 1], X_to_h = X -> order * X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
-	gridplot!(p[2, 1], xgrid; linewidth = 1)
-	gridplot!(p[2, 2], xgrid; linewidth = 1, xlimits = [-0.0005, 0.0005], ylimits = [-0.0005, 0.0005])
+	plt = GridVisualizer(; Plotter = Plotter, layout = (2, 2), clear = true, resolution = (1000, 1000))
+	scalarplot!(plt[1, 1], id(u), sol; levels = 11, title = "u_h")
+	plot_convergencehistory!(plt[1, 2], NDofs, [ResultsL2 ResultsH1 Resultsη]; add_h_powers = [order, order + 1], X_to_h = X -> order * X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
+	gridplot!(plt[2, 1], xgrid; linewidth = 1)
+	gridplot!(plt[2, 2], xgrid; linewidth = 1, xlimits = [-0.0005, 0.0005], ylimits = [-0.0005, 0.0005])
 
 	## print/plot convergence history
 	print_convergencehistory(NDofs, [ResultsL2 ResultsH1 Resultsη]; X_to_h = X -> X .^ (-1 / 2), ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "η"])
-end
 
+	return sol, plt
+end
 
 ## this function computes the local equilibrated fluxes
 ## by solving local problems on (disjunct groups of) node patches
@@ -357,4 +363,10 @@ function local_equilibration_estimator!(sol, FETypeDual)
 		view(sol[σ]) .+= X[group]
 	end
 end
+
+generateplots = default_generateplots(Example211_LshapeAdaptiveEQPoissonProblem, "example211.svg") # hide
+function runtests() # hide
+	sol, plt = main(; maxdofs = 1000, order = 2) # hide	
+	@test length(sol.entries) == 6604 # hide
+end # hide
 end

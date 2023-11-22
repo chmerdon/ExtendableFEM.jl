@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 202 : Poisson-Problem (Mixed)
-([source code](SOURCE_URL))
 
 This example computes the solution ``u`` and its stress ``\mathbf{\sigma} := - \mu \nabla u``
 of the two-dimensional Poisson problem in the mixed form
@@ -14,19 +13,28 @@ of the two-dimensional Poisson problem in the mixed form
 with right-hand side ``f(x,y) \equiv xy`` and homogeneous Dirichlet boundary conditions
 on the unit square domain ``\Omega`` on a given grid.
 
+The computed solution looks like this:
+
+![](example202.svg)
 =#
 
 module Example202_MixedPoissonProblem
 
 using ExtendableFEM
 using ExtendableGrids
+using Test #hide
+
+## define unknowns
+σ = Unknown("σ"; name = "pseudostress")
+u = Unknown("u"; name = "potential")
+p = Unknown("p"; name = "LM hdiv continuity") # only_used if hdivdg == true
 
 ## bilinearform kernel for mixed Poisson problem
 function blf!(result, u_ops, qpinfo)
 	σ, divσ, u = view(u_ops, 1:2), view(u_ops, 3), view(u_ops, 4)
 	μ = qpinfo.params[1]
 	result[1] = σ[1] / μ
-	result[2] = σ[2] / μ 
+	result[2] = σ[2] / μ
 	result[3] = -u[1]
 	result[4] = divσ[1]
 	return nothing
@@ -42,13 +50,10 @@ function boundarydata!(result, qpinfo)
 	return nothing
 end
 
-function main(; nrefs = 5, μ = 0.25, Plotter = nothing, hdivdg = false, kwargs...)
+function main(; nrefs = 5, μ = 0.25, hdivdg = false, Plotter = nothing, kwargs...)
 
 	## problem description
 	PD = ProblemDescription()
-	σ = Unknown("σ"; name = "pseudostress")
-	u = Unknown("u"; name = "potential")
-	p = Unknown("p"; name = "LM hdiv continuity") # only_used if hdivdg == true
 	assign_unknown!(PD, u)
 	assign_unknown!(PD, σ)
 	if hdivdg
@@ -71,7 +76,14 @@ function main(; nrefs = 5, μ = 0.25, Plotter = nothing, hdivdg = false, kwargs.
 	sol = ExtendableFEM.solve(PD, FES; kwargs...)
 
 	## plot
-	plot([id(u), id(σ)], sol; Plotter = Plotter)
+	plt = plot([id(u), id(σ)], sol; Plotter = Plotter)
+
+	return sol, plt
 end
 
+generateplots = default_generateplots(Example202_MixedPoissonProblem, "example202.svg") # hide
+function runtests() # hide
+	sol, plt = main(; μ = 0.25, nrefs = 2) # hide	
+	@test maximum(view(sol[1])) ≈ 0.08463539106946043 # hide
+end # hide
 end # module

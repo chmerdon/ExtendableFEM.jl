@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 225 : Obstacle Problem
-([source code](SOURCE_URL))
 
 This example computes the solution ``u`` of the nonlinear obstacle problem that seeks the minimiser of the energy functional
 ```math
@@ -19,17 +18,20 @@ with some right-hand side ``f`` within the set of admissible functions that lie 
 The obstacle constraint is realised via a penalty term
 ```math
 \begin{aligned}
-	\frac{1}{\epsilon} \| min(0, u - \chi) \|^2_{L^2}
+	\frac{1}{\epsilon} \| \min(0, u - \chi) \|^2_{L^2}
 \end{aligned}
 ```
 that is added to the energy above and is automatically differentiated for a Newton scheme.
+The computed solution for the default parameters looks like this:
 
+![](example225.svg)
 =#
 
 module Example225_ObstacleProblem
 
 using ExtendableFEM
 using ExtendableGrids
+using Test # hide
 
 ## define obstacle and penalty kernel
 const χ! = (result, x) -> (result[1] = (cos(4 * x[1] * π) * cos(4 * x[2] * π) - 1) / 20)
@@ -60,6 +62,14 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
 	sol = solve(PD, FES; kwargs...)
 
 	## plot
-	plot([id(u), grad(u)], sol; Plotter = Plotter)
+	plt = plot([id(u), grad(u)], sol; Plotter = Plotter, ncols = 3)
+
+	return sol, plt
 end
-end
+
+generateplots = default_generateplots(Example225_ObstacleProblem, "example225.svg") # hide
+function runtests() # hide
+	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) # hide
+	@test maximum(sol.entries) ≈ 0.0033496680638875204 # hide
+end # hide
+end # module

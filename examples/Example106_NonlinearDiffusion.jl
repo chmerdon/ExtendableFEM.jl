@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 106 : Nonlinear Diffusion
-([source code](SOURCE_URL))
 
 This example solves the nonlinear diffusion equation
 ```math
@@ -12,6 +11,10 @@ u_t - \Delta u^m & = 0
 in ``\Omega := (-1,1)``
 with homogeneous Neumann boundary conditions.
 
+The solution looks like this:
+
+![](example106.svg)
+
 =#
 
 module Example106_NonlinearDiffusion
@@ -20,6 +23,7 @@ using ExtendableFEM
 using ExtendableGrids
 using DifferentialEquations
 using GridVisualize
+using Test # hide
 
 ## Barenblatt solution
 ## (see Barenblatt, G. I. "On nonsteady motions of gas and fluid in porous medium." Appl. Math. and Mech.(PMM) 16.1 (1952): 67-78.)
@@ -38,9 +42,9 @@ function u_exact!(result, qpinfo)
 end
 
 function kernel_nonlinear!(result, input, qpinfo)
-	u, ∇u = view(input, 1), view(input, 2)
+	u, ∇u = input[1], input[2]
 	m = qpinfo.params[1]
-	result[1] = m * u[1]^(m - 1) * ∇u[1]
+	result[1] = m * u^(m - 1) * ∇u
 end
 
 ## everything is wrapped in a main function
@@ -75,8 +79,8 @@ function main(;
 	interpolate!(sol[u], u_exact!; time = t0, params = [m])
 
 	## init plotter and plot u0
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), size = (800,400))
-	scalarplot!(p[1, 1], id(u), sol; label = "u_h", markershape = :circle, markevery = 1, title = "t = $t0")
+	plt = GridVisualizer(; Plotter = Plotter, layout = (1, 2), size = (800,400))
+	scalarplot!(plt[1, 1], id(u), sol; label = "u_h", markershape = :circle, markevery = 1, title = "t = $t0")
 
 	## generate mass matrix (with mass lumping)
 	M = FEMatrix(FES)
@@ -109,8 +113,16 @@ function main(;
 	end
 
 	## plot final state and exact solution for comparison
-	scalarplot!(p[1, 2], id(u), sol; label = "u_h", markershape = :circle, markevery = 1, title = "t = $T")
+	scalarplot!(plt[1, 2], id(u), sol; label = "u_h", markershape = :circle, markevery = 1, title = "t = $T")
 	interpolate!(sol[1], u_exact!; time = T, params = [m])
-	scalarplot!(p[1, 2], id(u), sol; clear = false, color = :green, label = "u", legend = :best)
+	scalarplot!(plt[1, 2], id(u), sol; clear = false, color = :green, label = "u", legend = :best)
+
+	return sol, plt
 end
+
+generateplots = default_generateplots(Example106_NonlinearDiffusion, "example106.svg") # hide
+function runtests(; T = 0.01, m = 2, kwargs...) # hide
+	sol, plt = main(; T = T, m = m, use_diffeq = false, kwargs...) # hide	
+	@test maximum(sol.entries) ≈ 4.641588833612778 # hide
+end # hide
 end

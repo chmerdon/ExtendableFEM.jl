@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 103 : Burger's Equation
-([source code](SOURCE_URL))
 
 This example solves the Burger's equation
 ```math
@@ -10,6 +9,12 @@ u_t - \mu \Delta u + \mathrm{div} f(u) & = 0
 \end{aligned}
 ```
 with periodic boundary conditions.
+This script demonstrates how a time-dependent PDE can be solved
+with DifferentialEquations or by a manual implicit Euler scheme.
+
+The initial condition and the final solution for the default parameters looks like this:
+
+![](example103.svg)
 
 =#
 
@@ -18,12 +23,15 @@ module Example103_BurgersEquation
 using ExtendableFEM
 using ExtendableGrids
 using DifferentialEquations
+using Test #hide
 
-function kernel_nonlinear!(result, u, qpinfo)
-	result[1] = u[1]^2 / 2
+## nonlinear kernel, i.e. f(u)
+function f!(result, input, qpinfo)
+	result[1] = input[1]^2 / 2
 end
 
-function initial_data!(result, qpinfo)
+## initial condition
+function uinit!(result, qpinfo)
 	result[1] = abs(qpinfo.x[1]) < 0.5 ? 1 : 0
 end
 
@@ -46,17 +54,17 @@ function main(;
 	PD = ProblemDescription("Burger's Equation")
 	u = Unknown("u"; name = "u")
 	assign_unknown!(PD, u)
-	assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [grad(u)], [id(u)]; bonus_quadorder = 2))
+	assign_operator!(PD, NonlinearOperator(f!, [grad(u)], [id(u)]; bonus_quadorder = 2))
 	assign_operator!(PD, BilinearOperator([grad(u)]; store = true, factor = ν))
 	assign_operator!(PD, CombineDofs(u, u, [1], [num_nodes(xgrid)], [1.0]; kwargs...))
 
 	## prepare solution vector and initial data
 	FES = FESpace{H1Pk{1, 1, order}}(xgrid)
 	sol = FEVector(FES; tags = PD.unknowns)
-	interpolate!(sol[u], initial_data!)
+	interpolate!(sol[u], uinit!)
 
 	## init plotter and plot u0
-	p = plot([id(u), id(u)], sol; Plotter = Plotter, title_add = " (t = 0)")
+	plt = plot([id(u), id(u)], sol; Plotter = Plotter, title_add = " (t = 0)")
 
 	## generate mass matrix
 	M = FEMatrix(FES)
@@ -70,7 +78,7 @@ function main(;
 		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-3, dt = τ, dtmin = 1e-6, adaptive = true)
 		@info "#tsteps = $(length(de_sol))"
 
-		## get final solution
+		## extract final solution
 		sol.entries .= de_sol[end]
 	else
 		## add backward Euler time derivative
@@ -89,6 +97,14 @@ function main(;
 	end
 
 	## plot final state
-	plot!(p, [id(u)], sol; keep = 1, title_add = " (t = $T)")
+	plot!(plt, [id(u)], sol; keep = 1, title_add = " (t = $T)")
+
+	return sol, plt
 end
+
+generateplots = default_generateplots(Example103_BurgersEquation, "example103.svg") # hide
+function runtests() # hide
+	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) # hide	
+	@test maximum(sol.entries) ≈ 0.9380540612507218 # hide
+end # hide
 end

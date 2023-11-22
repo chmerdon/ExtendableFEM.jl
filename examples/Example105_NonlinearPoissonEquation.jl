@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 105 : Nonlinear Poisson Equation
-([source code](SOURCE_URL))
 
 This examples solves the nonlinear Poisson problem
 ```math
@@ -17,12 +16,18 @@ f(x) = \begin{cases}
 \end{cases}
 ```
 on the domain ``\Omega := (0,1)`` with Dirichlet boundary conditions ``u(0) = 0`` and ``u(1) = 1``.
+
+The solution looks like this:
+
+![](example105.svg)
+
 =#
 
 module Example105_NonlinearPoissonEquation
 
 using ExtendableFEM
 using ExtendableGrids
+using Test # hide
 
 ## rigt-hand side data
 function f!(result, qpinfo)
@@ -41,7 +46,7 @@ function nonlinear_kernel!(result, input, qpinfo)
 end
 
 ## everything is wrapped in a main function
-function main(; Plotter = nothing, h = 5e-2, ϵ = 1e-3, order = 2, kwargs...)
+function main(; Plotter = nothing, h = 1e-2, ϵ = 1e-3, order = 2, kwargs...)
 
 	## problem description
 	PD = ProblemDescription("Nonlinear Poisson Equation")
@@ -59,6 +64,14 @@ function main(; Plotter = nothing, h = 5e-2, ϵ = 1e-3, order = 2, kwargs...)
 	sol = solve(PD, FES; kwargs...)
 
 	## plot discrete and exact solution (on finer grid)
-	plot([id(u)], sol; Plotter = Plotter)
+	plt = plot([id(u)], sol; Plotter = Plotter)
+
+	return sol, plt
 end
+
+generateplots = default_generateplots(Example105_NonlinearPoissonEquation, "example105.svg") # hide
+function runtests() # hide
+	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) # hide	
+	@test maximum(sol.entries) ≈ 0.4812118250102083 # hide
+end # hide
 end

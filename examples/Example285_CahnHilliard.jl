@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 285 : Cahn-Hilliard Equations
-([source code](SOURCE_URL))
 
 This example studies the mixed form of the Cahn-Hilliard equations that seeks
 ``(c,\mu)`` such that
@@ -14,6 +13,12 @@ c_t - \mathbf{div} (M \nabla \mu) & = 0\\
 
 with ``f(c) = 100c^2(1-c)^2``, constant parameters ``M`` and ``\lambda`` and (random)
 initial concentration as defined in the code below.
+
+The computed solution at different timesteps
+for the default parameters and a randomized initial state look like this:
+
+![](example285.svg)
+
 =#
 
 module Example285_CahnHilliard
@@ -22,6 +27,8 @@ using ExtendableFEM
 using ExtendableGrids
 using GridVisualize
 using ForwardDiff
+using Random
+Random.seed!(135791113)
 
 ## parameters and initial condition
 const f = (c) -> 100 * c^2 * (1 - c)^2
@@ -33,19 +40,19 @@ end
 
 ## everything is wrapped in a main function
 function main(;
-	order = 1,                              # finite element order for c and μ
-	nref = 5,                               # refinement level
+	order = 2,                              # finite element order for c and μ
+	nref = 4,                               # refinement level
 	M = 1.0,
 	λ = 1e-2,
-    iterations_until_next_plot = 20,
+	iterations_until_next_plot = 20,
 	τ = 5 / 1000000,                        # time step (for main evolution phase)
-    τ_increase = 1.1,                      # increase factor for τ after each plot
+	τ_increase = 1.1,                      # increase factor for τ after each plot
 	Plotter = nothing,                      # Plotter (e.g. PyPlot)
 	kwargs...,
 )
 
 	## initial grid and final time
-	xgrid = uniform_refine(grid_unitsquare(Triangle2D; scale = [1, 1]), nref)
+	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nref)
 
 	## define unknowns
 	c = Unknown("c"; name = "concentration", dim = 1)
@@ -71,7 +78,7 @@ function main(;
 	interpolate!(sol[c], c0!)
 
 	## init plot (if order > 1, solution is upscaled to finer grid for plotting)
-	p = GridVisualizer(; Plotter = Plotter, layout = (7, 3), clear = true, resolution = (900, 2100))
+	plt = GridVisualizer(; Plotter = Plotter, layout = (4, 3), clear = true, resolution = (900, 1200))
 	if order > 1
 		xgrid_upscale = uniform_refine(xgrid, order - 1)
 		SolutionUpscaled = FEVector(FESpace{H1P1{1}}(xgrid_upscale))
@@ -81,7 +88,7 @@ function main(;
 		SolutionUpscaled = sol
 	end
 	nodevals = nodevalues_view(SolutionUpscaled[1])
-	scalarplot!(p[1, 1], xgrid_upscale, nodevals[1]; limits = (0.61, 0.65), xlabel = "", ylabel = "", levels = 1, title = "c (t = 0)")
+	scalarplot!(plt[1, 1], xgrid_upscale, nodevals[1]; limits = (0.61, 0.65), xlabel = "", ylabel = "", levels = 1, title = "c (t = 0)")
 
 	## prepare backward Euler time derivative
 	M = FEMatrix(FES)
@@ -95,7 +102,7 @@ function main(;
 
 	## advance in time, plot from time to time
 	t = 0
-	for j ∈ 1:20
+	for j ∈ 1:11
 		## do some timesteps until next plot
 		for it ∈ 1:iterations_until_next_plot
 			t += τ
@@ -108,11 +115,15 @@ function main(;
 		τ *= τ_increase
 		M.entries.cscmatrix.nzval ./= τ_increase
 
-        ## plot at current time
+		## plot at current time
 		if order > 1
 			lazy_interpolate!(SolutionUpscaled[1], sol)
 		end
-		scalarplot!(p[1+Int(floor((j) / 3)), 1+(j)%3], xgrid_upscale, nodevals[1]; xlabel = "", ylabel = "", limits = (-0.1, 1.1), levels = 1, title = "c (t = $(Float32(t)))")
+		scalarplot!(plt[1+Int(floor((j) / 3)), 1+(j)%3], xgrid_upscale, nodevals[1]; xlabel = "", ylabel = "", limits = (-0.1, 1.1), levels = 1, title = "c (t = $(Float32(t)))")
 	end
+
+	return sol, plt
 end
+
+generateplots = default_generateplots(Example285_CahnHilliard, "example285.svg") # hide
 end

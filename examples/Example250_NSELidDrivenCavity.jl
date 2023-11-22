@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 250 : Navier--Stokes Lid-driven cavity
-([source code](SOURCE_URL))
 
 This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem
 ```math
@@ -12,6 +11,10 @@ This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of
 ```
 in a lid driven cavity example over a cone and plots the solution and the formed eddies.
 
+The computed solution for the default parameters looks like this:
+
+![](example250.svg)
+
 =#
 
 module Example250_NSELidDrivenCavity
@@ -20,6 +23,7 @@ using ExtendableFEM
 using GridVisualize
 using ExtendableGrids
 using LinearAlgebra
+using Test # hide
 
 function kernel_nonlinear!(result, u_ops, qpinfo)
 	u, ∇u, p = view(u_ops, 1:2), view(u_ops, 3:6), view(u_ops, 7)
@@ -75,7 +79,7 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 	FES = [FESpace{H1Pk{2,2,order}}(xgrid), FESpace{H1Pk{1,2,order-1}}(xgrid)]
 
 	## prepare plots
-	p = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (1600, 800))
+	plt = GridVisualizer(; Plotter = Plotter, layout = (1, 2), clear = true, size = (1600, 800))
 
 	## solve by μ embedding
 	step = 0
@@ -89,9 +93,9 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 		if step == 1
 			initialize!(PE, sol)
 		end
-		scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity (μ = $(extra_params[1]))", Plotter = Plotter)
-		vectorplot!(p[1, 1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
-		streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, title = "streamlines")
+		scalarplot!(plt[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity (μ = $(extra_params[1]))", Plotter = Plotter)
+		vectorplot!(plt[1, 1], xgrid, eval_func_bary(PE), spacing = 0.05, clear = false)
+		streamplot!(plt[1, 2], xgrid, eval_func_bary(PE), spacing = 0.01, density = 2, title = "streamlines")
 		
 		if extra_params[1] <= μ_final
 			break
@@ -100,9 +104,16 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 		end
 	end
 
-	scalarplot!(p[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity (μ = $(extra_params[1]))", Plotter = Plotter)
-	vectorplot!(p[1, 1], xgrid, eval_func(PE), spacing = 0.05, clear = false)
-	streamplot!(p[1, 2], xgrid, eval_func(PE), spacing = 0.01, density = 2, title = "streamlines")
+	scalarplot!(plt[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity (μ = $(extra_params[1]))", Plotter = Plotter)
+	vectorplot!(plt[1, 1], xgrid, eval_func_bary(PE), spacing = 0.05, clear = false)
+	streamplot!(plt[1, 2], xgrid, eval_func_bary(PE), spacing = 0.01, density = 2, title = "streamlines")
+
+	return sol, plt
 end
 
+generateplots = default_generateplots(Example250_NSELidDrivenCavity, "example250.svg") # hide
+function runtests() # hide
+	sol, plt = main(; nrefs = 3, μ_final = 0.005) # hide
+	@test sum(sol.entries) ≈ 10.836786314557935 # hide
+end # hide
 end # module

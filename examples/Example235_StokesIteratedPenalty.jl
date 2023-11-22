@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 235 : Stokes iterated penalty method
-([source code](SOURCE_URL))
 
 This example computes a velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Stokes problem
 ```math
@@ -14,11 +13,11 @@ with some μ parameter ``\mu``.
 
 Here we solve the simple Hagen-Poiseuille flow on the two-dimensional unit square domain with the iterated penalty method
 suggested in the reference below adapted to the Bernardi--Raugel finite element method.
-Given intermediate solutions  ``\mathbf{u}_h`` and  ``p_h`` the next approximations are computed by the two equations
+Given intermediate solutions ``\mathbf{u}_h`` and ``p_h`` the next approximations are computed by the two equations
 
 ```math
 \begin{aligned}
-(\nabla \mathbf{u}_h^{next}, \nabla \mathbf{v}_h) + \lambda (\mathrm{div}_h(\mathbf{u}_h) ,\mathrm{div}_h(\mathbf{v}_h)) & = (\mathbf{f},\mathbf{v}_h) + (p_h,\mathrm{div}(\mathbf{v}_h))
+(\nabla \mathbf{u}_h^{next}, \nabla \mathbf{v}_h) + \lambda (\mathrm{div}_h(\mathbf{u}^{next}_h) ,\mathrm{div}_h(\mathbf{v}_h)) & = (\mathbf{f},\mathbf{v}_h) + (p_h,\mathrm{div}(\mathbf{v}_h))
 && \text{for all } \mathbf{v}_h \in \mathbf{V}_h\\
 (p^{next}_h,q_h) & = (p_h,q_h) - \lambda (\mathrm{div}(\mathbf{u}_h^{next}),q_h) && \text{for all } q_h \in Q_h
 \end{aligned}
@@ -26,7 +25,7 @@ Given intermediate solutions  ``\mathbf{u}_h`` and  ``p_h`` the next approximati
 
 This is done consecutively until the residual of both equations is small enough.
 The discrete divergence is computed via a RT0 reconstruction operator that preserves the disrete divergence.
-(another way would be to compute B*inv(M)*B' where M is the mass matrix of the pressure and B is the matrix for the div-pressure block).
+(another way would be to compute ``B M^{-1} B^T`` where ``M`` is the mass matrix of the pressure and ``B`` is the matrix for the div-pressure block).
 
 !!! reference
 
@@ -35,12 +34,17 @@ The discrete divergence is computed via a RT0 reconstruction operator that prese
 	Computer Methods in Applied Mechanics and Engineering Volume 110, Issues 3–4 (1993),\
 	[>Journal-Link<](https://doi.org/10.1016/0045-7825(93)90163-R)
 
+
+The computed solution for the default parameters looks like this:
+
+![](example235.svg)
 =#
 
 module Example235_StokesIteratedPenalty
 
 using ExtendableFEM
 using ExtendableGrids
+using Test # hide
 
 ## data for Hagen-Poiseuille flow
 function p!(result, qpinfo)
@@ -56,13 +60,6 @@ end
 ## kernel for div projection
 function div_projection!(result, input, qpinfo)
 	result[1] = input[1] - qpinfo.params[1] * input[2]
-end
-## kernel for exact error calculator
-function exact_error!(result, u, qpinfo)
-	u!(result, qpinfo)
-	p!(view(result, 3), qpinfo)
-	result .-= u
-	result .= result .^ 2
 end
 
 ## everything is wrapped in a main function
@@ -99,15 +96,25 @@ function main(; Plotter = nothing, λ = 1e4, μ = 1.0, nrefs = 5, kwargs...)
 	sol, nits = iterate_until_stationarity([SC1, SC2]; init = sol, kwargs...)
 	@info "converged after $nits iterations"
 
-	## error calculation
-	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), id(p)]; quadorder = 4, params = [μ], kwargs...)
-	error = evaluate(ErrorIntegratorExact, sol)
-	L2errorU = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :)))
-	L2errorP = sqrt(sum(view(error, 3, :)))
-	@info "L2error(u) = $L2errorU"
-	@info "L2error(p) = $L2errorP"
-
 	## plot
-	plot([id(u), id(p)], sol; Plotter = Plotter)
+	plt = plot([id(u), id(p)], sol; Plotter = Plotter)
+
+	return sol, plt
 end
+
+generateplots = default_generateplots(Example235_StokesIteratedPenalty, "example235.svg") # hide
+function exact_error!(result, u, qpinfo) # hide
+	u!(result, qpinfo) # hide
+	p!(view(result, 3), qpinfo) # hide
+	result .= (result .- u).^ 2 # hide
+end # hide
+function runtests(; μ = 1.0) # hide
+	sol, plt = main(; μ = μ) # hide
+	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(1), id(2)]; quadorder = 4, params = [μ]) # hide
+	error = evaluate(ErrorIntegratorExact, sol) # hide
+	error_u = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :))) # hide
+	error_p = sqrt(sum(view(error, 3, :))) # hide
+	@test error_u ≈ 3.990987355891888e-5 # hide
+	@test error_p ≈ 0.010437891104305222 # hide
+end # hide
 end

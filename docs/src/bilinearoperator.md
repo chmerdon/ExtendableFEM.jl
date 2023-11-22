@@ -18,9 +18,7 @@ Pages = ["common_operators/bilinear_operator.jl"]
 Order   = [:type, :function]
 ```
 
-
-
-## DG BilinearForms
+## DG BilinearOperator
 
 BilinearOperatorDG is intended for bilinear forms that involves jumps of discontinuous quantities
 on faces whose assembly requires evaluation of all degrees of freedom on the neighbouring cells,

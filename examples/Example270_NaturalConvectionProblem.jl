@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 270 : Natural convection
-([source code](SOURCE_URL))
 
 Seek velocity ``\mathbf{u}``, pressure ``p`` and temperature ``\theta`` such that
 ```math
@@ -40,6 +39,11 @@ Further explanations and discussion on this example can be found in the referenc
     SIAM Review 59(3) (2017),\
     [>Journal-Link<](https://doi.org/10.1137/15M1047696)
     [>Preprint-Link<](http://www.wias-berlin.de/publications/wias-publ/run.jsp?template=abstract&type=Preprint&year=2015&number=2177)
+
+The computed solution for the default parameters looks like this:
+
+![](example270.svg)
+
 =#
 
 
@@ -49,6 +53,7 @@ using ExtendableFEM
 using ExtendableGrids
 using GridVisualize
 using LinearAlgebra
+using Test # hide
 
 function kernel_nonlinear!(result, u_ops, qpinfo)
     u, ∇u, p, ∇T, T = view(u_ops, 1:2), view(u_ops,3:6), view(u_ops, 7), view(u_ops, 8:9), view(u_ops, 10)
@@ -135,9 +140,15 @@ function main(;
     ## compute Nusselt number along bottom (= boundary region 1)
     ∇T_faces = FaceInterpolator([jump(grad(T))]; order = 0, kwargs...)
 	NuIntegrator = ItemIntegrator((result, input, qpinfo) -> (result[1] = -input[2]), [id(1)]; entities = ON_FACES, regions = [1])
-	@info "Nu = $(sum(evaluate(NuIntegrator, evaluate!(∇T_faces, sol))))"
+    Nu = sum(evaluate(NuIntegrator, evaluate!(∇T_faces, sol)))
+	@info "Nu = $Nu"
 
-    return sol
+    return Nu, plt
 end
 
+generateplots = default_generateplots(Example270_NaturalConvectionProblem, "example270.svg") # hide
+function runtests() # hide
+	Nu, plt = main(; nrefs = 4) # hide
+	@test Nu ≈ 17.641450080135293 # hide
+end # hide
 end # module

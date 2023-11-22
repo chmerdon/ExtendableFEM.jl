@@ -1,228 +1,101 @@
 using Documenter
-using Literate
-using ExtendableSparse
-using ExtendableGrids
-using PlutoSliderServer
+using ExampleJuggler
+using CairoMakie
 using ExtendableFEM
-
-
-# Turn block comments starting in the first column into "normal" hash comments
-# as block comments currently are not handled by Literate.jl.
-function hashify_block_comments(input)
-    lines_in = collect(eachline(IOBuffer(input)))
-    lines_out=IOBuffer()
-    line_number=0
-    in_block_comment_region=false
-    for line in lines_in
-        line_number+=1
-        if occursin(r"^#=", line)
-            if in_block_comment_region
-                error("line $(line_number): already in block comment region\n$(line)")
-            end
-            println(lines_out,replace(line,r"^#=" => "#"))
-            in_block_comment_region=true
-        elseif occursin(r"^=#", line)
-            if !in_block_comment_region
-                error("line $(line_number): not in block comment region\n$(line)")
-            end
-            println(lines_out,replace(line,r"^=#" => "#"))
-            in_block_comment_region=false
-        else
-            if in_block_comment_region
-                println(lines_out,"# "*line)
-            else
-                println(lines_out,line)
-            end
-        end
-    end
-    return String(take!(lines_out))
-end
-
-#
-# Replace SOURCE_URL marker with github url of source
-#
-function replace_source_url(input,source_url)
-    lines_in = collect(eachline(IOBuffer(input)))
-    lines_out=IOBuffer()
-    for line in lines_in
-        println(lines_out,replace(line,"SOURCE_URL" => source_url))
-    end
-    return String(take!(lines_out))
-end
 
 function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_notebooks::Bool = false)
 
-    generated_examples = []
-    notebooks = []
+	module_examples = []
 
-    if with_examples
+	if with_examples
+		DocMeta.setdocmeta!(ExampleJuggler, :DocTestSetup, :(using ExampleJuggler); recursive = true)
 
+		example_dir = joinpath(@__DIR__, "..", "examples")
 
-        #
-        # Run notebooks
-        #
-        notebooks = [
-            #"Burger's equation" => "BurgersEquation.jl"
-        ]
+		modules = [
+			"Example103_BurgersEquation.jl",
+			"Example105_NonlinearPoissonEquation.jl",
+			"Example106_NonlinearDiffusion.jl",
+			"Example108_RobinBoundaryCondition.jl",
+			"Example201_PoissonProblem.jl",
+			"Example202_MixedPoissonProblem.jl",
+			"Example204_LaplaceEVProblem.jl",
+			"Example205_HeatEquation.jl",
+			"Example210_LshapeAdaptivePoissonProblem.jl",
+			"Example211_LshapeAdaptiveEQPoissonProblem.jl",
+			"Example220_ReactionConvectionDiffusion.jl",
+			"Example225_ObstacleProblem.jl",
+			"Example226_Thermoforming.jl",
+			"Example230_NonlinearElasticity.jl",
+			"Example235_StokesIteratedPenalty.jl",
+			"Example240_SVRTEnrichment.jl",
+			"Example245_NSEFlowAroundCylinder.jl",
+			"Example250_NSELidDrivenCavity.jl",
+			"Example252_NSEPlanarLatticeFlow.jl",
+			"Example260_AxisymmetricNavierStokesProblem.jl",
+			"Example265_FlowTransport.jl",
+			"Example270_NaturalConvectionProblem.jl",
+			"Example275_OptimalControlStokes.jl",
+			"Example280_CompressibleStokes.jl",
+			"Example284_LevelSetMethod.jl",
+			"Example285_CahnHilliard.jl",
+			"Example290_PoroElasticity.jl",
+			"Example301_PoissonProblem.jl",
+			"Example310_DivFreeBasis.jl",
+		]
 
-        notebookjl = last.(notebooks)
-        notebookmd = []
+		#notebooks = ["PlutoTemplate.jl"
+		#             "Example with Graphics" => "ExamplePluto.jl"]
 
-        # function rendernotebook(name)
-        #     base=split(name,".")[1]
-        #     input=joinpath(@__DIR__,"..","pluto-examples",base*".jl")
-        #     output=joinpath(@__DIR__,"src","nbhtml",base*".html")
-        #     session = Pluto.ServerSession();
-        #     html_contents=PlutoStaticHTML.notebook2html(input;session)
-        #     write(output, html_contents)
-        # end
+		cleanexamples()
 
+		module_examples = @docmodules(example_dir, modules, Plotter = CairoMakie)
+		#html_examples = @docplutonotebooks(example_dir, notebooks, iframe=false)
+		#pluto_examples = @docplutonotebooks(example_dir, notebooks, iframe=true)
+	end
 
-        # for notebook in notebookjl
-        #     @info "Converting $(notebook)"
-        #     rendernotebook(notebook)
-        # end
+	makedocs(
+		modules = [ExtendableFEM],
+		sitename = "ExtendableFEM.jl",
+		authors = "Christian Merdon",
+		repo = "github.com/chmerdon/ExtendableFEM.jl",
+		clean = false,
+		checkdocs = :all,
+		doctest = true,
+		pages = [
+			"Home" => "index.md",
+			"Index" => "package_index.md",
+			"Problem Description" => [
+				"problemdescription.md",
+				"nonlinearoperator.md",
+				"bilinearoperator.md",
+				"linearoperator.md",
+				"interpolateboundarydata.md",
+				"homogeneousdata.md",
+				"fixdofs.md",
+				"combinedofs.md",
+				"callbackoperator.md",
+			],
+			"Solving" => Any[
+				"pdesolvers.md",
+				"pdesolvers_dt.md",
+			],
+			"Postprocessing" => Any[
+				"postprocessing.md",
+				"itemintegrators.md",
+			],
+			#"Tutorial Notebooks" => notebooks,
+			"Examples" => module_examples,
+		],
+	)
 
+	cleanexamples()
 
-        # Use sliderserver to generate html
-        notebook_html_dir = joinpath(@__DIR__, "src", "nbhtml")
-        if run_notebooks
-            export_directory(
-                joinpath(@__DIR__, "..", "examples/pluto"),
-                notebook_paths = notebookjl,
-                Export_output_dir = joinpath(notebook_html_dir),
-                Export_offer_binder = false,
-            )
-        end
-
-        # generate frame markdown for each notebook
-        for notebook in notebookjl
-            base = split(notebook, ".")[1]
-            mdstring = """
-                       ##### [$(base).jl](@id $(base))
-                       [Download](https://github.com/chmerdon/ExtendableFEM.jl/blob/master/examples/pluto/$(notebook))
-                       this [Pluto.jl](https://github.com/fonsp/Pluto.jl) notebook.
-                       ```@raw html
-                       <iframe style="height:20000px" width="100%" src="../$(base).html"> </iframe>
-                       ```
-                       """
-            mdname = base * ".md"
-            push!(notebookmd, joinpath("nbhtml", mdname))
-            io = open(joinpath(notebook_html_dir, mdname), "w")
-            write(io, mdstring)
-            close(io)
-        end
-
-        @show notebookmd
-        notebooks = first.(notebooks) .=> notebookmd
-        @show notebooks
-        pushfirst!(notebooks, "About the notebooks" => "notebooks_intro.md")
-        @show notebooks
-
-
-        #
-        # Generate Markdown pages from examples
-        #
-        example_jl_dir = joinpath(@__DIR__,"..","examples")
-        example_md_dir  = joinpath(@__DIR__,"src","examples")
-        fully_excluded_examples = ["XXX"] # excludes just these examples
-        run_excluded_examples = ["255","285","286","XXX"] # excludes just the run of these examples (takes too long)
-        image_dir = joinpath(@__DIR__,"src","images")
-
-        for example_source in readdir(example_jl_dir)
-            base,ext=splitext(example_source)
-            if example_source == "pluto"
-                break;
-            end
-            if example_source[1:7] == "Example" && ext==".jl"
-                number = example_source[8:10]
-                if !(number in fully_excluded_examples)
-                    source_url="https://github.com/chmerdon/ExtendableFEM.jl/raw/master/examples/"*example_source
-                    preprocess(buffer)=replace_source_url(buffer,source_url)|>hashify_block_comments
-                        Literate.markdown(joinpath(@__DIR__,"..","examples",example_source),
-                                    example_md_dir,
-                                    documenter=false,
-                                    execute=false,
-                                    info=false,
-                                    preprocess=preprocess)
-
-                    filename = example_md_dir * "/" * base * ".md"
-                    if (run_examples) && !(number in run_excluded_examples) # exclude these examples for now (because they take long or require extra packages)
-                        # generate default main run output file 
-                        include(example_jl_dir * "/" * example_source)
-                        eval(Meta.parse("$base.main()")) # run once to get rid of compilation effects
-                        @time open(filename, "a") do io
-                            redirect_stdout(io) do
-                                println("**Default output:**")
-                                println("```")
-                                println("julia> $base.main()")
-                                eval(Meta.parse("$base.main()"))
-                                println("```")
-                            end
-                        end
-                    end
-                    for k = 1 : 4
-                        imgfile = "../images/" * base * "_$k.png"
-                        if isfile(image_dir * "/" * base * "_$k.png")
-                            open(filename, "a") do io
-                                redirect_stdout(io) do
-                                    println("![]($imgfile)")
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-
-        generated_examples=joinpath.("examples",readdir(example_md_dir))
-
-        pushfirst!(generated_examples, "examples_intro.md")
-    end
-
-    makedocs(
-        modules=[ExtendableFEM],
-        sitename="ExtendableFEM.jl",
-        authors="Christian Merdon",
-        repo = "github.com/chmerdon/ExtendableFEM.jl",
-        clean = false,
-        checkdocs = :all,
-        doctest = true,
-        pages = [
-            "Home" => "index.md",
-            "Index" => "package_index.md",
-            "Problem Description" => [
-                "problemdescription.md",
-                "nonlinearoperator.md",
-                "bilinearoperator.md",
-                "linearoperator.md",
-                "interpolateboundarydata.md",
-                "homogeneousdata.md",
-                "fixdofs.md",
-                "combinedofs.md",
-                "callbackoperator.md",
-            ],
-            "Solving" => Any[
-                   "pdesolvers.md",
-                   "pdesolvers_dt.md",
-                ],
-            "Postprocessing" => Any[
-                    "postprocessing.md",
-                    "itemintegrators.md",
-                ],
-            #"Tutorial Notebooks" => notebooks,
-            "Examples" => generated_examples,
-        ]
-    )
-
-    with_examples && rm(example_md_dir, recursive = true)
-    run_notebooks && rm(notebook_html_dir, recursive = true)
-    
 end
 
 #make_all(; with_examples = true, run_examples = true, run_notebooks = true)
 make_all(; with_examples = true, run_examples = true, run_notebooks = false)
 
 deploydocs(
-    repo = "github.com/chmerdon/ExtendableFEM.jl",
+	repo = "github.com/chmerdon/ExtendableFEM.jl",
 )

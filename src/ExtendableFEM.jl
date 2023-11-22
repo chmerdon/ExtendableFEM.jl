@@ -33,7 +33,7 @@ export HDIVRTkENRICH
 export L2P0, L2P1
 export nodevalues, nodevalues!, nodevalues_view, nodevalues_subset!
 export interpolate!, lazy_interpolate!
-export PointEvaluator, evaluate, evaluate!, eval_func
+export PointEvaluator, evaluate, evaluate!, evaluate_bary!, eval_func, eval_func_bary
 export SegmentIntegrator, integrate_segment!, initialize!
 export integrate!, integrate, QuadratureRule
 export unicode_gridplot, unicode_scalarplot
@@ -43,6 +43,9 @@ export displace_mesh, displace_mesh!
 export Reconstruct, Identity, Divergence, Gradient
 export _addnz
 export addblock!, addblock_matmul!
+
+## reexport stuff from GridVisualize
+export reveal, save
 
 
 include("io.jl")
@@ -113,6 +116,7 @@ export CombineDofs
 export get_periodic_coupling_info
 include("common_operators/interpolateboundarydata_operator.jl")
 export InterpolateBoundaryData
+export apply!
 include("common_operators/homogeneousdata_operator.jl")
 export HomogeneousBoundaryData
 export HomogeneousData
@@ -127,6 +131,7 @@ export plot_convergencehistory!
 export scalarplot!
 export vectorplot!
 export plot, plot!
+export default_generateplots
 
 @static if !isdefined(Base, :get_extension)
 	function __init__()

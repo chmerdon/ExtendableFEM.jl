@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 252 : Navier--Stokes Planar Lattice Flow
-([source code](SOURCE_URL))
 
 This example computes an approximation to the planar lattice flow test problem of the Stokes equations
 ```math
@@ -23,6 +22,11 @@ is prescribed at fixed time ``t = 0`` with ``\mathbf{f} = - \nu \Delta \mathbf{u
 
 In this example the Navier-Stokes equations are solved with a pressure-robust variant of the Bernardi--Raugel finite element method
 and the nonlinear convection term (that involves reconstruction operators) is automatically differentiated for a Newton iteration.
+
+The computed solution for the default parameters looks like this:
+
+![](example252.svg)
+
 =#
 
 module Example252_NSEPlanarLatticeFlow
@@ -30,6 +34,7 @@ module Example252_NSEPlanarLatticeFlow
 using ExtendableFEM
 using ExtendableGrids
 using LinearAlgebra
+using Test # hide
 
 ## exact velocity (and Dirichlet data)
 function u!(result, qpinfo)
@@ -111,7 +116,14 @@ function main(; μ = 0.001, nrefs = 5, reconstruct = true, Plotter = nothing, kw
 	@info "L2error(p) = $L2errorP"
 
 	## plot
-	plot([id(u), id(p)], sol; Plotter = Plotter)
+	plt = plot([id(u), id(p)], sol; Plotter = Plotter)
+
+	return L2errorU, plt
 end
 
+generateplots = default_generateplots(Example252_NSEPlanarLatticeFlow, "example252.svg") # hide
+function runtests() # hide
+	L2errorU, plt = main(; nrefs = 3) # hide
+	@test L2errorU ≈ 0.11892169556349004 # hide
+end # hide
 end # module

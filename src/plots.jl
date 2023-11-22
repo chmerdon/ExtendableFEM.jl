@@ -1,8 +1,14 @@
-function GridVisualize.scalarplot!(p, op::Tuple{Union{Unknown, Int}, DataType}, sol; abs = false, component = 1, title = sol[op[1]].name, kwargs...)
+function GridVisualize.scalarplot!(p, op::Tuple{Unknown, DataType}, sol; abs = false, component = 1, title = String(op[1].identifier), kwargs...)
 	GridVisualize.scalarplot!(p, sol[op[1]].FES.xgrid, view(nodevalues(sol[op[1]], op[2]; abs = abs), component, :); title = title, kwargs...)
 end
-function GridVisualize.vectorplot!(p, op::Tuple{Union{Unknown, Int}, DataType}, sol; title = sol[op[1]].name, kwargs...)
-	GridVisualize.vectorplot!(p, sol[op[1]].FES.xgrid, eval_func(PointEvaluator([op], sol)); title = title, kwargs...)
+function GridVisualize.scalarplot!(p, op::Tuple{Int, DataType}, sol; abs = false, component = 1, title = sol[op[1]].name, kwargs...)
+	GridVisualize.scalarplot!(p, sol[op[1]].FES.xgrid, view(nodevalues(sol[op[1]], op[2]; abs = abs), component, :); title = title, kwargs...)
+end
+function GridVisualize.vectorplot!(p, op::Tuple{Unknown, DataType}, sol; title = String(op[1].identifier), kwargs...)
+	GridVisualize.vectorplot!(p, sol[op[1]].FES.xgrid, eval_func_bary(PointEvaluator([op], sol)); title = title, kwargs...)
+end
+function GridVisualize.vectorplot!(p, op::Tuple{Int, DataType}, sol; title = sol[op[1]].name, kwargs...)
+	GridVisualize.vectorplot!(p, sol[op[1]].FES.xgrid, eval_func_bary(PointEvaluator([op], sol)); title = title, kwargs...)
 end
 
 function plot!(p::GridVisualizer, ops, sol; spacing = 0.1, keep = [], ncols = size(p.subplots, 2), do_abs = true, do_vector_plots = true, title_add = "", kwargs...)
@@ -26,7 +32,11 @@ function plot!(p::GridVisualizer, ops, sol; spacing = 0.1, keep = [], ncols = si
 			ncomponents = get_ncomponents(sol[op[1]])
 			edim = size(sol[op[1]].FES.xgrid[Coordinates], 1)
 			resultdim = Length4Operator(op[2], edim, ncomponents)
-			title = op[2] == Identity ? sol[op[1]].name : "$(op[2])(" * sol[op[1]].name * ")"
+			if typeof(op[1]) <: Unknown
+				title = op[2] == Identity ? String(op[1].identifier) : "$(op[2])(" * String(op[1].identifier) * ")"
+			else
+				title = op[2] == Identity ? "$(sol[op[1]].name)" : "$(op[2])($(sol[op[1]].name))"
+			end
 			if resultdim == 1
 				GridVisualize.scalarplot!(p[row, col], sol[op[1]].FES.xgrid, view(nodevalues(sol[op[1]], op[2]; abs = false), 1, :), title = title * title_add; kwargs...)
 			elseif do_abs == true
@@ -44,14 +54,14 @@ function plot!(p::GridVisualizer, ops, sol; spacing = 0.1, keep = [], ncols = si
 				end
 			end
 			if resultdim > 1 && do_vector_plots && do_abs == true && edim > 1
-				GridVisualize.vectorplot!(p[row, col], sol[op[1]].FES.xgrid, eval_func(PointEvaluator([op], sol)); spacing = spacing, title = "|" * title * "|" * " + quiver" * title_add, clear = false, kwargs...)
+				GridVisualize.vectorplot!(p[row, col], sol[op[1]].FES.xgrid, eval_func_bary(PointEvaluator([op], sol)); spacing = spacing, title = "|" * title * "|" * " + quiver" * title_add, clear = false, kwargs...)
 			end
 		end
 	end
 	return p
 end
 
-function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) + add), do_abs = true, width = 800, kwargs...)
+function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) + add), do_abs = true, width = (length(ops) + add) == 1 ? 400 : 800, kwargs...)
 	nplots = length(ops) + add
 	for op in ops
 		ncomponents = get_ncomponents(sol[op[1]])
@@ -135,4 +145,13 @@ end
 
 function ExtendableFEMBase.nodevalues(op, sol; kwargs...)
 	return nodevalues(sol[op[1]], op[2]; kwargs...)
+end
+
+## default function for generateplots for ExampleJuggler.jl
+function default_generateplots(example_module, filename; kwargs...)
+	function closure(dir = pwd(); Plotter = nothing, kwargs...)
+		~, plt = example_module.main(; Plotter = Plotter, kwargs...)
+		scene = GridVisualize.reveal(plt)
+		GridVisualize.save(joinpath(dir, filename), scene; Plotter = Plotter)
+	end
 end

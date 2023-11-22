@@ -1,7 +1,6 @@
-#= 
+#=
 
 # 275 : Optimal Control Stokes
-([source code](SOURCE_URL))
 
 This example studies the optimal control problem for the Stokes operator
 with divergence-free velocity space ``\mathbf{V}_0 \subset \mathbf{H}^1_0``, i.e.,
@@ -39,6 +38,11 @@ an example in the reference below.
     SIAM Journal on Control and Optimization 61:1, 342-360 (2023),\
     [>Journal-Link<](https://epubs.siam.org/doi/10.1137/22M1482603)
     [>Preprint-Link<](https://arxiv.org/abs/2203.02224)
+
+The computed solution for the default parameters looks like this:
+
+![](example275.svg)
+
 =#
 
 module Example275_OptimalControlStokes
@@ -120,6 +124,9 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1
     I = FEVector(FES[1]; name = "u^d")
     interpolate!(I[1], data!)
     plot!(plt, [id(1)], I; keep = 1:4)
+
+    return sol, plt
 end
 
+generateplots = default_generateplots(Example275_OptimalControlStokes, "example275.svg") # hide
 end
