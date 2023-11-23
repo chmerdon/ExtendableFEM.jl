@@ -114,6 +114,6 @@ end
 generateplots = default_generateplots(Example250_NSELidDrivenCavity, "example250.svg") # hide
 function runtests() # hide
 	sol, plt = main(; nrefs = 3, μ_final = 0.005) # hide
-	@test sum(sol.entries) ≈ 10.836786314557935 # hide
+	@test maximum(sol.entries) ≈ 1.6688289001463936 # hide
 end # hide
 end # module

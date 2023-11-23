@@ -140,7 +140,7 @@ function main(;
 	gridplot!(plt[3, 1], xgrid, linewidth = 1, title = "displaced mesh")
 	println(stdout, unicode_gridplot(xgrid))
 
-	return sol, plt
+	return strain_nodevals, plt
 end
 
 ## grid
@@ -162,7 +162,7 @@ end
 
 generateplots = default_generateplots(Example230_NonlinearElasticity, "example230.svg") # hide
 function runtests() # hide
-	sol, plt = main(;) # hide
-	@test maximum(sol.entries) ≈ 6.533607973691427 # hide
+	strain, plt = main(;) # hide
+	@test maximum(strain) ≈ 0.17318901080065996 # hide
 end # hide
 end
