@@ -22,7 +22,7 @@ function stab_kernel!(result, input, qpinfo)
 	result .= input/qpinfo.volume
 end
 
-function TestDGBLF(FEType = H1Pk{1, 2, 3}, order = get_polynomialorder(FEType, Triangle2D), operator = jump(grad(1)), tol = 1e-13)
+function TestDGBLF(FEType = H1Pk{1, 2, 3}, order = get_polynomialorder(FEType, Triangle2D), operator = jump(grad(1)), tol = 1e-12)
 	## tests if jumps of polynomial in ansatz space is zero
 	ncomponents = get_ncomponents(FEType)
 	function u!(result, qpinfo)

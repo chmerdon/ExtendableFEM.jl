@@ -166,7 +166,7 @@ function LinearOperatorDG(
 ````
 
 Generates a nonlinear linear form that evaluates a kernel function
-that depends on the (dscintoniuous) operator evaluations of the current solution.
+that depends on the (discontinous) operator evaluations of the current solution.
 The result of the kernel function is used in a vector product with the operator evaluation(s)
 of the test function(s). Hence, this can be used as a linearization of a
 nonlinear operator. The header of the kernel functions needs to be conform

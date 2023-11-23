@@ -44,7 +44,7 @@ assign_operator!(PD, LinearOperator(f!, [id(u)]))
 assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
 
 # discretise = choose FEVector with appropriate FESpaces
-FEType = H1Pk{1,2,3} # cubic element with 1 component in 2D
+FEType = H1Pk{1,2,3} # cubic H1-conforming element with 1 component in 2D
 FES = FESpace{FEType}(xgrid)
 
 # solve

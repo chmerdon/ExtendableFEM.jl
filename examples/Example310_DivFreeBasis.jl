@@ -66,7 +66,7 @@ function main(;
 	exact_u!(result, qpinfo) = (u_eval(result, qpinfo.x[1], qpinfo.x[2], qpinfo.x[3]))
 
 	## prepare plots
-	plt = GridVisualizer(; Plotter = Plotter, layout = (2, 2), clear = true, size = (1000, 1000))
+	plt = GridVisualizer(; Plotter = Plotter, layout = (2, 2), clear = true, size = (800, 800))
 
 	## prepare error calculation
 	function exact_error!(result, u, qpinfo)
