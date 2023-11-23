@@ -22,7 +22,7 @@ module Example205_HeatEquation
 using ExtendableFEM
 using ExtendableGrids
 using DifferentialEquations
-using Test # hide
+using Test #hide
 
 ## initial state u at time t0
 function initial_data!(result, qpinfo)
@@ -85,9 +85,9 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example205_HeatEquation, "example205.svg") # hide
-function runtests() # hide
-	sol, plt = main(; nrefs = 2, T = 1, use_diffeq = false) # hide	
-	@test maximum(sol.entries) ≈ 0.041490419236077006 # hide
-end # hide
+generateplots = default_generateplots(Example205_HeatEquation, "example205.svg") #hide
+function runtests() #hide
+	sol, plt = main(; nrefs = 2, T = 1, use_diffeq = false) #hide	
+	@test maximum(sol.entries) ≈ 0.041490419236077006 #hide
+end #hide
 end # module

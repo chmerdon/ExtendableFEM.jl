@@ -125,5 +125,5 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example285_CahnHilliard, "example285.svg") # hide
+generateplots = default_generateplots(Example285_CahnHilliard, "example285.svg") #hide
 end

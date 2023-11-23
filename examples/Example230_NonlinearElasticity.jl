@@ -24,7 +24,7 @@ module Example230_NonlinearElasticity
 using ExtendableFEM
 using ExtendableGrids
 using GridVisualize
-using Test # hide
+using Test #hide
 
 ## parameter-dependent nonlinear operator uses a callable struct to reduce allocations
 mutable struct nonlinear_operator{T}
@@ -160,9 +160,9 @@ function bimetal_strip2D(; scale = [1, 1], n = 2, anisotropy_factor::Int = Int(c
 	return xgrid
 end
 
-generateplots = default_generateplots(Example230_NonlinearElasticity, "example230.svg") # hide
-function runtests() # hide
-	strain, plt = main(;) # hide
-	@test maximum(strain) ≈ 0.17318901080065996 # hide
-end # hide
+generateplots = default_generateplots(Example230_NonlinearElasticity, "example230.svg") #hide
+function runtests() #hide
+	strain, plt = main(;) #hide
+	@test maximum(strain) ≈ 0.17318901080065996 #hide
+end #hide
 end

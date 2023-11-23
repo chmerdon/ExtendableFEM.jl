@@ -41,7 +41,7 @@ using ExtendableFEM
 using ExtendableGrids
 using SimplexGridFactory
 using Triangulate
-using Test # hide
+using Test #hide
 
 ## boundary data
 function u_inlet!(result, qpinfo)
@@ -127,7 +127,7 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     println("\n[min(c),max(c)] = [$(minimum(view(sol[T]))),$(maximum(view(sol[T])))]")
 
     ## plot
-    plt = plot([id(u), id(T)], sol; Plotter = Plotter, ncols = 1, spacing = 0.25)
+    plt = plot([id(u), id(T)], sol; Plotter = Plotter, ncols = 1, spacing = 0.25, width = 800, height = 800)
 
     return sol, plt
 end
@@ -210,10 +210,10 @@ function kernel_inflow!(result, input, qpinfo)
     end
 end
 
-generateplots = default_generateplots(Example265_FlowTransport, "example265.svg") # hide
-function runtests() # hide
-	sol, plt = main(;) # hide
-	@test minimum(view(sol[3])) >= 0 # hide
-	@test maximum(view(sol[3])) <= 0.25 # hide
-end # hide
+generateplots = default_generateplots(Example265_FlowTransport, "example265.svg") #hide
+function runtests() #hide
+	sol, plt = main(;) #hide
+	@test minimum(view(sol[3])) >= 0 #hide
+	@test maximum(view(sol[3])) <= 0.25 #hide
+end #hide
 end # module

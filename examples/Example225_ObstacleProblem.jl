@@ -31,7 +31,7 @@ module Example225_ObstacleProblem
 
 using ExtendableFEM
 using ExtendableGrids
-using Test # hide
+using Test #hide
 
 ## define obstacle and penalty kernel
 const χ! = (result, x) -> (result[1] = (cos(4 * x[1] * π) * cos(4 * x[2] * π) - 1) / 20)
@@ -67,9 +67,9 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example225_ObstacleProblem, "example225.svg") # hide
-function runtests() # hide
-	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) # hide
-	@test maximum(sol.entries) ≈ 0.0033496680638875204 # hide
-end # hide
+generateplots = default_generateplots(Example225_ObstacleProblem, "example225.svg") #hide
+function runtests() #hide
+	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
+	@test maximum(sol.entries) ≈ 0.0033496680638875204 #hide
+end #hide
 end # module

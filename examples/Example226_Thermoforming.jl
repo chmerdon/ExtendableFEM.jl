@@ -14,7 +14,7 @@ using ExtendableFEM
 using ExtendableGrids
 using SparseArrays
 using LinearAlgebra
-using Test # hide
+using Test #hide
 
 function w(r)
 	if 0.1 ≤ r ≤ 0.3
@@ -136,11 +136,11 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example226_Thermoforming, "example226.svg") # hide
-function runtests() # hide
-	sol1, ~ =  Example226_Thermoforming.main(; sparse_jacobians=true, N = 20) # hide
-	sol2, ~ =  Example226_Thermoforming.main(; sparse_jacobians=false, N = 20) # hide
-	@test norm(sol1.entries - sol2.entries) ≈ 0 # hide
-end # hide
+generateplots = default_generateplots(Example226_Thermoforming, "example226.svg") #hide
+function runtests() #hide
+	sol1, ~ =  Example226_Thermoforming.main(; sparse_jacobians=true, N = 20) #hide
+	sol2, ~ =  Example226_Thermoforming.main(; sparse_jacobians=false, N = 20) #hide
+	@test norm(sol1.entries - sol2.entries) ≈ 0 #hide
+end #hide
 end # module
 

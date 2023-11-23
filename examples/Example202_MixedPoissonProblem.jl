@@ -81,9 +81,9 @@ function main(; nrefs = 5, μ = 0.25, hdivdg = false, Plotter = nothing, kwargs.
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example202_MixedPoissonProblem, "example202.svg") # hide
-function runtests() # hide
-	sol, plt = main(; μ = 0.25, nrefs = 2) # hide	
-	@test maximum(view(sol[1])) ≈ 0.08463539106946043 # hide
-end # hide
+generateplots = default_generateplots(Example202_MixedPoissonProblem, "example202.svg") #hide
+function runtests() #hide
+	sol, plt = main(; μ = 0.25, nrefs = 2) #hide	
+	@test maximum(view(sol[1])) ≈ 0.08463539106946043 #hide
+end #hide
 end # module

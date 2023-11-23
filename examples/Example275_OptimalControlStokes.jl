@@ -128,5 +128,5 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1
     return sol, plt
 end
 
-generateplots = default_generateplots(Example275_OptimalControlStokes, "example275.svg") # hide
+generateplots = default_generateplots(Example275_OptimalControlStokes, "example275.svg") #hide
 end

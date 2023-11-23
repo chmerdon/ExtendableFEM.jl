@@ -44,7 +44,7 @@ module Example235_StokesIteratedPenalty
 
 using ExtendableFEM
 using ExtendableGrids
-using Test # hide
+using Test #hide
 
 ## data for Hagen-Poiseuille flow
 function p!(result, qpinfo)
@@ -102,19 +102,19 @@ function main(; Plotter = nothing, λ = 1e4, μ = 1.0, nrefs = 5, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example235_StokesIteratedPenalty, "example235.svg") # hide
-function exact_error!(result, u, qpinfo) # hide
-	u!(result, qpinfo) # hide
-	p!(view(result, 3), qpinfo) # hide
-	result .= (result .- u).^ 2 # hide
-end # hide
-function runtests(; μ = 1.0) # hide
-	sol, plt = main(; μ = μ) # hide
-	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(1), id(2)]; quadorder = 4, params = [μ]) # hide
-	error = evaluate(ErrorIntegratorExact, sol) # hide
-	error_u = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :))) # hide
-	error_p = sqrt(sum(view(error, 3, :))) # hide
-	@test error_u ≈ 3.990987355891888e-5 # hide
-	@test error_p ≈ 0.010437891104305222 # hide
-end # hide
+generateplots = default_generateplots(Example235_StokesIteratedPenalty, "example235.svg") #hide
+function exact_error!(result, u, qpinfo) #hide
+	u!(result, qpinfo) #hide
+	p!(view(result, 3), qpinfo) #hide
+	result .= (result .- u).^ 2 #hide
+end #hide
+function runtests(; μ = 1.0) #hide
+	sol, plt = main(; μ = μ) #hide
+	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(1), id(2)]; quadorder = 4, params = [μ]) #hide
+	error = evaluate(ErrorIntegratorExact, sol) #hide
+	error_u = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :))) #hide
+	error_p = sqrt(sum(view(error, 3, :))) #hide
+	@test error_u ≈ 3.990987355891888e-5 #hide
+	@test error_p ≈ 0.010437891104305222 #hide
+end #hide
 end

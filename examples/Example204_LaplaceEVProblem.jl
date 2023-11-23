@@ -63,5 +63,5 @@ function main(; which = 1:12, ncols = 3, nrefs = 4, order = 1, Plotter = nothing
 	return u, plt
 end
 
-generateplots = default_generateplots(Example204_LaplaceEVProblem, "example204.svg") # hide
+generateplots = default_generateplots(Example204_LaplaceEVProblem, "example204.svg") #hide
 end # module

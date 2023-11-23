@@ -23,7 +23,7 @@ using ExtendableFEM
 using ExtendableGrids
 using DifferentialEquations
 using GridVisualize
-using Test # hide
+using Test #hide
 
 ## Barenblatt solution
 ## (see Barenblatt, G. I. "On nonsteady motions of gas and fluid in porous medium." Appl. Math. and Mech.(PMM) 16.1 (1952): 67-78.)
@@ -120,9 +120,9 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example106_NonlinearDiffusion, "example106.svg") # hide
-function runtests(; T = 0.01, m = 2, kwargs...) # hide
-	sol, plt = main(; T = T, m = m, use_diffeq = false, kwargs...) # hide	
-	@test maximum(sol.entries) ≈ 4.641588833612778 # hide
-end # hide
+generateplots = default_generateplots(Example106_NonlinearDiffusion, "example106.svg") #hide
+function runtests(; T = 0.01, m = 2, kwargs...) #hide
+	sol, plt = main(; T = T, m = m, use_diffeq = false, kwargs...) #hide	
+	@test maximum(sol.entries) ≈ 4.641588833612778 #hide
+end #hide
 end

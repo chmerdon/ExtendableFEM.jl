@@ -25,7 +25,7 @@ module Example220_ReactionConvectionDiffusion
 using ExtendableFEM
 using ExtendableGrids
 using LinearAlgebra
-using Test # hide
+using Test #hide
 
 const α = 0.01
 const β = [1.0, 0]
@@ -135,9 +135,9 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
 	return Results, plt
 end
 
-generateplots = default_generateplots(Example220_ReactionConvectionDiffusion, "example220.svg") # hide
-function runtests() # hide
-	Results, plt = main(; nlevels = 2) # hide
-	@test Results[end, 1] ≈ 0.0001510021661291585 # hide
-end # hide
+generateplots = default_generateplots(Example220_ReactionConvectionDiffusion, "example220.svg") #hide
+function runtests() #hide
+	Results, plt = main(; nlevels = 2) #hide
+	@test Results[end, 1] ≈ 0.0001510021661291585 #hide
+end #hide
 end # module

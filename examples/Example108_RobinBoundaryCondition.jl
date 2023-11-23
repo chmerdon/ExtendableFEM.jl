@@ -22,7 +22,7 @@ module Example108_RobinBoundaryCondition
 using ExtendableFEM
 using ExtendableGrids
 using GridVisualize
-using Test # hide
+using Test #hide
 
 ## data and exact solution
 function f!(result, qpinfo)
@@ -77,15 +77,15 @@ function main(; Plotter = nothing, h = 1e-1, h_fine = 1e-3, order = 2, kwargs...
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example108_RobinBoundaryCondition, "example108.svg") # hide
-function exact_error!(result, u, qpinfo) # hide
-	u!(result, qpinfo) # hide
-	result .= (result .- u).^ 2 # hide
-end # hide
-function runtests(; kwargs...) # hide
-	sol, plt = main(; order = 2, kwargs...) # hide	
-	L2error = ItemIntegrator(exact_error!, [id(1)]; quadorder = 4, kwargs...) # hide
-	error = sqrt(sum(evaluate(L2error, sol))) # hide
-	@test error ≈ 9.062544216508815e-6 # hide
-end # hide
+generateplots = default_generateplots(Example108_RobinBoundaryCondition, "example108.svg") #hide
+function exact_error!(result, u, qpinfo) #hide
+	u!(result, qpinfo) #hide
+	result .= (result .- u).^ 2 #hide
+end #hide
+function runtests(; kwargs...) #hide
+	sol, plt = main(; order = 2, kwargs...) #hide	
+	L2error = ItemIntegrator(exact_error!, [id(1)]; quadorder = 4, kwargs...) #hide
+	error = sqrt(sum(evaluate(L2error, sol))) #hide
+	@test error ≈ 9.062544216508815e-6 #hide
+end #hide
 end

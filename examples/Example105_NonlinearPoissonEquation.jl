@@ -27,7 +27,7 @@ module Example105_NonlinearPoissonEquation
 
 using ExtendableFEM
 using ExtendableGrids
-using Test # hide
+using Test #hide
 
 ## rigt-hand side data
 function f!(result, qpinfo)
@@ -69,9 +69,9 @@ function main(; Plotter = nothing, h = 1e-2, ϵ = 1e-3, order = 2, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example105_NonlinearPoissonEquation, "example105.svg") # hide
-function runtests() # hide
-	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) # hide	
-	@test maximum(sol.entries) ≈ 0.4812118250102083 # hide
-end # hide
+generateplots = default_generateplots(Example105_NonlinearPoissonEquation, "example105.svg") #hide
+function runtests() #hide
+	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide	
+	@test maximum(sol.entries) ≈ 0.4812118250102083 #hide
+end #hide
 end

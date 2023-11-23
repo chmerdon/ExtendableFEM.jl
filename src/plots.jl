@@ -61,7 +61,7 @@ function plot!(p::GridVisualizer, ops, sol; spacing = 0.1, keep = [], ncols = si
 	return p
 end
 
-function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) + add), do_abs = true, width = (length(ops) + add) == 1 ? 400 : 800, kwargs...)
+function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) + add), do_abs = true, width = (length(ops) + add) == 1 ? 400 : 800, height = 0, kwargs...)
 	nplots = length(ops) + add
 	for op in ops
 		ncomponents = get_ncomponents(sol[op[1]])
@@ -74,7 +74,10 @@ function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) +
 		end
 	end
 	nrows = Int(ceil(nplots / ncols))
-	p = GridVisualizer(; Plotter = Plotter, layout = (nrows, ncols), clear = true, resolution = (width, width / ncols * nrows))
+	if height == 0
+		height = width / ncols * nrows
+	end
+	p = GridVisualizer(; Plotter = Plotter, layout = (nrows, ncols), clear = true, resolution = (width, height))
 	plot!(p, ops, sol; do_abs = do_abs, kwargs...)
 end
 function GridVisualize.vectorplot!(p, xgrid, op::Tuple{Union{Unknown, Int}, DataType}, sol; title = sol[op[1]].name, kwargs...)

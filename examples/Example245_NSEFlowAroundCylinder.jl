@@ -29,7 +29,7 @@ using SimplexGridFactory
 using ExtendableGrids
 using GridVisualize
 using LinearAlgebra
-using Test # hide
+using Test #hide
 
 ## inlet data for Karman vortex street example
 ## as in DFG benchmark 2D-1 (Re = 20, laminar)
@@ -196,11 +196,11 @@ function make_grid(W, H; n = 20, maxvol = 0.1)
 	simplexgrid(builder, maxvolume = 16 * maxvol, unsuitable = unsuitable)
 end
 
-generateplots = default_generateplots(Example245_NSEFlowAroundCylinder, "example245.svg") # hide
-function runtests() # hide
-	dragliftpdiff, plt = main(; maxvol = 5e-3) # hide
-	@test dragliftpdiff[1] ≈ 5.484046680249255 # hide
-	@test dragliftpdiff[2] ≈ 0.006508486071976145 # hide
-	@test dragliftpdiff[3] ≈ 0.1203441600631075 # hide
-end # hide
+generateplots = default_generateplots(Example245_NSEFlowAroundCylinder, "example245.svg") #hide
+function runtests() #hide
+	dragliftpdiff, plt = main(; maxvol = 5e-3) #hide
+	@test dragliftpdiff[1] ≈ 5.484046680249255 #hide
+	@test dragliftpdiff[2] ≈ 0.006508486071976145 #hide
+	@test dragliftpdiff[3] ≈ 0.1203441600631075 #hide
+end #hide
 end

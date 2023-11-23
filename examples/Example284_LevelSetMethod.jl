@@ -92,5 +92,5 @@ function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 0.4, order = 2, nre
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example284_LevelSetMethod, "example284.svg") # hide
+generateplots = default_generateplots(Example284_LevelSetMethod, "example284.svg") #hide
 end

@@ -20,7 +20,7 @@ module Example301_PoissonProblem
 
 using ExtendableFEM
 using ExtendableGrids
-using Test # hide
+using Test #hide
 
 function f!(fval, qpinfo)
 	fval[1] = qpinfo.x[1] * qpinfo.x[2] * qpinfo.x[3] 
@@ -49,9 +49,9 @@ function main(; μ = 1.0, nrefs = 3, Plotter = nothing, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example301_PoissonProblem, "example301.svg") # hide
-function runtests() # hide
-	sol, plt = main(;) # hide
-	@test sum(sol.entries) ≈ 21.874305144549524 # hide
-end # hide
+generateplots = default_generateplots(Example301_PoissonProblem, "example301.svg") #hide
+function runtests() #hide
+	sol, plt = main(;) #hide
+	@test sum(sol.entries) ≈ 21.874305144549524 #hide
+end #hide
 end # module

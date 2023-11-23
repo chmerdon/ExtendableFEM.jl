@@ -23,7 +23,7 @@ using ExtendableFEM
 using GridVisualize
 using ExtendableGrids
 using LinearAlgebra
-using Test # hide
+using Test #hide
 
 function kernel_nonlinear!(result, u_ops, qpinfo)
 	u, ∇u, p = view(u_ops, 1:2), view(u_ops, 3:6), view(u_ops, 7)
@@ -113,9 +113,9 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example250_NSELidDrivenCavity, "example250.svg") # hide
-function runtests() # hide
-	sol, plt = main(; nrefs = 3, μ_final = 0.005) # hide
-	@test sum(view(sol[1])) ≈ 9.501630403050289 # hide
-end # hide
+generateplots = default_generateplots(Example250_NSELidDrivenCavity, "example250.svg") #hide
+function runtests() #hide
+	sol, plt = main(; nrefs = 3, μ_final = 0.005) #hide
+	@test sum(view(sol[1])) ≈ 9.501630403050289 #hide
+end #hide
 end # module

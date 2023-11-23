@@ -53,7 +53,7 @@ using ExtendableFEM
 using ExtendableGrids
 using GridVisualize
 using LinearAlgebra
-using Test # hide
+using Test #hide
 
 function kernel_nonlinear!(result, u_ops, qpinfo)
     u, ∇u, p, ∇T, T = view(u_ops, 1:2), view(u_ops,3:6), view(u_ops, 7), view(u_ops, 8:9), view(u_ops, 10)
@@ -146,9 +146,9 @@ function main(;
     return Nu, plt
 end
 
-generateplots = default_generateplots(Example270_NaturalConvectionProblem, "example270.svg") # hide
-function runtests() # hide
-	Nu, plt = main(; nrefs = 4) # hide
-	@test Nu ≈ 17.641450080135293 # hide
-end # hide
+generateplots = default_generateplots(Example270_NaturalConvectionProblem, "example270.svg") #hide
+function runtests() #hide
+	Nu, plt = main(; nrefs = 4) #hide
+	@test Nu ≈ 17.641450080135293 #hide
+end #hide
 end # module

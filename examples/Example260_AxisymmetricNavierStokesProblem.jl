@@ -54,7 +54,7 @@ using ExtendableFEM
 using ExtendableGrids
 using SimplexGridFactory
 using Triangulate
-using Test # hide
+using Test #hide
 
 
 function kernel_convection!(result, input, qpinfo)
@@ -136,9 +136,9 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     return div_error, plt
 end
 
-generateplots = default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.svg") # hide
-function runtests() # hide
-	div_error, plt = main(; nrefs = 2) # hide
-	@test div_error <= 1e-14 # hide
-end # hide
+generateplots = default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.svg") #hide
+function runtests() #hide
+	div_error, plt = main(; nrefs = 2) #hide
+	@test div_error <= 1e-14 #hide
+end #hide
 end # module

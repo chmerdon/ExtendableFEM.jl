@@ -52,9 +52,9 @@ function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example201_PoissonProblem, "example201.svg") # hide
-function runtests() # hide
-	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) # hide
-	@test sum(sol.entries) ≈ 1.1140313632246377 # hide
-end # hide
+generateplots = default_generateplots(Example201_PoissonProblem, "example201.svg") #hide
+function runtests() #hide
+	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
+	@test sum(sol.entries) ≈ 1.1140313632246377 #hide
+end #hide
 end # module

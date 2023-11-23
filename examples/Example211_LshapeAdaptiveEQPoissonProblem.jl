@@ -38,7 +38,7 @@ using ExtendableFEMBase
 using ExtendableGrids
 using ExtendableSparse
 using GridVisualize
-using Test # hide
+using Test #hide
 
 ## exact solution u for the Poisson problem
 function u!(result, qpinfo)
@@ -364,9 +364,9 @@ function local_equilibration_estimator!(sol, FETypeDual)
 	end
 end
 
-generateplots = default_generateplots(Example211_LshapeAdaptiveEQPoissonProblem, "example211.svg") # hide
-function runtests() # hide
-	sol, plt = main(; maxdofs = 1000, order = 2) # hide	
-	@test length(sol.entries) == 6604 # hide
-end # hide
+generateplots = default_generateplots(Example211_LshapeAdaptiveEQPoissonProblem, "example211.svg") #hide
+function runtests() #hide
+	sol, plt = main(; maxdofs = 1000, order = 2) #hide	
+	@test length(sol.entries) == 6604 #hide
+end #hide
 end

@@ -102,9 +102,9 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example103_BurgersEquation, "example103.svg") # hide
-function runtests() # hide
-	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) # hide	
-	@test maximum(sol.entries) ≈ 0.9380540612507218 # hide
-end # hide
+generateplots = default_generateplots(Example103_BurgersEquation, "example103.svg") #hide
+function runtests() #hide
+	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide	
+	@test maximum(sol.entries) ≈ 0.9380540612507218 #hide
+end #hide
 end
