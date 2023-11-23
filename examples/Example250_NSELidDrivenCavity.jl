@@ -71,6 +71,8 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 	assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [id(u), grad(u), id(p)]; params = extra_params, kwargs...))
 	assign_operator!(PD, InterpolateBoundaryData(u, boundarydata!; regions = 3))
 	assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1, 2]))
+	assign_operator!(PD, FixDofs(p; dofs = [1]))
+	
 
 	## grid
 	xgrid = uniform_refine(initialgrid_cone(), nrefs)
@@ -114,6 +116,6 @@ end
 generateplots = default_generateplots(Example250_NSELidDrivenCavity, "example250.svg") # hide
 function runtests() # hide
 	sol, plt = main(; nrefs = 3, μ_final = 0.005) # hide
-	@test maximum(sol.entries) ≈ 1.6688289001463936 # hide
+	@test sum(view(sol[1])) ≈ 9.501630403050289 # hide
 end # hide
 end # module

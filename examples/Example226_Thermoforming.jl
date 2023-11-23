@@ -2,7 +2,7 @@
 
 # 226 : Thermoforming
 
-This implements the thermoforming simulation taken from https://arxiv.org/abs/1802.03564 Section 6.4.
+This implements the thermoforming example taken from https://arxiv.org/abs/1802.03564 Section 6.4.
 The computed solution for the default parameters looks like this:
 
 ![](example226.svg)
@@ -122,6 +122,7 @@ function main(;
 	FESs = [FES, FES, FES]
 	sol = FEVector(FESs; tags = [u,y,T])
 
+	## initial guess for Newton
 	interpolate!(sol[u], (result,qpinfo) -> ( result[1] = 0.9*Φ0(qpinfo.x) ) )
 	interpolate!(sol[T], (result,qpinfo) -> ( result[1] = 0.2 ) )
 	interpolate!(sol[y], (result,qpinfo) -> ( result[1] = 10.0 ) )

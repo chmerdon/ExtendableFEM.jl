@@ -113,9 +113,9 @@ function main(;
 	end
 
 	## plot final state and exact solution for comparison
-	scalarplot!(plt[1, 2], id(u), sol; label = "u_h", markershape = :circle, markevery = 1, title = "t = $T")
+	scalarplot!(plt[1, 2], id(u), sol; label = "u_h", markershape = :circle, markevery = 1)
 	interpolate!(sol[1], u_exact!; time = T, params = [m])
-	scalarplot!(plt[1, 2], id(u), sol; clear = false, color = :green, label = "u", legend = :best)
+	scalarplot!(plt[1, 2], id(u), sol; clear = false, color = :green, label = "u", title = "t = $T", legend = :best)
 
 	return sol, plt
 end
