@@ -203,20 +203,27 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 
 		## prepare assembly
 		AT = O.parameters[:entities]
-		@assert AT <: ON_FACES "only works for entities <: ON_FACES"
+		@assert AT <: ON_FACES  || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
 		xgrid = FES_test[1].xgrid
+        if AT <: ON_BFACES
+            AT = ON_FACES
+            bfaces = xgrid[BFaceFaces]
+            itemassemblygroups = zeros(Int, length(bfaces), 1)
+            itemassemblygroups[:] .= bfaces
+            gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
+        else
+            gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
+            itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
+        end
 		Ti = typeof(xgrid).parameters[2]
-		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
-		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
-		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
-		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
-		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
+		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
+		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
 		FETypes_test = [eltype(F) for F in FES_test]
-		FETypes_args = [eltype(F) for F in FES_args]
 		EGs = xgrid[UniqueCellGeometries]
 
-		coeffs_ops_test = Array{Array{Int, 1}, 1}([])
-		coeffs_ops_args = Array{Array{Int, 1}, 1}([])
+		coeffs_ops_test = Array{Array{Float64, 1}, 1}([])
+		coeffs_ops_args = Array{Array{Float64, 1}, 1}([])
 		for op in O.ops_test
 			push!(coeffs_ops_test, coeffs(op))
 		end
@@ -267,7 +274,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 		regions = O.parameters[:regions]
 		visit_region = zeros(Bool, maximum(itemregions))
 		if length(regions) > 0
-			visit_region[O.regions] = true
+			visit_region[regions] .= true
 		else
 			visit_region .= true
 		end
@@ -395,13 +402,13 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 
                             # evaluate kernel
                             O.kernel(result_kernel, input_args[qp], QPinfos)
-                            result_kernel .*= factor * weights[qp]
+                            result_kernel .*= factor * weights[qp] * itemvolumes[item]
 
                             # multiply test function operator evaluation on cell 1
                             for idt = 1 : ntest
                                 coeff_test = boundary_face ? 1 : coeffs_ops_test[idt][c1]
-                                for j ∈ 1:ndofs_test[idt]
-                                    dof_j = itemdofs_test[idt][j, cell1] + offsets_test[idt]
+                                for k ∈ 1:ndofs_test[idt]
+                                    dof = itemdofs_test[idt][k, cell1] + offsets_test[idt]
                                     for d ∈ 1:op_lengths_test[idt]
                                         b[dof] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeff_test
                                     end
@@ -416,23 +423,36 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 		O.FES_test = FES_test
 		O.FES_args = FES_args
 
-		function assembler(A, b, sol; kwargs...)
-			time = @elapsed begin
-				if O.parameters[:parallel_groups]
-					Threads.@threads for j ∈ 1:length(EGs)
-						fill!(Aj[j].cscmatrix.nzval, 0)
-						assembly_loop(Aj[j], sol, view(itemassemblygroups, :, j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
-					end
-					for j ∈ 1:length(EGs)
-						A.cscmatrix += Aj[j].cscmatrix
-					end
-					flush!(A)
+		function assembler(b, sol; kwargs...)
+			if O.parameters[:store] && size(b) == size(O.storage)
+				b .+= O.storage
+			else
+				if O.parameters[:store]
+					s = zeros(eltype(b), length(b))
 				else
-					for j ∈ 1:length(EGs)
-						assembly_loop(A, sol, view(itemassemblygroups, :, j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+					s = b
+				end
+				time = @elapsed begin
+					if O.parameters[:parallel_groups]
+						Threads.@threads for j ∈ 1:length(EGs)
+							fill!(bj[j], 0)
+							assembly_loop(bj[j], sol, view(itemassemblygroups, :, j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+						end
+						for j ∈ 1:length(EGs)
+							s .+= bj[j]
+						end
+					else
+						for j ∈ 1:length(EGs)
+							assembly_loop(b, sol, view(itemassemblygroups, :, j), EGs[j], O.QF[j], O.BE_test[j], O.BE_args[j], O.BE_test_vals[j], O.BE_args_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+						end
+					end
+					if O.parameters[:store]
+						b .+= s
+						O.storage = s
 					end
 				end
 			end
+
 			if O.parameters[:verbosity] > 1
 				@info ".... assembly of $(O.parameters[:name]) took $time s"
 			end
@@ -605,7 +625,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0) where
 
                             # evaluate kernel
                             O.kernel(result_kernel, QPinfos)
-                            result_kernel .*= factor * weights[qp]
+                            result_kernel .*= factor * weights[qp] * itemvolumes[item]
 
                             # multiply test function operator evaluation on cell 1
                             for idt ∈ 1:ntest

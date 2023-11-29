@@ -21,6 +21,7 @@ function run_examples()
 		"Example108_RobinBoundaryCondition.jl",
 		"Example201_PoissonProblem.jl",
 		"Example202_MixedPoissonProblem.jl",
+		"Example203_PoissonProblemDG.jl",
 		#"Example204_LaplaceEVProblem.jl",
 		"Example205_HeatEquation.jl",
 		"Example210_LshapeAdaptivePoissonProblem.jl",
