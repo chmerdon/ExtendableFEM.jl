@@ -1,6 +1,7 @@
 #=
 
 # 105 : Nonlinear Poisson Equation
+([source code](@__SOURCE_URL__))
 
 This examples solves the nonlinear Poisson problem
 ```math

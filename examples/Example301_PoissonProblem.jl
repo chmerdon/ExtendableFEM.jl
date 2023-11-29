@@ -1,6 +1,7 @@
 #=
 
 # 301 : Poisson-Problem
+([source code](@__SOURCE_URL__))
 
 This example computes the solution ``u`` of the two-dimensional Poisson problem
 ```math

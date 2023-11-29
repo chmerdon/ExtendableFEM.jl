@@ -1,6 +1,7 @@
 #=
 
 # 210 : Poisson L-shape Adaptive Mesh Refinement
+([source code](@__SOURCE_URL__))
 
 This example computes the standard-residual error estimator for the $H^1$ error ``e = u - u_h`` of some $H^1$-conforming
 approximation ``u_h`` to the solution ``u`` of some Poisson problem ``-\Delta u = f`` on an L-shaped domain, i.e.

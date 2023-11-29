@@ -1,6 +1,7 @@
 #=
 
 # 225 : Obstacle Problem
+([source code](@__SOURCE_URL__))
 
 This example computes the solution ``u`` of the nonlinear obstacle problem that seeks the minimiser of the energy functional
 ```math

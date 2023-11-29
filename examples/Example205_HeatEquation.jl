@@ -1,6 +1,7 @@
 #=
 
 # 205 : Heat equation
+([source code](@__SOURCE_URL__))
 
 This example computes the solution ``u`` of the two-dimensional heat equation
 ```math

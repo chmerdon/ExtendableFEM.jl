@@ -1,6 +1,7 @@
 #=
 
 # 280 : Compressible Stokes
+([source code](@__SOURCE_URL__))
 
 This example solves the two-dimensional
 compressible Stokes equations where one seeks a (vector-valued) velocity

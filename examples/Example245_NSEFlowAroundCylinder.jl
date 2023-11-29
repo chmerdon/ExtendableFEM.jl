@@ -1,6 +1,7 @@
 #=
 
 # 245 : Flow around a cylinder
+([source code](@__SOURCE_URL__))
 
 This example solves the DFG Navier-Stokes benchmark problem
 ```math

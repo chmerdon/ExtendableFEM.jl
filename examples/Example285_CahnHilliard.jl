@@ -1,6 +1,7 @@
 #=
 
 # 285 : Cahn-Hilliard Equations
+([source code](@__SOURCE_URL__))
 
 This example studies the mixed form of the Cahn-Hilliard equations that seeks
 ``(c,\mu)`` such that

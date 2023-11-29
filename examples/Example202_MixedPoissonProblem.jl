@@ -1,6 +1,7 @@
 #=
 
 # 202 : Poisson-Problem (Mixed)
+([source code](@__SOURCE_URL__))
 
 This example computes the solution ``u`` and its stress ``\mathbf{\sigma} := - \mu \nabla u``
 of the two-dimensional Poisson problem in the mixed form

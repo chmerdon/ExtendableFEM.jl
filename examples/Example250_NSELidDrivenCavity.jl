@@ -1,6 +1,7 @@
 #=
 
 # 250 : Navier--Stokes Lid-driven cavity
+([source code](@__SOURCE_URL__))
 
 This example computes the velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Navier--Stokes problem
 ```math

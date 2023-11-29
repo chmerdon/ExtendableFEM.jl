@@ -4,10 +4,12 @@
 A bilinear operator allows to add matrices to the system matrix that usually refer to
 linearisations of the PDE operators or stabilisations. If the bilinear operator
 lives on face entities, also jumps of operators can be involved, if they are naturally
-continuous for the ground finite element space (also jumps for broken spaces)
+continuous for the finite element space in operation (also jumps for broken spaces)
 and only involve degrees of freedom on the face, e.g.
-normal jumps for Hdiv spaces or jumps for H1-conforming spaces. For all other
-discontinuous operator evaluations there is the possibility to use BilinerOperatorDG.
+normal jumps for Hdiv spaces or jumps for H1-conforming spaces or tangential jumps
+of Hcurl spaces. For all other discontinuous operator evaluations
+(that needs to evaluat more than the degrees of freedom on the face)
+there is the possibility to use BilinearOperatorDG.
 It is also possible to assign a matrix assembled by the user as a BilinearOperator.
 
 ## Constructors
@@ -18,11 +20,12 @@ Pages = ["common_operators/bilinear_operator.jl"]
 Order   = [:type, :function]
 ```
 
-## DG BilinearOperator
+## BilinearOperatorDG
 
 BilinearOperatorDG is intended for bilinear forms that involves jumps of discontinuous quantities
 on faces whose assembly requires evaluation of all degrees of freedom on the neighbouring cells,
-e.g. gradient jumps for H1 conforming functions.
+e.g. gradient jumps for H1 conforming functions. In this case the assembly loop triggers
+integration along the boundary of the cells.
 
 ```@autodocs
 Modules = [ExtendableFEM]

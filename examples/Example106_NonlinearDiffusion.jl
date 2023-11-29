@@ -1,6 +1,7 @@
 #=
 
 # 106 : Nonlinear Diffusion
+([source code](@__SOURCE_URL__))
 
 This example solves the nonlinear diffusion equation
 ```math

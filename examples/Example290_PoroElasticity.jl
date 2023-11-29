@@ -1,6 +1,7 @@
 #=
 
 # 290 : Poro-Elasticity
+([source code](@__SOURCE_URL__))
 
 This example concerns the three-field solution ``(\mathbf{w},\mathbf{u},p)`` of Biot's consolidation
 model in poroelasticity given by

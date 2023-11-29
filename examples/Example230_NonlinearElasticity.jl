@@ -1,6 +1,7 @@
 #=
 
 # 230 : Nonlinear Elasticity
+([source code](@__SOURCE_URL__))
 
 This example computes the displacement field ``u`` of the nonlinear elasticity problem
 ```math

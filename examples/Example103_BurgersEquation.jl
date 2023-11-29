@@ -1,6 +1,7 @@
 #=
 
 # 103 : Burger's Equation
+([source code](@__SOURCE_URL__))
 
 This example solves the Burger's equation
 ```math

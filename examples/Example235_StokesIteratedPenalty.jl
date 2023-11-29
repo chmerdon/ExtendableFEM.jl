@@ -1,6 +1,7 @@
 #=
 
 # 235 : Stokes iterated penalty method
+([source code](@__SOURCE_URL__))
 
 This example computes a velocity ``\mathbf{u}`` and pressure ``\mathbf{p}`` of the incompressible Stokes problem
 ```math

@@ -1,6 +1,7 @@
 #=
 
 # 204 : Eigenvalue problem for the Laplacian
+([source code](@__SOURCE_URL__))
 
 This example computes the pairs of eigenvalues and eigenvectors
 ``(\lambda,u) \in \mathbb{R} \times H^1_0(\Omega)``

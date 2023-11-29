@@ -1,6 +1,7 @@
 #=
 
 # 226 : Thermoforming
+([source code](@__SOURCE_URL__))
 
 This implements the thermoforming example taken from https://arxiv.org/abs/1802.03564 Section 6.4.
 The computed solution for the default parameters looks like this:

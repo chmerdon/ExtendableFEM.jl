@@ -1,6 +1,7 @@
 #=
 
 # 284 : Level Set Method
+([source code](@__SOURCE_URL__))
 
 This example studies the level-set method of some level function ``\mathbf{\phi}`` convected in time via the equation
 ```math

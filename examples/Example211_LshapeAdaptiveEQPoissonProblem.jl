@@ -1,6 +1,7 @@
 #=
 
 # 211 : Poisson L-shape Local Equilibrated Fluxes
+([source code](@__SOURCE_URL__))
 
 This example computes a local equilibration error estimator for the $H^1$ error of some $H^1$-conforming
 approximation ``u_h`` to the solution ``u`` of some Poisson problem ``-\Delta u = f`` on an L-shaped domain, i.e.

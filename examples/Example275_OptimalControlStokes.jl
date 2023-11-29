@@ -1,6 +1,7 @@
 #=
 
 # 275 : Optimal Control Stokes
+([source code](@__SOURCE_URL__))
 
 This example studies the optimal control problem for the Stokes operator
 with divergence-free velocity space ``\mathbf{V}_0 \subset \mathbf{H}^1_0``, i.e.,

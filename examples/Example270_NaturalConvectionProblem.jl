@@ -1,6 +1,7 @@
 #=
 
 # 270 : Natural convection
+([source code](@__SOURCE_URL__))
 
 Seek velocity ``\mathbf{u}``, pressure ``p`` and temperature ``\theta`` such that
 ```math

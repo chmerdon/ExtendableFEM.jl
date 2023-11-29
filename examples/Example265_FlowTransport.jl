@@ -1,6 +1,7 @@
 #=
 
 # 265 : Flow + Transport
+([source code](@__SOURCE_URL__))
 
 This example solve the Stokes problem in an Omega-shaped pipe and then uses the velocity in a transport equation for a species with a certain inlet concentration.
 Altogether, we are looking for a velocity ``\mathbf{u}``, a pressure ``\mathbf{p}`` and a stationary species concentration ``\mathbf{c}`` such that

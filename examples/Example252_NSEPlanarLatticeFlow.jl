@@ -1,6 +1,7 @@
 #=
 
 # 252 : Navier--Stokes Planar Lattice Flow
+([source code](@__SOURCE_URL__))
 
 This example computes an approximation to the planar lattice flow test problem of the Stokes equations
 ```math

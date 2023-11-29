@@ -1,6 +1,7 @@
 #=
 
 # 220 : Reaction-Convection-Diffusion-Problem
+([source code](@__SOURCE_URL__))
 
 This example computes the solution of some convection-diffusion problem
 ```math

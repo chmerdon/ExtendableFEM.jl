@@ -1,6 +1,7 @@
 #=
 
 # 260 : Axisymmetric Stokes
+([source code](@__SOURCE_URL__))
 
 This example solves the 3D stagnation point flow via 
 the 2.5D axisymmetric formulation of the Navier--Stokes problem that seeks a velocity ``\mathbf{u} = (u_z, u_r)``

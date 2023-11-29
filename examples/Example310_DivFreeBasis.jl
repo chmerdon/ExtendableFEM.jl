@@ -1,6 +1,7 @@
 #=
 
 # 310 : Div-free RT0 basis
+([source code](@__SOURCE_URL__))
 
 This example computes the best-approximation ``\mathbf{\psi}_h`` of a divergence-free velocity
 ``\mathbf{u} = \mathrm{curl} \mathbf{\psi}`` by solving
