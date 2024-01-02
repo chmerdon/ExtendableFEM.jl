@@ -252,9 +252,9 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 		FETypes_args = [eltype(F) for F in FES_args]
 		EGs = xgrid[UniqueCellGeometries]
 
-		coeffs_ops_test = Array{Array{Int, 1}, 1}([])
-		coeffs_ops_ansatz = Array{Array{Int, 1}, 1}([])
-		coeffs_ops_args = Array{Array{Int, 1}, 1}([])
+		coeffs_ops_test = Array{Array{Float64, 1}, 1}([])
+		coeffs_ops_ansatz = Array{Array{Float64, 1}, 1}([])
+		coeffs_ops_args = Array{Array{Float64, 1}, 1}([])
 		for op in O.ops_test
 			push!(coeffs_ops_test, coeffs(op))
 		end

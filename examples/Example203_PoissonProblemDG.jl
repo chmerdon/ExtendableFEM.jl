@@ -80,11 +80,11 @@ function main(; dg = true, μ = 1.0, τ = 4.0, nrefs = 4, order = 2, bonus_quado
 	FES = FESpace{H1Pk{1, 2, order}}(xgrid; broken = dg)
 
 	## add DG terms
-	assign_operator!(PD, BilinearOperatorDG(dg_kernel(xgrid), [jump(id(u))], [average(grad(u))]; entities = ON_IFACES, factor = -μ, kwargs...))
+	assign_operator!(PD, BilinearOperatorDG(dg_kernel(xgrid), [jump(id(u))], [average(grad(u))]; entities = ON_FACES, factor = -μ, kwargs...))
 	assign_operator!(PD, BilinearOperatorDG(dg_kernelT(xgrid), [average(grad(u))], [jump(id(u))]; entities = ON_FACES, factor = -μ, kwargs...))
 	assign_operator!(PD, LinearOperatorDG(dg_kernel_bnd(xgrid, exact_u!), [average(grad(u))]; entities = ON_BFACES, factor = -μ, bonus_quadorder = bonus_quadorder, kwargs...))
 	assign_operator!(PD, BilinearOperatorDG(dg_kernel2(xgrid), [jump(id(u))]; entities = ON_FACES, factor = τ, kwargs...))
-	assign_operator!(PD, LinearOperatorDG(dg_kernel2_bnd(xgrid, exact_u!), [id(u)]; entities = ON_BFACES, regions = 1:4, factor = -τ, bonus_quadorder = bonus_quadorder, kwargs...))
+	assign_operator!(PD, LinearOperatorDG(dg_kernel2_bnd(xgrid, exact_u!), [id(u)]; entities = ON_BFACES, regions = 1:4, factor = τ, bonus_quadorder = bonus_quadorder, kwargs...))
 
 	## solve
 	sol = solve(PD, FES; kwargs...)
