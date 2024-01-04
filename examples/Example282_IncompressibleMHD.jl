@@ -109,7 +109,7 @@ function main(; Plotter = nothing, μ = 1e-3, η = 1e-1, nrefs = 5, kwargs...)
     ## plot
 	plt = plot([id(u), id(B), id(p), id(q)], sol; Plotter = Plotter)
 
-	return plt
+	return sol, plt
 end
 
 generateplots = default_generateplots(Example282_IncompressibleMHD, "example282.svg") #hide
