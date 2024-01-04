@@ -38,6 +38,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
 			"Example270_NaturalConvectionProblem.jl",
 			"Example275_OptimalControlStokes.jl",
 			"Example280_CompressibleStokes.jl",
+			"Example280_IncompressibleMHD.jl",
 			"Example284_LevelSetMethod.jl",
 			"Example285_CahnHilliard.jl",
 			"Example290_PoroElasticity.jl",

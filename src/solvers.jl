@@ -237,6 +237,9 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 						end
 					end
 					nlres = norm(residual.entries)
+					if SC.parameters[:verbosity] > 0
+						@info norms(residual)
+					end
 				end
 			end
 			time_final += time_assembly

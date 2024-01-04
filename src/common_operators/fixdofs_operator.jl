@@ -12,7 +12,7 @@ mutable struct FixDofs{UT, AT, VT} <: AbstractOperator
 	parameters::Dict{Symbol, Any}
 end
 
-ExtendableFEM.fixed_dofs(O::FixDofs) = O.dofs
+ExtendableFEM.fixed_dofs(O::FixDofs) = O.dofs .+ O.offset
 fixed_vals(O::FixDofs) = O.vals
 
 default_fixdofs_kwargs() = Dict{Symbol, Tuple{Any, String}}(

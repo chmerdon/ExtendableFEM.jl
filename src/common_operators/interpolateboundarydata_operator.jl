@@ -109,7 +109,7 @@ function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0
 			FEType = eltype(FES)
 			FESc = FESpace{FEType}(FES.xgrid)
 			Targetc = FEVector(FESc)
-			interpolate!(Targetc[1], FESc, ON_FACES, data; items = bfaces, time = time, bonus_quadorder = O.parameters[:bonus_quadorder])
+			interpolate!(Targetc[1], FESc, ON_FACES, data; items = bfaces, time = time, params = O.parameters[:params], bonus_quadorder = O.parameters[:bonus_quadorder])
 			bfacedofs = FES[BFaceDofs]
 			bfacedofs_c = FESc[BFaceDofs]
 			dof::Int = 0
@@ -122,7 +122,7 @@ function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0
 				end
 			end
 		else
-			interpolate!(bddata[1], ON_BFACES, data; time = time, bonus_quadorder = O.parameters[:bonus_quadorder])
+			interpolate!(bddata[1], ON_BFACES, data; time = time, params = O.parameters[:params], bonus_quadorder = O.parameters[:bonus_quadorder])
 		end
 		if O.parameters[:plot]
 			println(stdout, unicode_scalarplot(bddata[1]; title = "boundary data for $(O.u)"))

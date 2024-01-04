@@ -79,6 +79,7 @@ function main(;
 	NDofs = zeros(Int, nrefs)
 	L2error = zeros(Float64, nrefs)
 
+	sol = nothing
 	for lvl ∈ 1:nrefs
 		## grid
 		xgrid = uniform_refine(grid_unitcube(Tetrahedron3D), lvl)
@@ -142,11 +143,16 @@ function main(;
 		L2error[lvl] = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :)))
 		if divfree_basis
 			@info "|| u - curl(ϕ_h) || = $(L2error[lvl])"
-			scalarplot!(plt[1, 1], curl3(1), sol; abs = true)
 		else
 			@info "|| u - u_h || = $(L2error[lvl])"
-			scalarplot!(plt[1, 1], id(1), sol; abs = true)
 		end
+	end
+
+	## plot
+	if divfree_basis
+		scalarplot!(plt[1, 1], curl3(1), sol; abs = true)
+	else
+		scalarplot!(plt[1, 1], id(1), sol; abs = true)
 	end
 
 	## print convergence history as table

@@ -15,7 +15,7 @@ compressible Stokes equations where one seeks a (vector-valued) velocity
         \varrho & \geq 0.
 \end{aligned}
 ```
-Here eos ``eos`` is some equation of state function that describes the dependence of the pressure on the density
+Here, eos ``eos`` is some equation of state function that describes the dependence of the pressure on the density
 (and further physical quantities like temperature in a more general setting).
 Moreover, ``\mu`` and ``\lambda`` are Lame parameters and ``\mathbf{f}`` and ``\mathbf{g}`` are given right-hand side data.
 
