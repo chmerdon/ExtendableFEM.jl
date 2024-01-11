@@ -105,7 +105,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     if nonlinear
         assign_operator!(PD, NonlinearOperator(kernel_convection!, [id(u)], [id(u),grad(u)]; bonus_quadorder = 1, kwargs...))#; jacobian = kernel_jacobian!)) 
     end
-    assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = 1:2))
+    assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = [3]))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [4], mask = (1,0,1)))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1], mask = (0,1,1)))
 
@@ -114,7 +114,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
         xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
     else
         xgrid = simplexgrid(Triangulate;
-        points=[0 0 ; 1 0 ; 1 1 ; 0 1]',
+        points=[0 0 ; 5 0 ; 5 1 ; 0 1]',
         bfaces=[1 2 ; 2 3 ; 3 4 ; 4 1 ]',
         bfaceregions=[1, 2, 3, 4],
         regionpoints=[0.5 0.5;]',
@@ -123,14 +123,24 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     end
 
     ## solve
-    FES = [FESpace{H1P2{2,2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
+    FES = [FESpace{H1P2B{2,2}}(xgrid), FESpace{L2P1{1}}(xgrid)]
     sol = ExtendableFEM.solve(PD, FES; kwargs...)
 
     ## compute divergence in cylindrical coordinates by volume integrals
-    DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 2, resultdim = 1)
+    DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 3, resultdim = 1)
     div_error = sqrt(sum(evaluate(DivIntegrator, sol)))
-    @info "||div(u)|| = $div_error"
+    @info "||div(u_h)|| = $div_error"
 
+    ## compute L2error
+    function kernel_l2error(result, u_ops, qpinfo)
+        u!(result, qpinfo)
+        result .= (result - u_ops).^2
+    end
+    ErrorIntegratorExact = ItemIntegrator(kernel_l2error, [id(1)]; entities = ON_BFACES, regions = [3], quadorder = 4, kwargs...)
+    error = evaluate(ErrorIntegratorExact, sol)
+    L2error = sqrt(sum(view(error,1,:)) + sum(view(error,2,:)))
+    @info "||u - u_h|| = $L2error"
+    
     ## plot
     plt = plot([id(u)], sol; Plotter = Plotter)
 

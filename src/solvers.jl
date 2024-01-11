@@ -77,6 +77,9 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 	method_linear = SC.parameters[:method_linear]
 	precon_linear = SC.parameters[:precon_linear]
 	stats = SC.statistics
+	for (key, value) in stats
+		stats[key] = []
+	end
 
 	## unpack solver parameters
 	maxits = SC.parameters[:maxiterations]
@@ -245,10 +248,10 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 			time_final += time_assembly
 			allocs_final += allocs_assembly
 		end
-		push!(stats.assembly_allocs, allocs_assembly)
-		push!(stats.assembly_times, time_assembly)
+		push!(stats[:assembly_allocations], allocs_assembly)
+		push!(stats[:assembly_times], time_assembly)
 		if !is_linear
-			push!(stats.nonlinear_residuals, nlres)
+			push!(stats[:nonlinear_residuals], nlres)
 		end
 		if nlres < nltol
 			if SC.parameters[:verbosity] > -1
@@ -298,6 +301,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				SC.parameters[:initialized] = true
 
 				## solve
+				push!(stats[:matrix_nnz], nnz(A.entries.cscmatrix))
 				x = LinearSolve.solve!(linsolve)
 
 				fill!(residual.entries, 0)
@@ -312,9 +316,9 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				end
 				#@info residual.entries, norms(residual)
 				linres = norm(residual.entries)
-				push!(stats.linear_residuals, linres)
+				push!(stats[:linear_residuals], linres)
 				if is_linear
-					push!(stats.nonlinear_residuals, linres)
+					push!(stats[:nonlinear_residuals], linres)
 				end
 				offset = 0
 				for u in unknowns
@@ -331,8 +335,10 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 		time_total += time_solve
 		time_final += time_solve
 		allocs_final += allocs_solve
-		push!(stats.solver_allocs, allocs_solve)
-		push!(stats.solver_times, time_solve)
+		push!(stats[:solver_allocations], allocs_solve)
+		push!(stats[:solver_times], time_solve)
+		push!(stats[:total_times], time_total)
+		push!(stats[:total_allocations], (allocs_assembly + allocs_solve))
 		if SC.parameters[:verbosity] > -1
 			@printf "%.3e\t" linres
 			@printf "%.2f\t%.2f\t%.2f\t" time_assembly time_solve time_total

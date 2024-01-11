@@ -680,11 +680,16 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0) where
 			end
 		end
 		O.assembler = assembler
+	else
+		## update the time
+		for j = 1 : length(O.QP_infos)
+			O.QP_infos[j].time = time
+		end
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorDG{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, kwargs...) where {Tv, UT}
-	if !assemble_matrix
+function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorDG{Tv, UT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {Tv, UT}
+	if !assemble_rhs
 		return nothing
 	end
 	if UT <: Integer
@@ -703,8 +708,8 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorDG{Tv, UT}, SC::Sol
 	end
 end
 
-function ExtendableFEM.assemble!(b, O::LinearOperatorDG{Tv, UT}, sol = nothing; assemble_matrix = true, kwargs...) where {Tv, UT}
-	if !assemble_matrix
+function ExtendableFEM.assemble!(b, O::LinearOperatorDG{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
+	if !assemble_rhs
 		return nothing
 	end
 	@assert UT <: Integer

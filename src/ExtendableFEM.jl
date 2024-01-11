@@ -79,7 +79,7 @@ export get_periodic_coupling_info
 
 include("solver_config.jl")
 export SolverConfiguration
-export SolverStatistics, residual
+export residual
 
 include("solvers.jl")
 export solve

@@ -1,13 +1,14 @@
-mutable struct SolverStatistics{Tv}
-	assembly_times::Vector{Tv}
-	solver_times::Vector{Tv}
-	assembly_allocs::Vector{Tv}
-	solver_allocs::Vector{Tv}
-	linear_residuals::Vector{Tv}
-	nonlinear_residuals::Vector{Tv}
-end
-
-residual(S::SolverStatistics) = S.nonlinear_residuals[end]
+default_statistics() = Dict{Symbol, Vector{Real}}(
+	:assembly_times => [],
+	:solver_times => [],
+	:assembly_allocations => [],
+	:solver_allocations => [],
+	:linear_residuals => [],
+	:nonlinear_residuals => [],
+	:matrix_nnz => [],
+	:total_times => [],
+	:total_allocations => [],
+)
 
 mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	PD::ProblemDescription
@@ -16,7 +17,7 @@ mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	sol::xT					## stores solution
 	res::xT
 	LP::LinearProblem
-	statistics::SolverStatistics{Float64}
+	statistics::Dict{Symbol, Vector{Real}}
 	linsolver::Any
 	unknown_ids_in_sol::Array{Int, 1}
 	unknowns::Array{Unknown, 1}
@@ -24,6 +25,9 @@ mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	offsets::Array{Int, 1}  ## offset for each unknown that is solved
 	parameters::Dict{Symbol, Any} # dictionary with user parameters
 end
+
+residual(S::SolverConfiguration) = S.statistics[:nonlinear_residuals][end]
+
 
 #
 # Default context information with help info.
@@ -125,5 +129,5 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 	end
 	res = deepcopy(b)
 	LP = LinearProblem(A.entries.cscmatrix, b.entries)
-	return SolverConfiguration{typeof(A), typeof(b), typeof(x)}(Problem, A, b, x, res, LP, SolverStatistics(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[]), nothing, unknown_ids_in_sol, unknowns, copy(unknowns), offsets, parameters)
+	return SolverConfiguration{typeof(A), typeof(b), typeof(x)}(Problem, A, b, x, res, LP, default_statistics(), nothing, unknown_ids_in_sol, unknowns, copy(unknowns), offsets, parameters)
 end
