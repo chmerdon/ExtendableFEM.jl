@@ -127,7 +127,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     sol = ExtendableFEM.solve(PD, FES; kwargs...)
 
     ## compute divergence in cylindrical coordinates by volume integrals
-    DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 3, resultdim = 1)
+    DivIntegrator = ItemIntegrator(kernel_l2div, [id(u), div(u)]; quadorder = 4, resultdim = 1)
     div_error = sqrt(sum(evaluate(DivIntegrator, sol)))
     @info "||div(u_h)|| = $div_error"
 
@@ -144,12 +144,12 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     ## plot
     plt = plot([id(u)], sol; Plotter = Plotter)
 
-    return div_error, plt
+    return [div_error, L2error], plt
 end
 
 generateplots = default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.svg") #hide
 function runtests() #hide
-	div_error, plt = main(; nrefs = 2) #hide
-	@test div_error <= 1e-14 #hide
+	errors, plt = main(; nrefs = 1) #hide
+	@test all(errors .<= 1e-12) #hide
 end #hide
 end # module
