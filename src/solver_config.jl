@@ -137,13 +137,18 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 	end
 
 	## adjustments for using freedofs
-	if length(parameters[:restrict_dofs]) > 0
-		freedofs = Vector{Int}(parameters[:restrict_dofs][1])
-		for j = 2 : length(parameters[:restrict_dofs])
-			parameters[:restrict_dofs][j] .+= FES[j-1].ndofs
-			append!(freedofs, parameters[:restrict_dofs][j])
+	if haskey(parameters, :restrict_dofs)
+		if length(parameters[:restrict_dofs]) > 0
+			freedofs = Vector{Int}(parameters[:restrict_dofs][1])
+			for j = 2 : length(parameters[:restrict_dofs])
+				parameters[:restrict_dofs][j] .+= FES[j-1].ndofs
+				append!(freedofs, parameters[:restrict_dofs][j])
+			end
+			x_temp = deepcopy(b)
+		else
+			freedofs = []
+			x_temp = x
 		end
-		x_temp = deepcopy(b)
 	else
 		freedofs = []
 		x_temp = x
