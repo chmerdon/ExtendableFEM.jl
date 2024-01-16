@@ -80,6 +80,13 @@ function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) +
 	p = GridVisualizer(; Plotter = Plotter, layout = (nrows, ncols), clear = true, resolution = (width, height))
 	plot!(p, ops, sol; do_abs = do_abs, kwargs...)
 end
+
+function plot_unicode(sol; kwargs...)
+	for u = 1 : length(sol)
+		println(stdout, unicode_scalarplot(sol[u]; title = sol[u].name, kwargs...))
+	end
+end
+
 function GridVisualize.vectorplot!(p, xgrid, op::Tuple{Union{Unknown, Int}, DataType}, sol; title = sol[op[1]].name, kwargs...)
 	GridVisualize.vectorplot!(p, xgrid, eval_func(PointEvaluator([op], sol)); title = title, kwargs...)
 end

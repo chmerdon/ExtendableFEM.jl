@@ -85,6 +85,10 @@ function main(;
 		xgrid = uniform_refine(grid_unitcube(Tetrahedron3D), lvl)
 
 		if divfree_basis
+
+			## use Nedelec FESpace and determine linear independent basis
+			FES = FESpace{HCURLN0{3}}(xgrid)
+
 			@time begin
 				## get subset of edges, spanning the node graph
 				spanning_tree = get_spanning_edge_subset(xgrid)
@@ -92,51 +96,32 @@ function main(;
 				## get all other edges = linear independent degrees of freedom
 				subset = setdiff(1:num_edges(xgrid), spanning_tree)
 			end
-
-			## generate lowest order Nedelec FESpace
-			FES = FESpace{HCURLN0{3}}(xgrid)
 			NDofs[lvl] = length(subset)
 
-			## assemble full Nedelec curl-curl matrix
-			@time begin
-				A = FEMatrix(FES)
-				b = FEVector(FES)
-				assemble!(A, BilinearOperator([curl3(1)]))
-				assemble!(b, LinearOperator(exact_u!, [curl3(1)]; bonus_quadorder = bonus_quadorder))
+			## assemble full Nedelec curl-curl problem...
+			u = Unknown("u"; name = "curl potential of velocity")
+			PD = ProblemDescription("curl-curl formulation")
+			assign_unknown!(PD, u)
+			assign_operator!(PD, BilinearOperator([curl3(u)]))
+			assign_operator!(PD, LinearOperator(exact_u!, [curl3(u)]; bonus_quadorder = bonus_quadorder))
 
-				## restrict to linear independent basis
-				Z = ExtendableSparseMatrix{Float64, Int64}(length(subset), FES.ndofs)
-				for j = 1 : length(subset)
-					Z[j,subset[j]] = 1
-				end
-				Ared = Z * (A.entries * Z')
-				bred = Z * b.entries
-			end
-
-			## solve
-			sol = FEVector(FES)
-			@time sol.entries[subset] .= Ared\bred
+			## ...and solve with subset
+			sol = solve(PD, FES; restrict_dofs = [subset[:]])
 		else
 			## use RT0 functions + side constraint for divergence
 			FES = [FESpace{HDIVRT0{3}}(xgrid), FESpace{L2P0{1}}(xgrid)]
 			NDofs[lvl] = FES[1].ndofs + FES[2].ndofs
 
-			## assemble full RT0 mass matrix and div-pressure constraint
-			@time begin
-				A = FEMatrix(FES)
-				b = FEVector(FES)
-				assemble!(A, BilinearOperator([id(1)]))
-				assemble!(A, BilinearOperator([div(1)], [id(2)]; transposed_copy = 1))
-				assemble!(b, LinearOperator(exact_u!, [id(1)]; bonus_quadorder = bonus_quadorder))
-			end
-
-			## solve
-			sol = FEVector(FES)
-			@time sol.entries .= A.entries\b.entries
+			u = Unknown("u"; name = "velocity")
+			p = Unknown("u"; name = "pressure")
+			PD = ProblemDescription("mixed formulation")
+			assign_unknown!(PD, u)
+			assign_unknown!(PD, p)
+			assign_operator!(PD, BilinearOperator([id(u)]))
+			assign_operator!(PD, BilinearOperator([div(u)], [id(p)]; transposed_copy = 1))
+			assign_operator!(PD, LinearOperator(exact_u!, [id(u)]; bonus_quadorder = bonus_quadorder))
+			sol = solve(PD, FES)
 		end
-
-		## check residual
-		@info "residual = $(norm(A.entries * sol.entries - b.entries))"
 
 		## evalute error
 		error = evaluate(ErrorIntegratorExact, sol)

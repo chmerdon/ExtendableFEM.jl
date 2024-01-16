@@ -36,7 +36,7 @@ function main(; which = 1:12, ncols = 3, nrefs = 4, order = 1, Plotter = nothing
 	## assemble operators
 	A = FEMatrix(FES)
 	B = FEMatrix(FES)
-	u = FEVector(FES)
+	u = FEVector(FES; name = "u")
 	assemble!(A, BilinearOperator([grad(1)]; kwargs...))
 	assemble!(A, BilinearOperator([id(1)]; entities = ON_BFACES, factor = 1e5, kwargs...))
 	assemble!(B, BilinearOperator([id(1)]; kwargs...))

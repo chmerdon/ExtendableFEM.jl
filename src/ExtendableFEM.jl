@@ -1,7 +1,6 @@
 module ExtendableFEM
 
 using ExtendableFEMBase
-export evaluate!
 using ExtendableSparse
 using ExtendableGrids
 using SparseArrays
@@ -13,7 +12,6 @@ using GridVisualize
 using ForwardDiff
 using SparseDiffTools
 using DiffResults
-using UnicodePlots
 using Printf
 using DocStringExtensions
 
@@ -46,7 +44,6 @@ export addblock!, addblock_matmul!
 
 ## reexport stuff from GridVisualize
 export reveal, save
-
 
 include("io.jl")
 export print_convergencehistory
@@ -132,6 +129,7 @@ export scalarplot!
 export vectorplot!
 export plot, plot!
 export default_generateplots
+export plot_unicode
 
 @static if !isdefined(Base, :get_extension)
 	function __init__()

@@ -59,20 +59,11 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 			end
 		end
 	end
-	if SC.parameters[:verbosity] > -1
-		@info "SOLVING $(PD.name) @ time = $(SC.parameters[:time])
-			unknowns = $([u.name for u in unknowns])
-			fetypes = $(["$(get_FEType(FES[j]))" for j = 1 : length(unknowns)])
-			ndofs = $([FES[j].ndofs for j = 1 : length(unknowns)])"
-	end
-
-	if SC.parameters[:verbosity] > 0 || SC.parameters[:show_config]
-		@info "\n$(SC)"
-	end
 
 	A = SC.A
 	b = SC.b
 	sol = SC.sol
+	soltemp = SC.tempsol
 	residual = SC.res
 	method_linear = SC.parameters[:method_linear]
 	precon_linear = SC.parameters[:precon_linear]
@@ -87,6 +78,26 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 	nltol = SC.parameters[:target_residual]
 	is_linear = SC.parameters[:is_linear]
 	damping = SC.parameters[:damping]
+	freedofs = SC.freedofs
+
+
+	if SC.parameters[:verbosity] > -1
+		if length(freedofs) > 0
+		@info "SOLVING $(PD.name) @ time = $(SC.parameters[:time])
+			unknowns = $([u.name for u in unknowns])
+			fetypes = $(["$(get_FEType(FES[j]))" for j = 1 : length(unknowns)])
+			ndofs = $([FES[j].ndofs for j = 1 : length(unknowns)]) (restricted to $(length.(SC.parameters[:restrict_dofs])))"
+		else
+			@info "SOLVING $(PD.name) @ time = $(SC.parameters[:time])
+				unknowns = $([u.name for u in unknowns])
+				fetypes = $(["$(get_FEType(FES[j]))" for j = 1 : length(unknowns)])
+				ndofs = $([FES[j].ndofs for j = 1 : length(unknowns)])"
+		end
+	end
+
+	if SC.parameters[:verbosity] > 0 || SC.parameters[:show_config]
+		@info "\n$(SC)"
+	end
 
 	## check if problem is (non)linear
 	nonlinear = false
@@ -239,7 +250,11 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 							fill!(residual[j], 0)
 						end
 					end
-					nlres = norm(residual.entries)
+					if length(freedofs) > 0
+						nlres = norm(residual.entries[freedofs])
+					else
+						nlres = norm(residual.entries)
+					end
 					if SC.parameters[:verbosity] > 0
 						@info norms(residual)
 					end
@@ -293,19 +308,32 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 		time_solve = @elapsed begin
 			allocs_solve = @allocated begin
 				if !SC.parameters[:constant_matrix] || !SC.parameters[:initialized]
-					linsolve.A = A.entries.cscmatrix
+					if length(freedofs) > 0
+						linsolve.A = A.entries.cscmatrix[freedofs, freedofs]
+					else
+						linsolve.A = A.entries.cscmatrix
+					end
 				end
 				if !SC.parameters[:constant_rhs] || !SC.parameters[:initialized]
-					linsolve.b = b.entries
+					if length(freedofs) > 0
+						linsolve.b = b.entries[freedofs]
+					else
+						linsolve.b = b.entries
+					end
 				end
 				SC.parameters[:initialized] = true
 
 				## solve
-				push!(stats[:matrix_nnz], nnz(A.entries.cscmatrix))
+				push!(stats[:matrix_nnz], nnz(linsolve.A))
 				x = LinearSolve.solve!(linsolve)
 
-				fill!(residual.entries, 0)
-				mul!(residual.entries, A.entries.cscmatrix, x.u)
+				## check linear residual with full matrix
+				if length(freedofs) > 0
+					soltemp.entries[freedofs] .= x.u
+					residual.entries .= A.entries.cscmatrix * soltemp.entries
+				else
+					residual.entries .= A.entries.cscmatrix * x.u
+				end
 				residual.entries .-= b.entries
 				for op in PD.operators
 					for dof in fixed_dofs(op)
@@ -314,21 +342,26 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 						end
 					end
 				end
-				#@info residual.entries, norms(residual)
 				linres = norm(residual.entries)
 				push!(stats[:linear_residuals], linres)
 				if is_linear
 					push!(stats[:nonlinear_residuals], linres)
 				end
+
+				## update solution (incl. damping etc.)
 				offset = 0
-				for u in unknowns
-					ndofs_u = length(view(sol[u]))
-					if damping > 0
-						view(sol[u]) .= damping * view(sol[u]) + (1 - damping) * view(x.u, offset+1:offset+ndofs_u)
-					else
-						view(sol[u]) .= view(x.u, offset+1:offset+ndofs_u)
+				if length(freedofs) > 0
+					sol.entries[freedofs] .= x.u
+				else
+					for u in unknowns
+						ndofs_u = length(view(sol[u]))
+						if damping > 0
+							view(sol[u]) .= damping * view(sol[u]) + (1 - damping) * view(x.u, offset+1:offset+ndofs_u)
+						else
+							view(sol[u]) .= view(x.u, offset+1:offset+ndofs_u)
+						end
+						offset += ndofs_u
 					end
-					offset += ndofs_u
 				end
 			end
 		end
@@ -537,7 +570,7 @@ function iterate_until_stationarity(
 						reltol = SC.parameters[:reltol]
 						LP = SC.LP
 						if precon_linear !== nothing
-							linsolve = LinearSolve.init(LP, method_linear; Pl = precon_linear(A.entries.cscmatrix), abstol = abstol, reltol = reltol)
+							linsolve = LinearSolve.init(LP, method_linear; Pl = precon_linear(linsolve.A), abstol = abstol, reltol = reltol)
 						else
 							linsolve = LinearSolve.init(LP, method_linear; abstol = abstol, reltol = reltol)
 						end

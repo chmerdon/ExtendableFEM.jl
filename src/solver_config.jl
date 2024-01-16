@@ -15,7 +15,9 @@ mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	A::AT					## stores system matrix
 	b::bT					## stores right-hand side
 	sol::xT					## stores solution
+	tempsol::xT				## temporary solution
 	res::xT
+	freedofs::Vector{Int}	## stores indices of free dofs
 	LP::LinearProblem
 	statistics::Dict{Symbol, Vector{Real}}
 	linsolver::Any
@@ -41,6 +43,7 @@ default_solver_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:init => (nothing, "initial solution (also used to save the new solution)"),
 	:spy => (false, "show unicode spy plot of system matrix during solve"),
 	:symmetrize => (false, "make system matrix symmetric (replace by (A+A')/2)"),
+	:restrict_dofs => ([], "array of dofs for each unknown that should be solved (default: all dofs)"),
 	:check_matrix => (false, "check matrix for symmetry and positive definiteness and largest/smallest eigenvalues"),
 	:verbosity => (0, "verbosity level"),
 	:show_config => (false, "show configuration at the beginning of solve"),
@@ -115,9 +118,14 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 	for FE in FES
 		push!(offsets, FE.ndofs + offsets[end])
 	end
+
+	## storage for full system
 	FES_active = FES[1:length(unknowns)]
 	A = FEMatrix{TvM, TiM}(FES_active)
 	b = FEVector{bT}(FES_active; tags = unknowns)
+	res = deepcopy(b)
+
+	## initialize solution vector
 	if parameters[:init] === nothing
 		names = [u.name for u in unknowns]
 		append!(names, ["N.N." for j ∈ length(unknowns)+1:length(FES)])
@@ -127,7 +135,25 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 		x = parameters[:init]
 		unknown_ids_in_sol = [findfirst(==(u), x.tags) for u in unknowns]
 	end
-	res = deepcopy(b)
-	LP = LinearProblem(A.entries.cscmatrix, b.entries)
-	return SolverConfiguration{typeof(A), typeof(b), typeof(x)}(Problem, A, b, x, res, LP, default_statistics(), nothing, unknown_ids_in_sol, unknowns, copy(unknowns), offsets, parameters)
+
+	## adjustments for using freedofs
+	if length(parameters[:restrict_dofs]) > 0
+		freedofs = Vector{Int}(parameters[:restrict_dofs][1])
+		for j = 2 : length(parameters[:restrict_dofs])
+			parameters[:restrict_dofs][j] .+= FES[j-1].ndofs
+			append!(freedofs, parameters[:restrict_dofs][j])
+		end
+		x_temp = deepcopy(b)
+	else
+		freedofs = []
+		x_temp = x
+	end
+
+	## construct linear problem
+	if length(freedofs) > 0
+		LP = LinearProblem(A.entries.cscmatrix[freedofs,freedofs], b.entries[freedofs])
+	else
+		LP = LinearProblem(A.entries.cscmatrix, b.entries)
+	end
+	return SolverConfiguration{typeof(A), typeof(b), typeof(x)}(Problem, A, b, x, x_temp, res, freedofs, LP, default_statistics(), nothing, unknown_ids_in_sol, unknowns, copy(unknowns), offsets, parameters)
 end
