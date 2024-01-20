@@ -65,6 +65,11 @@ function Base.show(io::IO, O::LinearOperator)
 	print(io, "$(O.parameters[:name])($([test_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]))")
 	return nothing
 end
+function Base.show(io::IO, O::Union{LinearOperatorFromVector, LinearOperatorFromMatrix})
+	dependencies = dependencies_when_linearized(O)
+	print(io, "$(O.parameters[:name])")
+	return nothing
+end
 
 function LinearOperator(kernel, u_test, ops_test, u_args, ops_args; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_linop_kwargs())

@@ -3,14 +3,13 @@
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/dev/index.html)
 
 # ExtendableFEM
-High Level API Finite Element Methods based on ExtendableGrids and ExtendableFEMBase. 
-It offers a ProblemDescription interface, that basically involves assigning Unknowns and Operators. Such operators usually stem from a weak formulation of the problem
-and mainly consist of three types that can be customized via kernel functions:
+High Level API Finite Element Methods based on [ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl) (for grid management)
+and [ExtendableFEMBase.jl](https://github.com/chmerdon/ExtendableFEMBase.jl) (for finite element basis functions and dof management). 
+It offers a ProblemDescription interface, that basically involves assigning Unknowns and Operators. Such operators usually stem from a weak formulation of the problem and mainly consist of three types that can be customized via kernel functions:
 
 - BilinearOperator,
 - LinearOperator,
-- NonlinearOperator (that automatically assemble Newton method by automatic differentiation)
-
+- NonlinearOperator (that automatically assemble Newton's method by automatic differentiation)
 
 ### Quick Example
 

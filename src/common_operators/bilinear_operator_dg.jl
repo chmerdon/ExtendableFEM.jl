@@ -226,7 +226,7 @@ function BilinearOperatorDG(kernel::Function, oa_test::Array{<:Tuple{Union{Unkno
 	return BilinearOperatorDG(kernel, u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args; kwargs...)
 end
 
-function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0) where {Tv}
+function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0, kwargs...) where {Tv}
 	## check if FES is the same as last time
 	FES_test = [getFEStest(FE_test[j]) for j ∈ 1:length(FE_test)]
 	FES_ansatz = [getFESansatz(FE_ansatz[j]) for j ∈ 1:length(FE_ansatz)]
@@ -590,7 +590,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 	end
 end
 
-function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time = 0.0) where {Tv}
+function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time = 0.0, kwargs...) where {Tv}
 	## check if FES is the same as last time
 	FES_test = [getFEStest(FE_test[j]) for j ∈ 1:length(FE_test)]
 	FES_ansatz = [getFESansatz(FE_ansatz[j]) for j ∈ 1:length(FE_ansatz)]
@@ -939,10 +939,10 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorDG{Tv, UT}, SC::S
 		ind_args = [findfirst(==(u), sol.tags) for u in O.u_args] #[get_unknown_id(SC, u) for u in O.u_args]
 	end
 	if length(O.u_args) > 0
-		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz], [sol[j] for j in ind_args])
+		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz], [sol[j] for j in ind_args]; kwargs...)
 		O.assembler(A.entries, b.entries, [sol[j] for j in ind_args])
 	else
-		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz])
+		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz]; kwargs...)
 		O.assembler(A.entries, b.entries)
 	end
 end
@@ -956,10 +956,10 @@ function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperatorDG{Tv, UT}, sol
 	ind_ansatz = O.u_ansatz
 	ind_args = O.u_args
 	if length(O.u_args) > 0
-		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz], [sol[j] for j in ind_args])
+		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz], [sol[j] for j in ind_args]; kwargs...)
 		O.assembler(A.entries, [sol[j] for j in ind_args])
 	else
-		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz])
+		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz]; kwargs...)
 		O.assembler(A.entries, nothing)
 	end
 end

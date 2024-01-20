@@ -51,7 +51,7 @@ end
 
 function Base.show(io::IO, O::LinearOperatorDG)
 	dependencies = dependencies_when_linearized(O)
-	print(io, "$(O.parameters[:name])($([test_function(dependencies[2][j]) for j = 1 : length(dependencies[2])]); entities = $(O.parameters[:entities])))")
+	print(io, "$(O.parameters[:name])($([test_function(dependencies[1][j]) for j = 1 : length(dependencies[1])]))")
 	return nothing
 end
 
@@ -191,7 +191,7 @@ function LinearOperatorDG(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown
 	return LinearOperatorDG(kernel, u_test, ops_test, u_args, ops_args; kwargs...)
 end
 
-function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0) where {Tv}
+function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0, kwargs...) where {Tv}
 	## check if FES is the same as last time
 	FES_test = [getFEStest(FE_test[j]) for j ∈ 1:length(FE_test)]
 	FES_args = [FE_args[j].FES for j ∈ 1:length(FE_args)]
@@ -458,10 +458,15 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 			end
 		end
 		O.assembler = assembler
+	else
+		## update the time
+		for j = 1 : length(O.QP_infos)
+			O.QP_infos[j].time = time
+		end
 	end
 end
 
-function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0) where {Tv}
+function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwargs...) where {Tv}
 	## check if FES is the same as last time
 	FES_test = [getFEStest(FE_test[j]) for j ∈ 1:length(FE_test)]
 
@@ -700,10 +705,10 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorDG{Tv, UT}, SC::Sol
 		ind_args = [findfirst(==(u), sol.tags) for u in O.u_args] #[get_unknown_id(SC, u) for u in O.u_args]
 	end
 	if length(O.u_args) > 0
-		build_assembler!(b.entries, O, [b[j] for j in ind_test], [sol[j] for j in ind_args])
+		build_assembler!(b.entries, O, [b[j] for j in ind_test], [sol[j] for j in ind_args]; kwargs...)
 		O.assembler(b.entries, [sol[j] for j in ind_args])
 	else
-		build_assembler!(b.entries, O, [b[j] for j in ind_test])
+		build_assembler!(b.entries, O, [b[j] for j in ind_test]; kwargs...)
 		O.assembler(b.entries)
 	end
 end
@@ -716,10 +721,10 @@ function ExtendableFEM.assemble!(b, O::LinearOperatorDG{Tv, UT}, sol = nothing; 
 	ind_test = O.u_test
 	ind_args = O.u_args
 	if length(O.u_args) > 0
-		build_assembler!(b.entries, O, [b[j] for j in ind_test], [sol[j] for j in ind_args])
+		build_assembler!(b.entries, O, [b[j] for j in ind_test], [sol[j] for j in ind_args]; kwargs...)
 		O.assembler(b.entries, [sol[j] for j in ind_args])
 	else
-		build_assembler!(b.entries, O, [b[j] for j in ind_test])
-		O.assembler(b.entries, nothing)
+		build_assembler!(b.entries, O, [b[j] for j in ind_test]; kwargs...)
+		O.assembler(b.entries)
 	end
 end
