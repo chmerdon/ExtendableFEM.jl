@@ -28,7 +28,6 @@ using Test #hide
 ## define unknowns
 σ = Unknown("σ"; name = "pseudostress")
 u = Unknown("u"; name = "potential")
-p = Unknown("p"; name = "LM hdiv continuity") # only_used if hdivdg == true
 
 ## bilinearform kernel for mixed Poisson problem
 function blf!(result, u_ops, qpinfo)
@@ -51,17 +50,12 @@ function boundarydata!(result, qpinfo)
 	return nothing
 end
 
-function main(; nrefs = 5, μ = 0.25, hdivdg = false, Plotter = nothing, kwargs...)
+function main(; nrefs = 5, μ = 0.25, order = 0, Plotter = nothing, kwargs...)
 
 	## problem description
 	PD = ProblemDescription()
 	assign_unknown!(PD, u)
 	assign_unknown!(PD, σ)
-	if hdivdg
-		assign_unknown!(PD, p)
-		assign_operator!(PD, BilinearOperator([jump(normalflux(σ))], [id(p)]; transposed_copy = 1, entities = ON_IFACES, kwargs...))
-		assign_operator!(PD, HomogeneousData(p; regions = 1:4))
-	end
 	assign_operator!(PD, BilinearOperator(blf!, [id(σ), div(σ), id(u)]; params = [μ], kwargs...))
 	assign_operator!(PD, LinearOperator(boundarydata!, [normalflux(σ)]; entities = ON_BFACES, regions = 1:4, kwargs...))
 	assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
@@ -69,9 +63,8 @@ function main(; nrefs = 5, μ = 0.25, hdivdg = false, Plotter = nothing, kwargs.
 
 	## discretize
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
-	FES = Dict(u => FESpace{L2P0{1}}(xgrid),
-		σ => FESpace{HDIVRT0{2}}(xgrid; broken = hdivdg),
-		p => hdivdg ? FESpace{L2P0{1}, ON_FACES}(xgrid) : nothing)
+	FES = Dict(u => FESpace{order == 0 ? L2P0{1} : H1Pk{1,2,order}}(xgrid; broken = true),
+		σ => FESpace{HDIVRTk{2, order}}(xgrid))
 
 	## solve
 	sol = ExtendableFEM.solve(PD, FES; kwargs...)
@@ -84,7 +77,7 @@ end
 
 generateplots = default_generateplots(Example202_MixedPoissonProblem, "example202.svg") #hide
 function runtests() #hide
-	sol, plt = main(; μ = 0.25, nrefs = 2) #hide	
+	sol, plt = main(; μ = 0.25, order = 0, nrefs = 2) #hide	
 	@test maximum(view(sol[1])) ≈ 0.08463539106946043 #hide
 end #hide
 end # module
