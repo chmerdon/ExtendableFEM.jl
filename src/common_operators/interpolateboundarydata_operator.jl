@@ -79,10 +79,11 @@ function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0
 	bfaces::Array{Int,1} = O.bfaces
 	if O.FES !== FES
 		bddata = FEVector(FES)
-		Ti = eltype(FES.xgrid[CellNodes])
+		xgrid = FES.dofgrid
+		Ti = eltype(xgrid[CellNodes])
 		bfacedofs::Adjacency{Ti} = FES[BFaceDofs]
-		bfacefaces = FES.xgrid[BFaceFaces]
-		bfaceregions = FES.xgrid[BFaceRegions]
+		bfacefaces = xgrid[BFaceFaces]
+		bfaceregions = xgrid[BFaceRegions]
 		nbfaces = num_sources(bfacedofs)
 		ndofs4bface = max_num_targets_per_source(bfacedofs)
 		bdofs = []
@@ -107,7 +108,8 @@ function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0
 		bfaces = O.bfaces
 		if FES.broken
 			FEType = eltype(FES)
-			FESc = FESpace{FEType}(FES.xgrid)
+			xgrid = FES.dofgrid
+			FESc = FESpace{FEType}(xgrid)
 			Targetc = FEVector(FESc)
 			interpolate!(Targetc[1], FESc, ON_FACES, data; items = bfaces, time = time, params = O.parameters[:params], bonus_quadorder = O.parameters[:bonus_quadorder])
 			bfacedofs = FES[BFaceDofs]

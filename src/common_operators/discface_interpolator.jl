@@ -72,9 +72,11 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 			@info ".... building assembler for $(O.parameters[:name])"
 		end
 
+		## determine grid
+		xgrid = determine_assembly_grid(FES_args)
+
 		## prepare assembly
 		AT = ON_CELLS
-		xgrid = FES_args[1].xgrid
 		Ti = typeof(xgrid).parameters[2]
 		itemassemblygroups = xgrid[CellAssemblyGroups]
 		itemgeometries = xgrid[CellGeometries]
@@ -151,7 +153,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 		#A = FEMatrix(FES_target, FES_target)
 
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j ∈ 1:nargs]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j ∈ 1:nargs]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
 		facedofs_target::Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}} = FES_target[CellDofs]
 
 		O.FES_args = FES_args

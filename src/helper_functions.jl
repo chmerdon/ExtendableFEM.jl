@@ -157,3 +157,56 @@ function get_periodic_coupling_info(
 
 	return dofsX, dofsY, factors
 end
+
+## determines a common assembly grid for the given arrays of finite element spaces
+function determine_assembly_grid(FES_test, FES_ansatz = [], FES_args = [])
+	xgrid = FES_test[1].xgrid
+	dofgrid = FES_test[1].dofgrid
+	all_same_xgrid = true
+	all_same_dofgrid = true
+	for j = 2 : length(FES_test)
+		if xgrid !== FES_test[j].xgrid
+			all_same_xgrid = false
+		end
+		if dofgrid !== FES_test[j].dofgrid
+			all_same_dofgrid = false
+		end
+	end
+	for j = 1 : length(FES_ansatz)
+		if xgrid !== FES_ansatz[j].xgrid
+			all_same_xgrid = false
+		end
+		if dofgrid !== FES_ansatz[j].dofgrid
+			all_same_dofgrid = false
+		end
+	end
+	for j = 1 : length(FES_args)
+		if xgrid !== FES_args[j].xgrid
+			all_same_xgrid = false
+		end
+		if dofgrid !== FES_args[j].dofgrid
+			all_same_dofgrid = false
+		end
+	end
+	if all_same_dofgrid
+		return dofgrid
+	elseif all_same_xgrid
+		return xgrid
+	else
+		@warn "detected non-matching grids for involved finite element spaces, trying assembly on grid of first testfunction argument"
+		return xgrid
+	end
+	return xgrid
+end
+
+## gets the dofmap for the FESpace FES fr the assemblygrid xgrid and the assembly type AT
+function get_dofmap(FES, xgrid, AT)
+	DM = Dofmap4AssemblyType(AT)
+	if FES.dofgrid !== xgrid && FES.xgrid !== xgrid
+		@warn "warning assembly grid does neither match FES dofgrid or parent grid!"
+		return FES[DM]
+	end	
+	FES[DM]
+	return FES.dofgrid === xgrid ? FES[DM] : FES[ParentDofmap4Dofmap(DM)]
+end
+

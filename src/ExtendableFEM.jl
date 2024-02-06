@@ -51,7 +51,7 @@ export print_table
 
 include("unknowns.jl")
 export Unknown
-export grid
+export grid, dofgrid
 export id, grad, hessian, div, normalflux, Δ, apply, curl1, curl2, curl3, laplace
 export id_jump, grad_jump, normalflux_jump
 

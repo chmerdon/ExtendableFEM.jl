@@ -1,7 +1,7 @@
 name = "ExtendableFEM"
 uuid = "a722555e-65e0-4074-a036-ca7ce79a4aed"
 authors = ["Christian Merdon <merdon@wias-berlin.de>"]
-version = "0.2.0"
+version = "0.3.0"
 
 [deps]
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
@@ -30,8 +30,8 @@ ExtendableFEMDiffEQExt = "DifferentialEquations"
 CommonSolve = "0.2"
 DiffResults = "1"
 DocStringExtensions = "0.8,0.9"
-ExtendableFEMBase = "^0.2, 0.3"
-ExtendableGrids = "1.0"
+ExtendableFEMBase = "^0.3.1, 0.4"
+ExtendableGrids = "1.3"
 ExtendableSparse = "1.2"
 ForwardDiff = "^0.10.35"
 GridVisualize = "1.5"

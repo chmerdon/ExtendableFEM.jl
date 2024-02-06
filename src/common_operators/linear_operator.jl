@@ -249,9 +249,11 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 			@info ".... building assembler for $(O.parameters[:name])"
 		end
 
+		## determine grid
+		xgrid = determine_assembly_grid(FES_test, FES_args)
+
 		## prepare assembly
 		AT = O.parameters[:entities]
-		xgrid = FES_test[1].xgrid
 		Ti = typeof(xgrid).parameters[2]
 		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
@@ -322,14 +324,14 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 		if O.parameters[:parallel_groups]
 			bj = Array{typeof(b), 1}(undef, length(EGs))
 			for j ∈ 1:length(EGs)
-				bj[j] = deepcopy(b)
+				bj[j] = copy(b)
 			end
 		end
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j ∈ 1:ntest]
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j ∈ 1:nargs]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j ∈ 1:ntest]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j ∈ 1:nargs]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
@@ -451,9 +453,11 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 			@info ".... building assembler for $(O.parameters[:name])"
 		end
 
+		## determine grid
+		xgrid = determine_assembly_grid(FES_test)
+
 		## prepare assembly
 		AT = O.parameters[:entities]
-		xgrid = FES_test[1].xgrid
 		Ti = typeof(xgrid).parameters[2]
 		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
@@ -512,12 +516,12 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 		if O.parameters[:parallel_groups]
 			bj = Array{typeof(b), 1}(undef, length(EGs))
 			for j ∈ 1:length(EGs)
-				bj[j] = deepcopy(b)
+				bj[j] = copy(b)
 			end
 		end
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j ∈ 1:ntest]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j ∈ 1:ntest]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry

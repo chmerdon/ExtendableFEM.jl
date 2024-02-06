@@ -194,7 +194,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				#         for op in PD.reduction_operators
 				#             allocs_assembly += @allocated LP_reduced, A, b = apply!(LP_reduced, op, SC; kwargs...)
 				#         end    
-				#         residual = deepcopy(b)
+				#         residual = copy(b)
 				#     end
 				# end
 
@@ -448,7 +448,7 @@ function iterate_until_stationarity(
 			@assert u in all_unknowns "did not found unknown $u in init vector (tags missing?)"
 		end
 		FES = [[init[u].FES for u in unknowns[j]] for j ∈ 1:nPDs]
-		sol = deepcopy(init)
+		sol = copy(init)
 		sol.tags .= init.tags
 	else
 		all_unknowns = []

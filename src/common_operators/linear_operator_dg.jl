@@ -201,10 +201,12 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 			@info ".... building assembler for $(O.parameters[:name])"
 		end
 
+		## determine grid
+		xgrid = determine_assembly_grid(FES_test, FES_args)
+
 		## prepare assembly
 		AT = O.parameters[:entities]
 		@assert AT <: ON_FACES  || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
-		xgrid = FES_test[1].xgrid
         if AT <: ON_BFACES
             AT = ON_FACES
             bfaces = xgrid[BFaceFaces]
@@ -292,16 +294,16 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 
 		## prepare parallel assembly
 		if O.parameters[:parallel_groups]
-			Aj = Array{typeof(A), 1}(undef, length(EGs))
+			bj = Array{typeof(b), 1}(undef, length(EGs))
 			for j ∈ 1:length(EGs)
-				Aj[j] = deepcopy(A)
+				bj[j] = copy(b)
 			end
 		end
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j ∈ 1:ntest]
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), ON_CELLS) for j ∈ 1:nargs]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j ∈ 1:ntest]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j ∈ 1:nargs]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
@@ -475,10 +477,13 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 		if O.parameters[:verbosity] > 0
 			@info ".... building assembler for $(O.parameters[:name])"
 		end
+
+		## determine grid
+		xgrid = determine_assembly_grid(FES_test)
+
 		## prepare assembly
 		AT = O.parameters[:entities]
 		@assert AT <: ON_FACES  || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
-		xgrid = FES_test[1].xgrid
         if AT <: ON_BFACES
             AT = ON_FACES
             bfaces = xgrid[BFaceFaces]
@@ -554,14 +559,14 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 
 		## prepare parallel assembly
 		if O.parameters[:parallel_groups]
-			Aj = Array{typeof(A), 1}(undef, length(EGs))
+			bj = Array{typeof(b), 1}(undef, length(EGs))
 			for j ∈ 1:length(EGs)
-				Aj[j] = deepcopy(A)
+				bj[j] = copy(b)
 			end
 		end
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j ∈ 1:ntest]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j ∈ 1:ntest]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry

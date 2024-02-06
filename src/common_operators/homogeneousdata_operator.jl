@@ -68,18 +68,19 @@ end
 function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs...) where {UT,AT}
 	if O.FES !== FES
 		regions = O.parameters[:regions]
+		xgrid = FES.dofgrid
 		if AT <: ON_BFACES
 			itemdofs = FES[ExtendableFEMBase.BFaceDofs]
-			itemregions = FES.xgrid[BFaceRegions]
-			uniquegeometries = FES.xgrid[UniqueBFaceGeometries]
+			itemregions = xgrid[BFaceRegions]
+			uniquegeometries = xgrid[UniqueBFaceGeometries]
 		elseif AT <: ON_CELLS
 			itemdofs = FES[ExtendableFEMBase.CellDofs]
-			itemregions = FES.xgrid[CellRegions]
-			uniquegeometries = FES.xgrid[UniqueCellGeometries]
+			itemregions = xgrid[CellRegions]
+			uniquegeometries = xgrid[UniqueCellGeometries]
 		elseif AT <: ON_FACES
 			itemdofs = FES[ExtendableFEMBase.FaceDofs]
-			itemregions = FES.xgrid[FaceRegions]
-			uniquegeometries = FES.xgrid[UniqueFaceGeometries]
+			itemregions = xgrid[FaceRegions]
+			uniquegeometries = xgrid[UniqueFaceGeometries]
 		end
 		nitems = num_sources(itemdofs)
 		ndofs4item = max_num_targets_per_source(itemdofs)

@@ -123,7 +123,7 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 	FES_active = FES[1:length(unknowns)]
 	A = FEMatrix{TvM, TiM}(FES_active)
 	b = FEVector{bT}(FES_active; tags = unknowns)
-	res = deepcopy(b)
+	res = copy(b)
 
 	## initialize solution vector
 	if parameters[:init] === nothing
@@ -144,7 +144,7 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 				parameters[:restrict_dofs][j] .+= FES[j-1].ndofs
 				append!(freedofs, parameters[:restrict_dofs][j])
 			end
-			x_temp = deepcopy(b)
+			x_temp = copy(b)
 		else
 			freedofs = []
 			x_temp = x

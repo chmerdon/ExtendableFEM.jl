@@ -294,9 +294,11 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 			@info ".... building assembler for $(O.parameters[:name])"
 		end
 
+		## determine grid
+		xgrid = determine_assembly_grid(FES_test, FES_ansatz, FES_args)
+
 		## prepare assembly
 		AT = O.parameters[:entities]
-		xgrid = FES_test[1].xgrid
 		Ti = typeof(xgrid).parameters[2]
 		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
 		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
@@ -404,16 +406,16 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 		if O.parameters[:parallel_groups]
 			Aj = Array{typeof(A), 1}(undef, length(EGs))
 			for j ∈ 1:length(EGs)
-				Aj[j] = deepcopy(A)
+				Aj[j] = copy(A)
 			end
 		end
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j ∈ 1:ntest]
 		FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), AT) for j ∈ 1:nansatz]
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j ∈ 1:nargs]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j ∈ 1:ntest]
-		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_ansatz[j][Dofmap4AssemblyType(FEATs_ansatz[j])] for j ∈ 1:nansatz]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_args[j][Dofmap4AssemblyType(FEATs_args[j])] for j ∈ 1:nargs]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
+		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_ansatz[j], xgrid, FEATs_ansatz[j]) for j = 1 : nansatz]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
 		factor = O.parameters[:factor]
 		transposed_copy = O.parameters[:transposed_copy]
 		entry_tol = O.parameters[:entry_tolerance]
@@ -613,9 +615,12 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 				@info "...... ANSATZ : $([(get_FEType(FES_ansatz[j]), O.ops_ansatz[j]) for j = 1 : nansatz])"
 			end
 		end
+
+		## determine grid
+		xgrid = determine_assembly_grid(FES_test, FES_ansatz)
+
 		## prepare assembly
 		AT = O.parameters[:entities]
-		xgrid = FES_test[1].xgrid
 		Ti = typeof(xgrid).parameters[2]
 		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
 		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
@@ -712,14 +717,14 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 		if O.parameters[:parallel_groups]
 			Aj = Array{typeof(A), 1}(undef, length(EGs))
 			for j ∈ 1:length(EGs)
-				Aj[j] = deepcopy(A)
+				Aj[j] = copy(A)
 			end
 		end
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j ∈ 1:ntest]
 		FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), AT) for j ∈ 1:nansatz]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_test[j][Dofmap4AssemblyType(FEATs_test[j])] for j ∈ 1:ntest]
-		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [FES_ansatz[j][Dofmap4AssemblyType(FEATs_ansatz[j])] for j ∈ 1:nansatz]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
+		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_ansatz[j], xgrid, FEATs_ansatz[j]) for j = 1 : nansatz]
 		factor = O.parameters[:factor]
 		transposed_copy = O.parameters[:transposed_copy]
 		entry_tol = O.parameters[:entry_tolerance]
@@ -755,6 +760,10 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 			for item::Int in items
 				if itemregions[item] > 0
 					if !(visit_region[itemregions[item]]) || AT == ON_IFACES
+						continue
+					end
+				else
+					if length(regions) > 0
 						continue
 					end
 				end
@@ -820,7 +829,6 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 				for id ∈ 1:nansatz, idt in couples_with[id]
 					Aloc[idt, id] .*= itemvolumes[item]
 					for j ∈ 1:ndofs_test[idt]
-
 						dof_j = itemdofs_test[idt][j, item] + offsets_test[idt]
 						for k ∈ 1:ndofs_ansatz[id]
 							dof_k = itemdofs_ansatz[id][k, item] + offsets_ansatz[id]

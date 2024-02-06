@@ -80,6 +80,7 @@ ExtendableFEMBase.div(u) = (u, Divergence)
 normalflux(u) = (u, NormalFlux)
 
 grid(u) = (u, "grid")
+dofgrid(u) = (u, "dofgrid")
 
 Δ(u) = (u, Laplacian)
 apply(u, FO::Type{<:AbstractFunctionOperator}) = (u, FO)
