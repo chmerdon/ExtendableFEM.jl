@@ -31,11 +31,7 @@ Each column of the plot shows the solution, the subgrid it lives on. The last ro
 module Example206_CoupledSubGridProblems
 
 using ExtendableFEM
-using ExtendableFEMBase
 using ExtendableGrids
-using ExtendableSparse
-using GridVisualize
-using UnicodePlots
 using Test #
 
 
