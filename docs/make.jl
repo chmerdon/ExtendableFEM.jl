@@ -23,6 +23,7 @@ function make_all(; with_examples::Bool = true, run_examples::Bool = true, run_n
 			"Example204_LaplaceEVProblem.jl",
 			"Example205_HeatEquation.jl",
 			"Example206_CoupledSubGridProblems.jl",
+			"Example207_AdvectionUpwindDG.jl",
 			"Example210_LshapeAdaptivePoissonProblem.jl",
 			"Example211_LshapeAdaptiveEQPoissonProblem.jl",
 			"Example220_ReactionConvectionDiffusion.jl",

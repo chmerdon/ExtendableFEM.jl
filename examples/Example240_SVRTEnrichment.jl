@@ -54,7 +54,7 @@ function prepare_data(; μ = 1)
 	@variables x y
 
 	## stream function ξ
-	ξ = -sin(2 * pi * x) * cos(2 * pi * y) / (2 * pi)
+	ξ = -sin(2 * pi * x) * cos(2 * pi * y)
 
 	## velocity u = curl ξ
 	∇ξ = Symbolics.gradient(ξ, [x, y])
@@ -120,7 +120,7 @@ function kernel_stokes_standard!(result, u_ops, qpinfo)
 	return nothing
 end
 
-function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, reduce = true, time = 0.5, bonus_quadorder = 5, kwargs...)
+function main(; nrefs = 5, μ = 1, α = 1, order = 2, Plotter = nothing, enrich = true, reduce = true, time = 0.5, bonus_quadorder = 5, kwargs...)
 
 	## prepare problem data
 	f_eval, u_eval, ∇u_eval, p_eval = prepare_data(; μ = μ)
@@ -152,7 +152,7 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
 		result .= result .^ 2
 	end
 	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u)]; quadorder = 2 * (order + 1), kwargs...)
-	ErrorIntegratorPressure = ItemIntegrator(exact_error_p!, [id(pfull)]; quadorder = 2 * (order + 1), kwargs...)
+	ErrorIntegratorPressure = ItemIntegrator(exact_error_p!, [order == 1 ? id(p0) : id(pfull)]; quadorder = 2 * (order + 1), kwargs...)
 	L2NormIntegratorE = L2NormIntegrator([id(uR)]; quadorder = 2 * order)
 	function kernel_div!(result, u, qpinfo)
 		result .= sum(u) .^ 2
@@ -203,7 +203,7 @@ function main(; nrefs = 5, μ = 1, order = 2, Plotter = nothing, enrich = true, 
 					AR = FEMatrix(FES_enrich)
 					BR = FEMatrix(FES[p], FES_enrich)
 					bR = FEVector(FES_enrich)
-					assemble!(AR, BilinearOperator([div(1)]; lump = true, factor = μ, kwargs...))
+					assemble!(AR, BilinearOperator([div(1)]; lump = true, factor = α*μ, kwargs...))
 					for bface in xgrid[BFaceFaces]
 						AR.entries[bface, bface] = 1e60
 					end
@@ -454,7 +454,7 @@ end
 generateplots = default_generateplots(Example240_SVRTEnrichment, "example240.svg") #hide
 function runtests(;) #hide
 	Results, plt = main(; nrefs = 2) #hide
-	@test Results[end,1] ≈ 0.015279978191548282 #hide
-	@test Results[end,5] < 2e-10 #hide
+	@test Results[end,1] ≈ 0.09600693353585522 #hide
+	@test Results[end,5] < 1e-9 #hide
 end #hide
 end # module

@@ -24,6 +24,7 @@ function run_examples()
 		"Example203_PoissonProblemDG.jl",
 		#"Example204_LaplaceEVProblem.jl",
 		"Example205_HeatEquation.jl",
+		"Example207_AdvectionUpwindDG.jl",
 		"Example210_LshapeAdaptivePoissonProblem.jl",
 		"Example211_LshapeAdaptiveEQPoissonProblem.jl",
 		"Example220_ReactionConvectionDiffusion.jl",

@@ -94,16 +94,15 @@ end
 
 generateplots = default_generateplots(Example206_CoupledSubGridProblems, "example206.svg") #hide
 
-
-function jump_l2norm!(result, u, qpinfo)
-    result[1] = (u[1] - u[2])^2
-end
+function jump_l2norm!(result, u, qpinfo) #hide
+    result[1] = (u[1] - u[2])^2 #hide
+end #hide
 function runtests() #hide
-    ## test if jump at interface vanishes for large penalty
+    ## test if jump at interface vanishes for large penalty #hide
 	sol, plt = main(; τ = 1e9, nrefs = 2, order = 2) #hide
-    jump_integrator = ItemIntegrator(jump_l2norm!, [id(1), id(2)]; entities = ON_BFACES, regions = [5], resultdim = 1, quadorder = 4)
-    jump_error = sqrt(sum(evaluate(jump_integrator, sol)))
-    @info "||[u_1 - u_2]|| = $(jump_error)"
+    jump_integrator = ItemIntegrator(jump_l2norm!, [id(1), id(2)]; entities = ON_BFACES, regions = [5], resultdim = 1, quadorder = 4) #hide
+    jump_error = sqrt(sum(evaluate(jump_integrator, sol))) #hide
+    @info "||[u_1 - u_2]|| = $(jump_error)" #hide
 	@test jump_error < 1e-8 #hide
 end #hide
 end #module

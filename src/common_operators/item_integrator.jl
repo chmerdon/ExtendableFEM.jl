@@ -139,8 +139,6 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 			visit_region .= true
 		end
 
-		## prepare parameters
-
 		## prepare operator infos
 		op_lengths_args = [size(O.BE_args[1][j].cvals, 1) for j ∈ 1:nargs]
 

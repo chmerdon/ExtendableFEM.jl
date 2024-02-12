@@ -123,6 +123,7 @@ function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs..
 		else
 			for item ∈ 1:nitems
 				if itemregions[item] in regions
+					ndofs4item = num_targets(itemdofs, item)
 					for k ∈ 1:ndofs4item
 						dof = itemdofs[k, item]
 						push!(bdofs, dof + offset)
