@@ -50,7 +50,7 @@ function prepare_data(; μ = 1)
 	return f_eval, u_eval, ∇u_eval[2]
 end
 
-function main(; dg = true, μ = 1.0, τ = 4.0, nrefs = 4, order = 2, bonus_quadorder = 2, Plotter = nothing, kwargs...)
+function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quadorder = 2, Plotter = nothing, kwargs...)
 
 	## prepare problem data
 	f_eval, u_eval, ∇u_eval = prepare_data(; μ = μ)
@@ -66,15 +66,6 @@ function main(; dg = true, μ = 1.0, τ = 4.0, nrefs = 4, order = 2, bonus_quado
 	assign_operator!(PD, LinearOperator(rhs!, [id(u)]; bonus_quadorder = bonus_quadorder, kwargs...))
 	assign_operator!(PD, InterpolateBoundaryData(u, exact_u!; bonus_quadorder = bonus_quadorder, regions = 1:4))
 
-	## prepare error calculation
-	function exact_error!(result, u, qpinfo)
-		exact_u!(result, qpinfo)
-		exact_∇u!(view(result, 2:3), qpinfo)
-		result .-= u
-		result .= result .^ 2
-	end
-	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u)]; quadorder = 2 * order, params = [μ], kwargs...)
-
 	## discretize
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
 	FES = FESpace{H1Pk{1, 2, order}}(xgrid; broken = dg)
@@ -89,12 +80,27 @@ function main(; dg = true, μ = 1.0, τ = 4.0, nrefs = 4, order = 2, bonus_quado
 	## solve
 	sol = solve(PD, FES; kwargs...)
 
+	## prepare error calculation
+	function exact_error!(result, u, qpinfo)
+		exact_u!(result, qpinfo)
+		exact_∇u!(view(result, 2:3), qpinfo)
+		result .-= u
+		result .= result .^ 2
+	end
+	function dgjumps!(result, u, qpinfo)
+		result .= u[1]^2/qpinfo.volume
+	end
+	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u)]; quadorder = 2 * order, params = [μ], kwargs...)
+	DGJumpsIntegrator = ItemIntegratorDG(dgjumps!, [jump(id(u))]; entities = ON_IFACES, kwargs...)
+
 	## calculate error
 	error = evaluate(ErrorIntegratorExact, sol)
+	dgjumps = sqrt(sum(evaluate(DGJumpsIntegrator, sol)))
 	L2error = sqrt(sum(view(error, 1, :)))
 	H1error = sqrt(sum(view(error, 2, :)) + sum(view(error, 3, :)))
 	@info "L2 error = $L2error"
 	@info "H1 error = $H1error"
+	@info "dgjumps = $dgjumps"
 
 	## plot
 	plt = plot([id(u), grad(u)], sol; Plotter = Plotter)

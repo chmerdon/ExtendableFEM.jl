@@ -622,7 +622,11 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 		## prepare assembly
 		AT = O.parameters[:entities]
 		Ti = typeof(xgrid).parameters[2]
-		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
+		if xgrid == FES_test[1].dofgrid
+			gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
+		else
+			gridAT = AT
+		end
 		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
