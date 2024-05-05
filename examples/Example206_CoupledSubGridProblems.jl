@@ -40,15 +40,20 @@ function boundary_conditions!(result, qpinfo)
 end
 
 function interface_condition!(result, u, qpinfo)
-    result[1] = -(u[2] - u[1])
+    result[1] = u[1] - u[2]
     result[2] = -result[1]
 end
 
+function interface_condition_LM!(result, u, qpinfo)
+    result[1] = (u[1] - u[2])
+end
 
-function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, nref = 4, order = 2, Plotter = nothing, kwargs...)
+
+function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, use_LM = true, nref = 4, order = 2, Plotter = nothing, kwargs...)
 
 	## Finite element type
 	FEType = H1Pk{1, 2, order}
+    FETypeLM = H1Pk{1, 1, order}
 
 	## generate mesh
 	xgrid = grid_unitsquare(Triangle2D)
@@ -68,10 +73,15 @@ function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, nref = 4, order = 2, Plott
     ## define an FESpace just on region 1 and one just on region 2
     FES1 = FESpace{FEType}(xgrid; regions = [1])
     FES2 = FESpace{FEType}(xgrid; regions = [2])
+    if use_LM
+        FES3 = FESpace{FETypeLM, ON_BFACES}(xgrid; regions = [5])
+        @show FES3.xgrid FES3.dofgrid
+    end
 
     ## define variables
     u1 = Unknown("u1"; name = "potential in region 1")
     u2 = Unknown("u2"; name = "potential in region 2")
+    p = Unknown("p"; name = "LM for interface condition")
 
     ## problem description
 	PD = ProblemDescription()
@@ -81,11 +91,16 @@ function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, nref = 4, order = 2, Plott
 	assign_operator!(PD, BilinearOperator([grad(u2)]; regions = [2], factor = μ[2], kwargs...))
     assign_operator!(PD, LinearOperator([id(u1)]; regions = [1], factor = f[1]))
     assign_operator!(PD, LinearOperator([id(u2)]; regions = [2], factor = f[2]))
-	assign_operator!(PD, BilinearOperator(interface_condition!, [id(u1), id(u2)]; regions = [5], factor = τ, entities = ON_FACES, kwargs...))
+    if use_LM
+        assign_unknown!(PD, p)
+        assign_operator!(PD, BilinearOperator(interface_condition_LM!, [id(p)], [id(u1), id(u2)]; regions = [5], transposed_copy = 1, entities = ON_BFACES, kwargs...))
+    else
+	    assign_operator!(PD, BilinearOperator(interface_condition!, [id(u1), id(u2)]; regions = [5], factor = τ, entities = ON_BFACES, kwargs...))
+    end
 	assign_operator!(PD, InterpolateBoundaryData(u1, boundary_conditions!; regions = 1:4))
 	assign_operator!(PD, InterpolateBoundaryData(u2, boundary_conditions!; regions = 1:4))
 
-    sol = solve(PD, [FES1, FES2])
+    sol = solve(PD, use_LM ? [FES1, FES2, FES3] : [FES1, FES2])
 
     plt = plot([id(u1), id(u2), dofgrid(u1), dofgrid(u2), grid(u1)], sol; Plotter = Plotter)
 

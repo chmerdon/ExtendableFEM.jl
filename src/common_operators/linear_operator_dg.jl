@@ -339,6 +339,11 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 			input_args = [zeros(T, op_offsets_args[end]) for j ∈ 1:nweights]
 
 			for item::Int in items
+				if itemregions[item] > 0
+					if !(visit_region[itemregions[item]]) || AT == ON_IFACES
+						continue
+					end
+				end
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
 				QPinfos.volume = itemvolumes[item]
@@ -370,7 +375,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 
 							for id ∈ 1:nargs
 								for j ∈ 1:ndofs_args[id]
-									dof_j = itemdofs_args[id][j, cell1] + offsets_args[id]
+									dof_j = itemdofs_args[id][j, cell1]
 									for d ∈ 1:op_lengths_args[id]
 										input_args[qp][d+op_offsets_args[id]] += sol[id][dof_j] * BE_args_vals[id][itempos1, orientation1][d, j, qp] * coeffs_ops_args[id][c1]
 									end
@@ -599,6 +604,11 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 			## got into neighbouring cells and evaluate each operator according to
 			## facepos and orientation
 			for item::Int in items
+				if itemregions[item] > 0
+					if !(visit_region[itemregions[item]]) || AT == ON_IFACES
+						continue
+					end
+				end
 
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item

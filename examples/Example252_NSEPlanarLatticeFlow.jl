@@ -3,7 +3,7 @@
 # 252 : Navier--Stokes Planar Lattice Flow
 ([source code](@__SOURCE_URL__))
 
-This example computes an approximation to the planar lattice flow test problem of the Stokes equations
+This example computes an approximation to the planar lattice flow test problem of the Navier-Stokes equations
 ```math
 \begin{aligned}
 - \nu \Delta \mathbf{u} + (\mathbf{u} \cdot \nabla) \mathbf{u} + \nabla p & = \mathbf{f}\\

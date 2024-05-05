@@ -13,6 +13,7 @@ using ForwardDiff
 using SparseDiffTools
 using DiffResults
 using Printf
+using UnicodePlots
 using DocStringExtensions
 
 if !isdefined(Base, :get_extension)
@@ -52,7 +53,7 @@ export print_table
 include("unknowns.jl")
 export Unknown
 export grid, dofgrid
-export id, grad, hessian, div, normalflux, Δ, apply, curl1, curl2, curl3, laplace
+export id, grad, hessian, div, normalflux, tangentialflux, Δ, apply, curl1, curl2, curl3, laplace, tangentialgrad
 export id_jump, grad_jump, normalflux_jump
 
 include("operators.jl")
@@ -96,6 +97,8 @@ include("common_operators/item_integrator.jl")
 export ItemIntegrator
 export evaluate, evaluate!
 export L2NormIntegrator
+include("common_operators/item_integrator_dg.jl")
+export ItemIntegratorDG
 include("common_operators/linear_operator.jl")
 export LinearOperator
 include("common_operators/linear_operator_dg.jl")

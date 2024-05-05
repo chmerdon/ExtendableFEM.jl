@@ -78,6 +78,8 @@ laplace(u) = (u, Laplacian)
 hessian(u) = (u, Hessian)
 ExtendableFEMBase.div(u) = (u, Divergence)
 normalflux(u) = (u, NormalFlux)
+tangentialflux(u) = (u, TangentFlux)
+tangentialgrad(u) = (u, TangentialGradient)
 
 grid(u) = (u, "grid")
 dofgrid(u) = (u, "dofgrid")

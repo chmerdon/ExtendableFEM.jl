@@ -723,6 +723,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j ∈ 1:ntest]
 		FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), AT) for j ∈ 1:nansatz]
+
 		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
 		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_ansatz[j], xgrid, FEATs_ansatz[j]) for j = 1 : nansatz]
 		factor = O.parameters[:factor]

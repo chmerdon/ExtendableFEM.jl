@@ -456,7 +456,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 
 							for id ∈ 1:nargs
 								for j ∈ 1:ndofs_args[id]
-									dof_j = itemdofs_args[id][j, cell1] + offsets_args[id]
+									dof_j = itemdofs_args[id][j, cell1]
 									for d ∈ 1:op_lengths_args[id]
 										input_args[qp][d+op_offsets_args[id]] += sol[id][dof_j] * BE_args_vals[id][itempos1, orientation1][d, j, qp] * coeffs_ops_args[id][c1]
 									end
@@ -608,7 +608,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 
 		## prepare assembly
 		AT = O.parameters[:entities]
-		@assert AT <: ON_FACES "only works for entities <: ON_FACES"
+		@assert AT <: ON_FACES  || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
 		Ti = typeof(xgrid).parameters[2]
 		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
 		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
