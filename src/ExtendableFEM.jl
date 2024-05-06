@@ -13,7 +13,6 @@ using ForwardDiff
 using SparseDiffTools
 using DiffResults
 using Printf
-using UnicodePlots
 using DocStringExtensions
 
 if !isdefined(Base, :get_extension)

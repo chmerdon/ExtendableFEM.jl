@@ -205,7 +205,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				if SC.parameters[:show_matrix]
 					@show A
 				elseif SC.parameters[:spy]
-					@info ".... spy plot of system matrix:\n$(UnicodePlots.spy(sparse(A.entries.cscmatrix)))"
+					@info ".... spy plot of system matrix:\n$(A.entries.cscmatrix))"
 				end
 				if SC.parameters[:check_matrix]
 					#λ, ϕ = Arpack.eigs(A.entries.cscmatrix; nev = 5, which = :SM, ritzvec = false)
