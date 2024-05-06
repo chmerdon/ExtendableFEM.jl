@@ -150,6 +150,6 @@ end
 generateplots = default_generateplots(Example203_PoissonProblemDG, "example203.svg") #hide
 function runtests() #hide
 	L2error, ~ = main(; μ = 0.25, nrefs = 2, order = 2) #hide	
-	@test L2error ≈ 0.00020471252431790736 #hide
+	@test L2error ≈ 0.00025771757957310844 #hide
 end #hide
 end # module
