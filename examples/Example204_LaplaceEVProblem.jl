@@ -38,11 +38,12 @@ function main(; which = 1:12, ncols = 3, nrefs = 4, order = 1, Plotter = nothing
 	B = FEMatrix(FES)
 	u = FEVector(FES; name = "u")
 	assemble!(A, BilinearOperator([grad(1)]; kwargs...))
-	assemble!(A, BilinearOperator([id(1)]; entities = ON_BFACES, factor = 1e5, kwargs...))
+	assemble!(A, BilinearOperator([id(1)]; entities = ON_BFACES, factor = 1e4, kwargs...))
 	assemble!(B, BilinearOperator([id(1)]; kwargs...))
 
 	## solver generalized eigenvalue problem iteratively with KrylovKit
-	λs, x, info = geneigsolve((A.entries, B.entries), maximum(which), :SR; maxiter = 2000, issymmetric = true, tol = 1e-8)
+	λs, x, info = geneigsolve((A.entries, B.entries), maximum(which), :SR; maxiter = 4000, issymmetric = true, tol = 1e-8)
+	@show info
 	@assert info.converged >= maximum(which)
 
 	## plot requested eigenvalue pairs
