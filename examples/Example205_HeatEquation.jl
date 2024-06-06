@@ -32,7 +32,7 @@ function initial_data!(result, qpinfo)
 end
 
 function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
-	solver = Rosenbrock23(autodiff = false), Plotter = nothing, kwargs...)
+	solver = ImplicitEuler(autodiff = false), Plotter = nothing, kwargs...)
 
 	## problem description
 	PD = ProblemDescription("Heat Equation")
