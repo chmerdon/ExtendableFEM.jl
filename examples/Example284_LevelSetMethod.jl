@@ -38,7 +38,7 @@ end
 
 ## everything is wrapped in a main function
 function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 0.4, order = 2, nref = 5, use_diffeq = true,
-	solver = Rosenbrock23(autodiff = false), kwargs...)
+	solver = ImplicitEuler(autodiff = false), kwargs...)
 
 	## initial grid and final time
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nref)
