@@ -201,6 +201,13 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				## show spy
 				if SC.parameters[:symmetrize]
 					A.entries.cscmatrix = (A.entries.cscmatrix + A.entries.cscmatrix') / 2
+				elseif SC.parameters[:symmetrize_structure]
+					A.entries.cscmatrix += 1e-16*A.entries.cscmatrix'
+					AE = A.entries
+					for j = 1 : size(AE, 1)
+						AE[j,j] += 1e-16
+					end
+					flush!(AE)
 				end
 				if SC.parameters[:show_matrix]
 					@show A
@@ -231,6 +238,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 					end
 					SC.linsolver = linsolve
 				end
+
 
 
 				## compute nonlinear residual
@@ -432,6 +440,7 @@ function iterate_until_stationarity(
 	SCs::Array{<:SolverConfiguration, 1},
 	FES = nothing;
 	maxsteps = 1000,
+	energy_integrator = nothing,
 	init = nothing,
 	unknowns = [SC.PD.unknowns for SC in SCs],
 	kwargs...)
@@ -650,6 +659,11 @@ function iterate_until_stationarity(
 					@printf " (%.3e)" linres
 				end
 			end # nonlinear iterations subproblem
+		end
+
+		if energy_integrator !== nothing
+			error = evaluate(energy_integrator, sol)
+			@printf "   energy = %.3e" sum([sum(view(error,j,:)) for j = 1:size(error,1)])
 		end
 		@printf "\n"
 	end

@@ -123,8 +123,10 @@ function main(;
     end
     assign_operator!(PDT, BilinearOperator([id(ϱ)]; quadorder = 2*(order-1), factor = 1/τ, store = true, kwargs...))
     assign_operator!(PDT, LinearOperator([id(ϱ)], [id(ϱ)]; quadorder = 2*(order-1), factor = 1/τ, kwargs...))
+    assign_operator!(PDT, BilinearOperatorDG(kernel_upwind!, [jump(id(ϱ))], [this(id(ϱ)), other(id(ϱ))], [id(u)]; quadorder = order+1, entities = ON_IFACES, kwargs...))
 
     ## prepare error calculation
+    EnergyIntegrator = ItemIntegrator(energy_kernel!, [id(u)]; resultdim = 1, quadorder = 2*(order+1), kwargs...)
     ErrorIntegratorExact = ItemIntegrator(exact_error!(u!, ∇u!, ϱ!), [id(u), grad(u), id(ϱ)]; resultdim = 9, quadorder = 2*(order+1), kwargs...)
     NDofs = zeros(Int, nrefs)
     Results = zeros(Float64, nrefs, 5)
@@ -138,12 +140,6 @@ function main(;
         FES = [FESpace{FETypes[j]}(xgrid) for j = 1 : 3]
         sol = FEVector(FES; tags = [u,ϱ,p])
 
-        if lvl == 1
-            op_upwind = assign_operator!(PDT, BilinearOperatorDG(kernel_upwind!(xgrid), [jump(id(ϱ))], [this(id(ϱ)), other(id(ϱ))], [id(u)]; quadorder = order+1, entities = ON_IFACES, kwargs...))
-        else
-            replace_operator!(PDT, op_upwind, BilinearOperatorDG(kernel_upwind!(xgrid), [jump(id(ϱ))], [this(id(ϱ)), other(id(ϱ))], [id(u)]; quadorder = order+1, entities = ON_IFACES, kwargs...))
-        end
-
         ## initial guess
         fill!(sol[ϱ],M)
         interpolate!(sol[u], u!)
@@ -153,7 +149,7 @@ function main(;
         ## solve the two problems iteratively [1] >> [2] >> [1] >> [2] ...
         SC1 = SolverConfiguration(PD; init = sol, maxiterations = 1, target_residual = target_residual, constant_matrix = true, kwargs...)
         SC2 = SolverConfiguration(PDT; init = sol, maxiterations = 1, target_residual = target_residual, kwargs...)
-        sol, nits = iterate_until_stationarity([SC1, SC2]; maxsteps = maxsteps, init = sol, kwargs...)
+        sol, nits = iterate_until_stationarity([SC1, SC2]; energy_integrator = EnergyIntegrator, maxsteps = maxsteps, init = sol, kwargs...)
 
         ## caculate error
         error = evaluate(ErrorIntegratorExact, sol)
@@ -190,16 +186,12 @@ function kernel_continuity!(result, ϱ, u, qpinfo)
 end
 
 ## kernel for (u⋅n ϱ^upw, λ) ON_IFACES in continuity equation
-function kernel_upwind!(xgrid)
-    facenormals = xgrid[FaceNormals]
-    flux::Float64 = 0
-    function closure(result, input, u, qpinfo)
-        flux = dot(u, view(facenormals,:,qpinfo.item))
-        if flux > 0
-            result[1] = input[1] * flux
-        else
-            result[1] = input[2] * flux
-        end
+function kernel_upwind!(result, input, u, qpinfo)
+    flux = dot(u, qpinfo.normal) # u * n
+    if flux > 0
+        result[1] = input[1] * flux # rho_left * flux
+    else
+        result[1] = input[2] * flux # rho_righ * flux
     end
 end
 
@@ -222,6 +214,10 @@ end
 function standard_gravity!(result, ϱ, qpinfo)
     result[1] = 0
     result[2] = -ϱ[1]
+end
+
+function energy_kernel!(result, u, qpinfo)
+    result[1] = dot(u,u)/2
 end
 
 function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, M = 1, c = 1, μ = 1, ufac = 100)

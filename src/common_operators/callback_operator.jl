@@ -10,6 +10,7 @@ end
 default_cbop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:name => ("CallbackOperator", "name for operator used in printouts"),
 	:time_dependent => (false, "operator is time-dependent ?"),
+	:linearized_dependencies => (:auto, "[u_ansatz, u_test] when linearized"),
 	:modifies_matrix => (true, "callback function modifies the matrix?"),
 	:modifies_rhs => (true, "callback function modifies the rhs?"),
 	:store => (false, "store matrix and rhs separately (and copy from there when reassembly is triggered)"),
@@ -62,6 +63,9 @@ $(_myprint(default_cbop_kwargs()))
 function CallbackOperator(callback::Function, u_args = []; kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_cbop_kwargs())
 	_update_params!(parameters, kwargs)
+	if parameters[:linearized_dependencies] == :auto
+		parameters[:linearized_dependencies] = [u_args, u_args]
+	end
 	if parameters[:store] && parameters[:modifies_matrix]
 		storage_A = ExtendableSparseMatrix{Float64, Int}(0, 0)
 	else

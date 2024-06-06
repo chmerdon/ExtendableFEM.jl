@@ -403,6 +403,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 			result_kernel = zeros(T, op_offsets_test[end])
 			itemorientations = xgrid[CellFaceOrientations]
 			itemcells = xgrid[FaceCells]
+			itemnormals = xgrid[FaceNormals]
 			cellitems = xgrid[CellFaces]
 
 			ndofs_test::Array{Int, 1} = [size(BE[1, 1].cvals, 2) for BE in BE_test]
@@ -427,6 +428,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 			for item::Int in items
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
+				QPinfos.normal .= view(itemnormals, :, item)
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 
@@ -750,6 +752,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 			result_kernel = zeros(T, op_offsets_test[end])
 			itemorientations = xgrid[CellFaceOrientations]
 			itemcells = xgrid[FaceCells]
+			itemnormals = xgrid[FaceNormals]
 			cellitems = xgrid[CellFaces]
 
 			#ndofs_test::Array{Int,1} = [get_ndofs(ON_CELLS, FE, EG) for FE in FETypes_test]
@@ -777,6 +780,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
+				QPinfos.normal .= view(itemnormals, :, item)
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 

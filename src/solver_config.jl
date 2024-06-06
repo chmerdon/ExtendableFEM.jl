@@ -43,6 +43,7 @@ default_solver_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:init => (nothing, "initial solution (also used to save the new solution)"),
 	:spy => (false, "show unicode spy plot of system matrix during solve"),
 	:symmetrize => (false, "make system matrix symmetric (replace by (A+A')/2)"),
+	:symmetrize_structure => (false, "make the system sparse matrix structurally symmetric (e.g. if [j,k] is also [k,j] must be set, all diagonal entries must be set)"),
 	:restrict_dofs => ([], "array of dofs for each unknown that should be solved (default: all dofs)"),
 	:check_matrix => (false, "check matrix for symmetry and positive definiteness and largest/smallest eigenvalues"),
 	:verbosity => (0, "verbosity level"),

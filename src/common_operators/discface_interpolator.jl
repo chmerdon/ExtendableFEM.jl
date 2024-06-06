@@ -83,6 +83,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 		itemregions = xgrid[CellRegions]
 		itemfaces = xgrid[CellFaces]
 		facevolumes = xgrid[FaceVolumes]
+		facenormals = xgrid[FaceNormals]
 		facecells = xgrid[FaceCells]
 		FETypes_args = [eltype(F) for F in FES_args]
 		EGs = [itemgeometries[itemassemblygroups[1, j]] for j ∈ 1:num_sources(itemassemblygroups)]
@@ -195,6 +196,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 					face = itemfaces[localface, item]
 					QPinfos.item = face
 					QPinfos.volume = facevolumes[face]
+					QPinfos.normal .= view(facenormals,: , face)
 
 					left_or_right = facecells[1, face] == item ? 1 : 2
 

@@ -98,6 +98,14 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
 		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
+		has_normals = true
+		if gridAT <: ON_FACES
+			itemnormals = xgrid[FaceNormals]
+		elseif gridAT <: ON_BFACES
+			itemnormals = xgrid[FaceNormals][:, xgrid[BFaceFaces]]
+		else
+			has_normals = false
+		end
 		FETypes_args = [eltype(F) for F in FES_args]
 		EGs = [itemgeometries[itemassemblygroups[1, j]] for j ∈ 1:num_sources(itemassemblygroups)]
 
@@ -172,6 +180,9 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 				end
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
+				if has_normals
+					QPinfos.normal .= view(itemnormals, :, item)
+				end
 				QPinfos.volume = itemvolumes[item]
 
 				## update FE basis evaluators

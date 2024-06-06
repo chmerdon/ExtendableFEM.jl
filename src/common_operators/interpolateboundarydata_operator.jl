@@ -10,7 +10,7 @@ mutable struct InterpolateBoundaryData{UT, DFT} <: AbstractOperator
 end
 
 ExtendableFEM.fixed_dofs(O::InterpolateBoundaryData) = O.bdofs
-fixed_vals(O::InterpolateBoundaryData) = O.bddata.entries
+fixed_vals(O::InterpolateBoundaryData) = view(O.bddata.entries, O.bdofs)
 
 default_bndop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:penalty => (1e30, "penalty for fixed degrees of freedom"),

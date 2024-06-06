@@ -208,6 +208,7 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 			result_kernel = zeros(Tv, resultdim)
 			itemorientations = xgrid[CellFaceOrientations]
 			itemcells = xgrid[FaceCells]
+			itemnormals = xgrid[FaceNormals]
 			cellitems = xgrid[CellFaces]
 
 			ndofs_args::Array{Int, 1} = [size(BE[1, 1].cvals, 2) for BE in BE_args]
@@ -221,6 +222,7 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 			for item::Int in items
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
+				QPinfos.normal .= view(itemnormals, :, item)
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 

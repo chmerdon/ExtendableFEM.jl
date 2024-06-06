@@ -305,6 +305,14 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
 		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		has_normals = true
+		if AT <: ON_FACES
+			itemnormals = xgrid[FaceNormals]
+		elseif AT <: ON_BFACES
+			itemnormals = xgrid[FaceNormals][:, xgrid[BFaceFaces]]
+		else
+			has_normals = false
+		end
 		FETypes_test = [eltype(F) for F in FES_test]
 		FETypes_ansatz = [eltype(F) for F in FES_ansatz]
 		FETypes_args = [eltype(F) for F in FES_args]
@@ -461,6 +469,9 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 				end
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
+				if has_normals
+					QPinfos.normal .= view(itemnormals, :, item)
+				end
 				QPinfos.volume = itemvolumes[item]
 
 				## update FE basis evaluators
@@ -631,6 +642,14 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
 		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
+		has_normals = true
+		if gridAT <: ON_FACES
+			itemnormals = xgrid[FaceNormals]
+		elseif gridAT <: ON_BFACES
+			itemnormals = xgrid[FaceNormals][:, xgrid[BFaceFaces]]
+		else
+			has_normals = false
+		end
 		FETypes_test = [eltype(F) for F in FES_test]
 		FETypes_ansatz = [eltype(F) for F in FES_ansatz]
 		EGs = [itemgeometries[itemassemblygroups[1, j]] for j ∈ 1:num_sources(itemassemblygroups)]
@@ -774,6 +793,9 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 				end
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
+				if has_normals
+					QPinfos.normal .= view(itemnormals, :, item)
+				end
 				QPinfos.volume = itemvolumes[item]
 
 				## update FE basis evaluators
@@ -943,7 +965,7 @@ function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperator{Tv, UT}, sol =
 	ind_args = O.u_args
 	if length(O.u_args) > 0
 		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz], [sol[j] for j in ind_args]; kwargs...)
-		O.assembler(A.entries, [sol[j] for j in ind_args])
+		O.assembler(A.entries, nothing, [sol[j] for j in ind_args])
 	else
 		build_assembler!(A.entries, O, [A[j, j] for j in ind_test], [A[j, j] for j in ind_ansatz]; kwargs...)
 		O.assembler(A.entries, nothing)

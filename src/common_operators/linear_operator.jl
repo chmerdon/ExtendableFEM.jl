@@ -259,6 +259,14 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
 		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		has_normals = true
+		if AT <: ON_FACES
+			itemnormals = xgrid[FaceNormals]
+		elseif AT <: ON_BFACES
+			itemnormals = xgrid[FaceNormals][:, xgrid[BFaceFaces]]
+		else
+			has_normals = false
+		end
 		FETypes_test = [eltype(F) for F in FES_test]
 		FETypes_args = [eltype(F) for F in FES_args]
 		EGs = [itemgeometries[itemassemblygroups[1, j]] for j ∈ 1:num_sources(itemassemblygroups)]
@@ -367,6 +375,9 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 				end
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
+				if has_normals
+					QPinfos.normal .= view(itemnormals, :, item)
+				end
 				QPinfos.volume = itemvolumes[item]
 
 				## update FE basis evaluators
@@ -463,6 +474,14 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
 		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		has_normals = true
+		if AT <: ON_FACES
+			itemnormals = xgrid[FaceNormals]
+		elseif AT <: ON_BFACES
+			itemnormals = xgrid[FaceNormals][:, xgrid[BFaceFaces]]
+		else
+			has_normals = false
+		end
 		FETypes_test = [eltype(F) for F in FES_test]
 		EGs = [itemgeometries[itemassemblygroups[1, j]] for j ∈ 1:num_sources(itemassemblygroups)]
 
@@ -541,6 +560,9 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 				else
 					QPinfos.region = itemregions[item]
 					QPinfos.item = item
+					if has_normals
+						QPinfos.normal .= view(itemnormals, :, item)
+					end
 					QPinfos.volume = itemvolumes[item]
 				end
 
