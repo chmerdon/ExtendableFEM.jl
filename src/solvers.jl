@@ -38,6 +38,21 @@ function CommonSolve.solve(PD::ProblemDescription, SC = nothing; init = nothing,
 	return solve(PD, [init[u].FES for u in unknowns], SC; init = init, unknowns = unknowns, kwargs...)
 end
 
+function symmetrize_structure!(A::ExtendableSparseMatrix{Tv,Ti}; diagval = 1e-16) where {Tv,Ti}
+	cscmat = A.cscmatrix
+	rows::Array{Ti, 1} = rowvals(cscmat)
+	nzvals::Array{Tv, 1} = cscmat.nzval
+	for col ∈ 1:size(cscmat, 2)
+		for r in nzrange(cscmat, col)
+			A[col, rows[r]] += 1e-16*nzvals[r]
+		end
+		if A[col,col] == 0 && diagval !== 0
+			A[col,col] = diagval
+		end
+	end
+	flush!(A)
+end
+
 function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<:FESpace}}, SC = nothing; unknowns = PD.unknowns, kwargs...)
 	if typeof(FES) <: FESpace
 		FES = [FES]
@@ -202,12 +217,7 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				if SC.parameters[:symmetrize]
 					A.entries.cscmatrix = (A.entries.cscmatrix + A.entries.cscmatrix') / 2
 				elseif SC.parameters[:symmetrize_structure]
-					A.entries.cscmatrix += 1e-16*A.entries.cscmatrix'
-					AE = A.entries
-					for j = 1 : size(AE, 1)
-						AE[j,j] += 1e-16
-					end
-					flush!(AE)
+					symmetrize_structure!(A.entries)
 				end
 				if SC.parameters[:show_matrix]
 					@show A
