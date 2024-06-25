@@ -25,7 +25,7 @@ The obstacle constraint is realised via a penalty term
 that is added to the energy above and is automatically differentiated for a Newton scheme.
 The computed solution for the default parameters looks like this:
 
-![](example225.svg)
+![](example225.png)
 =#
 
 module Example225_ObstacleProblem
@@ -68,7 +68,7 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example225_ObstacleProblem, "example225.svg") #hide
+generateplots = default_generateplots(Example225_ObstacleProblem, "example225.png") #hide
 function runtests() #hide
 	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
 	@test maximum(sol.entries) ≈ 0.0033496680638875204 #hide

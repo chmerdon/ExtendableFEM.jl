@@ -19,6 +19,7 @@ default_interp_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:order => ("auto", "interpolation order (default: match order of applied finite element space)"),
 	:name => ("Projector", "name for operator used in printouts"),
 	:parallel_groups => (true, "assemble operator in parallel using CellAssemblyGroups"),
+	:only_interior => (false, "only interior faces, interpolation of boundary faces will be zero"),
 	:resultdim => (0, "dimension of result field (default = length of arguments)"),
 	:params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
 	:verbosity => (0, "verbosity level"),
@@ -143,6 +144,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 		end
 
 		## prepare target FE
+		only_interior = O.parameters[:only_interior]
 		if O.parameters[:order] <= 0
 			FEType_target = L2P0{resultdim}
 		else
@@ -194,6 +196,10 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 
 				for localface::Int ∈ 1:nfaces
 					face = itemfaces[localface, item]
+					if only_interior && facecells[2, face] == 0
+						## skip boundary face
+						continue
+					end
 					QPinfos.item = face
 					QPinfos.volume = facevolumes[face]
 					QPinfos.normal .= view(facenormals,: , face)

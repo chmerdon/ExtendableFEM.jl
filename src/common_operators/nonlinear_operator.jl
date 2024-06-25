@@ -476,3 +476,15 @@ function ExtendableFEM.assemble!(A, b, sol, O::NonlinearOperator{Tv, UT}, SC::So
 	build_assembler!(A.entries, b.entries, O, [sol[j] for j in ind_test], [sol[j] for j in ind_args]; kwargs...)
 	O.assembler(A.entries, b.entries, [sol[j] for j in ind_args]; time = time)
 end
+
+
+
+function ExtendableFEM.assemble!(A, b, O::NonlinearOperator{Tv, UT}, sol; assemble_matrix = true, assemble_rhs = true, time = 0.0, kwargs...) where {Tv, UT}
+	if assemble_matrix * assemble_rhs == false
+		return nothing
+	end
+	ind_test = O.u_test
+	ind_args = O.u_args
+	build_assembler!(A.entries, b.entries, O, [sol[j] for j in ind_test], [sol[j] for j in ind_args]; kwargs...)
+	O.assembler(A.entries, b.entries, [sol[j] for j in ind_args]; time = time)
+end

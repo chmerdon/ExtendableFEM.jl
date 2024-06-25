@@ -14,7 +14,7 @@ on the unit square domain ``\Omega`` on a given grid.
 
 The computed solution for the default parameters looks like this:
 
-![](example201.svg)
+![](example201.png)
 
 =#
 
@@ -53,7 +53,7 @@ function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example201_PoissonProblem, "example201.svg") #hide
+generateplots = default_generateplots(Example201_PoissonProblem, "example201.png") #hide
 function runtests() #hide
 	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
 	@test sum(sol.entries) ≈ 1.1140313632246377 #hide

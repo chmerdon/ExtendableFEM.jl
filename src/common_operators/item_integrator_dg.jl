@@ -19,6 +19,7 @@ default_iiopdg_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:resultdim => (0, "dimension of result field (default = length of arguments)"),
 	:params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
 	:factor => (1, "factor that should be multiplied during assembly"),
+	:piecewise => (true, "returns piecewise integrations, otherwise a global integration"),
 	:quadorder => ("auto", "quadrature order"),
 	:bonus_quadorder => (0, "additional quadrature order added to quadorder"),
 	:verbosity => (0, "verbosity level"),
@@ -178,6 +179,7 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 
 		## prepare operator infos
 		op_lengths_args = [size(O.BE_args[1][j][1, 1].cvals, 1) for j ∈ 1:nargs]
+		piecewise = O.parameters[:piecewise]
 
 		op_offsets_args = [0]
 		append!(op_offsets_args, cumsum(op_lengths_args))
@@ -269,8 +271,10 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
                     result_kernel .*= factor * weights[qp] * itemvolumes[item]
 
 					# integrate over item
-					for d ∈ 1:resultdim
-						b[d, item] += result_kernel[d]
+					if piecewise
+						b[1:resultdim, item] .+= result_kernel
+					else
+						b .+= result_kernel
 					end
 				end
 
@@ -365,7 +369,11 @@ function evaluate(O::ItemIntegratorDG{Tv, UT}, sol; kwargs...) where {Tv, UT}
 	elseif AT <: ON_BEDGES
 		nitems = size(grid[BEdgeNodes], 2)
 	end
-	b = zeros(eltype(sol[1].entries), O.parameters[:resultdim], nitems)
+	if O.parameters[:piecewise]
+		b = zeros(eltype(sol[1].entries), O.parameters[:resultdim], nitems)
+	else
+		b = zeros(eltype(sol[1].entries), O.parameters[:resultdim])
+	end
 	O.assembler(b, [sol[j] for j in ind_args])
 	return b
 end

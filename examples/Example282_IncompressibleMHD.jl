@@ -16,7 +16,7 @@ a velocity field ``\mathbf{u}``, a pressure field ``p`` and a divergence-free ma
 ```
 on a rectangular 2D domain. Here, ``\mu`` and ``\eta`` are the viscosity and resistivity of the fluid and the magnetic field, respectively.
 
-![](example282.svg)
+![](example282.png)
 
 =#
 
@@ -112,5 +112,5 @@ function main(; Plotter = nothing, μ = 1e-3, η = 1e-1, nrefs = 5, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example282_IncompressibleMHD, "example282.svg") #hide
+generateplots = default_generateplots(Example282_IncompressibleMHD, "example282.png") #hide
 end

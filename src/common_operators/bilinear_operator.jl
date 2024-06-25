@@ -959,7 +959,6 @@ function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperator{Tv, UT}, sol =
 	if !assemble_matrix
 		return nothing
 	end
-	@assert UT <: Integer
 	ind_test = O.u_test
 	ind_ansatz = O.u_ansatz
 	ind_args = O.u_args

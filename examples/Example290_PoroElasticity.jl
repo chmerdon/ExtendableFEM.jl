@@ -27,7 +27,7 @@ As a test problem the first benchmark problem from the same reference is used.
 
 The computed solution for the default parameters looks like this:
 
-![](example290.svg)
+![](example290.png)
 
 =#
 
@@ -210,7 +210,7 @@ function main(; α = 0.93, E = 1e5, ν = 0.4, K = 1e-7, nrefs = 6, T = 0.5, τ =
 	return L2errorU, plt
 end
 
-generateplots = default_generateplots(Example290_PoroElasticity, "example290.svg") #hide
+generateplots = default_generateplots(Example290_PoroElasticity, "example290.png") #hide
 function runtests() #hide
 	L2errorU, plt = main(; nrefs = 4) #hide
 	@test L2errorU ≈ 0.18232484430836826 #hide

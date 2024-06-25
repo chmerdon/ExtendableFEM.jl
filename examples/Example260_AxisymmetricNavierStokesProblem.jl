@@ -45,7 +45,7 @@ integral over the rotation angle drops out on both sides.
 
 The computed solution for the default parameters looks like this:
 
-![](example260.svg)
+![](example260.png)
 
 =#
 
@@ -147,7 +147,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     return [div_error, L2error], plt
 end
 
-generateplots = default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.svg") #hide
+generateplots = default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.png") #hide
 function runtests() #hide
 	errors, plt = main(; nrefs = 1) #hide
 	@test all(errors .<= 1e-12) #hide

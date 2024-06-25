@@ -22,7 +22,7 @@ almost equal along the interface.
 
 The computed solution(s) looks like this:
 
-![](example206.svg)
+![](example206.png)
 
 Each column of the plot shows the solution, the subgrid it lives on. The last row shows the full grid.
 
@@ -65,6 +65,7 @@ function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, use_LM = true, nref = 4, o
     ## (one can use the BFace storages for that)
     xgrid[BFaceNodes] = Int32[xgrid[BFaceNodes] [2 5; 5 4]]
     append!(xgrid[BFaceRegions], [5,5])
+    xgrid[FaceRegions][xgrid[BFaceFaces][end-1:end]] .= 5
     xgrid[BFaceGeometries] = VectorOfConstants{ElementGeometries, Int}(Edge1D, 6)
 
     ## refine
@@ -74,7 +75,7 @@ function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, use_LM = true, nref = 4, o
     FES1 = FESpace{FEType}(xgrid; regions = [1])
     FES2 = FESpace{FEType}(xgrid; regions = [2])
     if use_LM
-        FES3 = FESpace{FETypeLM, ON_BFACES}(xgrid; regions = [5])
+        FES3 = FESpace{FETypeLM, ON_FACES}(xgrid; regions = [5])
         @show FES3.xgrid FES3.dofgrid
     end
 
@@ -93,9 +94,9 @@ function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, use_LM = true, nref = 4, o
     assign_operator!(PD, LinearOperator([id(u2)]; regions = [2], factor = f[2]))
     if use_LM
         assign_unknown!(PD, p)
-        assign_operator!(PD, BilinearOperator(interface_condition_LM!, [id(p)], [id(u1), id(u2)]; regions = [5], transposed_copy = 1, entities = ON_BFACES, kwargs...))
+        assign_operator!(PD, BilinearOperator(interface_condition_LM!, [id(p)], [id(u1), id(u2)]; regions = [5], transposed_copy = 1, entities = ON_FACES, kwargs...))
     else
-	    assign_operator!(PD, BilinearOperator(interface_condition!, [id(u1), id(u2)]; regions = [5], factor = τ, entities = ON_BFACES, kwargs...))
+	    assign_operator!(PD, BilinearOperator(interface_condition!, [id(u1), id(u2)]; regions = [5], factor = τ, entities = ON_FACES, kwargs...))
     end
 	assign_operator!(PD, InterpolateBoundaryData(u1, boundary_conditions!; regions = 1:4))
 	assign_operator!(PD, InterpolateBoundaryData(u2, boundary_conditions!; regions = 1:4))
@@ -107,7 +108,7 @@ function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, use_LM = true, nref = 4, o
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example206_CoupledSubGridProblems, "example206.svg") #hide
+generateplots = default_generateplots(Example206_CoupledSubGridProblems, "example206.png") #hide
 
 function jump_l2norm!(result, u, qpinfo) #hide
     result[1] = (u[1] - u[2])^2 #hide

@@ -32,7 +32,7 @@ parallel until the outlet is reached, possibly due to articifial diffusion.
 
 The computed solution for the default parameters looks like this:
 
-![](example265.svg)
+![](example265.png)
 
 =#
 
@@ -211,7 +211,7 @@ function kernel_inflow!(result, input, qpinfo)
     end
 end
 
-generateplots = default_generateplots(Example265_FlowTransport, "example265.svg") #hide
+generateplots = default_generateplots(Example265_FlowTransport, "example265.png") #hide
 function runtests() #hide
 	sol, plt = main(;) #hide
 	@test minimum(view(sol[3])) >= 0 #hide

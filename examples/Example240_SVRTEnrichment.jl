@@ -33,7 +33,7 @@ enrichment dofs can be eliminated from the system.
 
 The computed solution for the default parameters looks like this:
 
-![](example240.svg)
+![](example240.png)
 
 =#
 
@@ -451,7 +451,7 @@ function div_projector(V1, VR)
 	return F, DD_RR
 end
 
-generateplots = default_generateplots(Example240_SVRTEnrichment, "example240.svg") #hide
+generateplots = default_generateplots(Example240_SVRTEnrichment, "example240.png") #hide
 function runtests(;) #hide
 	Results, plt = main(; nrefs = 2) #hide
 	@test Results[end,1] ≈ 0.09600693353585522 #hide

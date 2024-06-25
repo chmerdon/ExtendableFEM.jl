@@ -15,7 +15,7 @@ with DifferentialEquations or by a manual implicit Euler scheme.
 
 The initial condition and the final solution for the default parameters looks like this:
 
-![](example103.svg)
+![](example103.png)
 
 =#
 
@@ -103,7 +103,7 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example103_BurgersEquation, "example103.svg") #hide
+generateplots = default_generateplots(Example103_BurgersEquation, "example103.png") #hide
 function runtests() #hide
 	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide	
 	@test maximum(sol.entries) ≈ 0.9380540612507218 #hide

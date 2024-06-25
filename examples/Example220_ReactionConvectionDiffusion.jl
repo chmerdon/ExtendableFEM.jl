@@ -17,7 +17,7 @@ simple gradient jump (interior penalty) stabilisation is added to improve things
 
 The computed solution for the default parameters looks like this:
 
-![](example220.svg)
+![](example220.png)
 
 =#
 
@@ -136,7 +136,7 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
 	return Results, plt
 end
 
-generateplots = default_generateplots(Example220_ReactionConvectionDiffusion, "example220.svg") #hide
+generateplots = default_generateplots(Example220_ReactionConvectionDiffusion, "example220.png") #hide
 function runtests() #hide
 	Results, plt = main(; nlevels = 2) #hide
 	@test Results[end, 1] ≈ 0.0001510021661291585 #hide

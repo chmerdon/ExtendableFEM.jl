@@ -116,7 +116,7 @@ function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs..
 			for item ∈ 1:nitems
 				if itemregions[item] in regions
 					for dof in dofmask
-						append!(bdofs, itemdofs[dof, item])
+						append!(bdofs, itemdofs[dof, item] + offset)
 					end
 				end
 			end

@@ -15,7 +15,7 @@ This time the problem is solved on a given grid via the discontinuous Galerkin m
 
 The computed solution looks like this:
 
-![](example203.svg)
+![](example203.png)
 =#
 
 module Example203_PoissonProblemDG
@@ -68,14 +68,14 @@ function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quad
 
 	## discretize
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
-	FES = FESpace{H1Pk{1, 2, order}}(xgrid; broken = dg)
+	FES = FESpace{order == 0 ? L2P0{1} : H1Pk{1, 2, order}}(xgrid; broken = dg)
 
 	## add DG terms
 	assign_operator!(PD, BilinearOperatorDG(dg_kernel(xgrid), [jump(id(u))], [average(grad(u))]; entities = ON_FACES, factor = -μ, kwargs...))
 	assign_operator!(PD, BilinearOperatorDG(dg_kernelT(xgrid), [average(grad(u))], [jump(id(u))]; entities = ON_FACES, factor = -μ, kwargs...))
 	assign_operator!(PD, LinearOperatorDG(dg_kernel_bnd(xgrid, exact_u!), [average(grad(u))]; entities = ON_BFACES, factor = -μ, bonus_quadorder = bonus_quadorder, kwargs...))
-	assign_operator!(PD, BilinearOperatorDG(dg_kernel2(xgrid), [jump(id(u))]; entities = ON_FACES, factor = τ, kwargs...))
-	assign_operator!(PD, LinearOperatorDG(dg_kernel2_bnd(xgrid, exact_u!), [id(u)]; entities = ON_BFACES, regions = 1:4, factor = τ, bonus_quadorder = bonus_quadorder, kwargs...))
+	assign_operator!(PD, BilinearOperatorDG(dg_kernel2(xgrid), [jump(id(u))]; entities = ON_FACES, factor = μ*τ, kwargs...))
+	assign_operator!(PD, LinearOperatorDG(dg_kernel2_bnd(xgrid, exact_u!), [id(u)]; entities = ON_BFACES, regions = 1:4, factor = μ*τ, bonus_quadorder = bonus_quadorder, kwargs...))
 
 	## solve
 	sol = solve(PD, FES; kwargs...)
@@ -90,7 +90,7 @@ function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quad
 	function dgjumps!(result, u, qpinfo)
 		result .= u[1]^2/qpinfo.volume
 	end
-	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u)]; quadorder = 2 * order, params = [μ], kwargs...)
+	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u)]; quadorder = 2 * (order+1), params = [μ], kwargs...)
 	DGJumpsIntegrator = ItemIntegratorDG(dgjumps!, [jump(id(u))]; entities = ON_IFACES, kwargs...)
 
 	## calculate error
@@ -147,9 +147,9 @@ function dg_kernel2_bnd(xgrid, uDb! = nothing)
 	end
 end
 
-generateplots = default_generateplots(Example203_PoissonProblemDG, "example203.svg") #hide
+generateplots = default_generateplots(Example203_PoissonProblemDG, "example203.png") #hide
 function runtests() #hide
 	L2error, ~ = main(; μ = 0.25, nrefs = 2, order = 2) #hide	
-	@test L2error ≈ 0.00025771757957310844 #hide
+	@test L2error ≈ 0.00020400470505497443 #hide
 end #hide
 end # module

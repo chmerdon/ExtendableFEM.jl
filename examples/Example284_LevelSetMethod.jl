@@ -15,7 +15,7 @@ such that the level ``\phi \equiv 0.5`` forms a circle which is then convected b
 
 The initial condition and the final solution for the default parameters looks like this:
 
-![](example284.svg)
+![](example284.png)
 
 =#
 
@@ -37,7 +37,7 @@ function kernel_convection!(result, input, qpinfo)
 end
 
 ## everything is wrapped in a main function
-function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 0.4, order = 2, nref = 5, use_diffeq = true,
+function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-3, T = 0.4, order = 2, nref = 5, use_diffeq = true,
 	solver = ImplicitEuler(autodiff = false), kwargs...)
 
 	## initial grid and final time
@@ -64,7 +64,7 @@ function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 0.4, order = 2, nre
 		prob = generate_ODEProblem(PD, FES, (0.0, T); init = sol, constant_matrix = true)
 
 		## solve ODE problem
-		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-4, reltol = 1e-2, dt = τ, dtmin = 1e-8, adaptive = true)
+		de_sol = DifferentialEquations.solve(prob, solver, abstol = 1e-6, reltol = 1e-4, dt = τ, dtmin = 1e-8, adaptive = true)
 		@info "#tsteps = $(length(de_sol))"
 
 		## get final solution
@@ -93,5 +93,5 @@ function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 0.4, order = 2, nre
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example284_LevelSetMethod, "example284.svg") #hide
+generateplots = default_generateplots(Example284_LevelSetMethod, "example284.png") #hide
 end

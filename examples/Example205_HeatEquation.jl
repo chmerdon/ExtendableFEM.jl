@@ -14,7 +14,7 @@ on the unit square domain ``\Omega`` on a given grid.
 
 The initial condition and the final solution for the default parameters looks like this:
 
-![](example205.svg)
+![](example205.png)
 
 =#
 
@@ -86,7 +86,7 @@ function main(; nrefs = 4, T = 2.0, τ = 1e-3, order = 2, use_diffeq = true,
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example205_HeatEquation, "example205.svg") #hide
+generateplots = default_generateplots(Example205_HeatEquation, "example205.png") #hide
 function runtests(; verbosity = -1, kwargs...) #hide
 	sol, plt = main(; nrefs = 2, T = 1, use_diffeq = false, kwargs...) #hide	
 	@test maximum(sol.entries) ≈ 0.041490419236077006 #hide

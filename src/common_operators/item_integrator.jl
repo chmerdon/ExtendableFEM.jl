@@ -17,6 +17,7 @@ default_iiop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:resultdim => (0, "dimension of result field (default = length of arguments)"),
 	:params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
 	:factor => (1, "factor that should be multiplied during assembly"),
+	:piecewise => (true, "returns piecewise integrations, otherwise a global integration"),
 	:quadorder => ("auto", "quadrature order"),
 	:bonus_quadorder => (0, "additional quadrature order added to quadorder"),
 	:verbosity => (0, "verbosity level"),
@@ -149,6 +150,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 
 		## prepare operator infos
 		op_lengths_args = [size(O.BE_args[1][j].cvals, 1) for j ∈ 1:nargs]
+		piecewise = O.parameters[:piecewise]
 
 		op_offsets_args = [0]
 		append!(op_offsets_args, cumsum(op_lengths_args))
@@ -163,7 +165,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
-		function assembly_loop(b::AbstractMatrix{T}, sol::Array{<:FEVectorBlock, 1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_args::Array{<:FEEvaluator, 1}, L2G::L2GTransformer, QPinfos::QPInfos) where {T}
+		function assembly_loop(b, sol::Array{<:FEVectorBlock, 1}, items, EG::ElementGeometries, QF::QuadratureRule, BE_args::Array{<:FEEvaluator, 1}, L2G::L2GTransformer, QPinfos::QPInfos)
 
 			## prepare parameters
 			result_kernel = zeros(Tv, resultdim)
@@ -178,6 +180,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 						continue
 					end
 				end
+
 				QPinfos.region = itemregions[item]
 				QPinfos.item = item
 				if has_normals
@@ -212,8 +215,10 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 					result_kernel .*= factor * weights[qp] * itemvolumes[item]
 
 					# integrate over item
-					for d ∈ 1:resultdim
-						b[d, item] += result_kernel[d]
+					if piecewise
+						b[1:resultdim, item] .+= result_kernel
+					else
+						b .+= result_kernel
 					end
 				end
 			end
@@ -308,7 +313,11 @@ function evaluate(O::ItemIntegrator{Tv, UT}, sol; kwargs...) where {Tv, UT}
 	elseif AT <: ON_BEDGES
 		nitems = size(grid[BEdgeNodes], 2)
 	end
-	b = zeros(eltype(sol[1].entries), O.parameters[:resultdim], nitems)
+	if O.parameters[:piecewise]
+		b = zeros(eltype(sol[1].entries), O.parameters[:resultdim], nitems)
+	else
+		b = zeros(eltype(sol[1].entries), O.parameters[:resultdim])
+	end
 	O.assembler(b, [sol[j] for j in ind_args])
 	return b
 end

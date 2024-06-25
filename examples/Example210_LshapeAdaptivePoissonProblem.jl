@@ -13,7 +13,7 @@ This example script showcases the evaluation of 2nd order derivatives like the L
 
 The resulting mesh and error convergence history for the default parameters looks like:
 
-![](example210.svg)
+![](example210.png)
 
 =#
 
@@ -60,9 +60,7 @@ end
 
 ## kernel for face interpolation of normal jumps of gradient
 function gradnormalflux!(result, ∇u, qpinfo)
-	item = qpinfo.item
-	normal = view(qpinfo.params, :, item)
-	result[1] = dot(∇u, normal)
+	result[1] = dot(∇u, qpinfo.normal)
 end
 
 ## kernel for face refinement indicator
@@ -88,8 +86,9 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 	## discretize
 	xgrid = uniform_refine(grid_lshape(Triangle2D), nrefs)
 
-	## define item integrators for estimation and error calculation
-	ErrorIntegratorFace = ItemIntegrator(η_face!, [id(1)]; quadorder = 2 * order, entities = ON_IFACES, kwargs...)
+	## define interpolators and item integrators for error estimation and calculation
+	NormalJumpProjector = FaceInterpolator(gradnormalflux!, [jump(grad(u))]; resultdim = 1, order = order, only_interior = true, kwargs...)
+	ErrorIntegratorFace = ItemIntegrator(η_face!, [id(1)]; quadorder = 2 * order, entities = ON_FACES, kwargs...)
 	ErrorIntegratorCell = ItemIntegrator(η_cell!, [Δ(1)]; quadorder = 2 * (order - 2), entities = ON_CELLS, kwargs...)
 	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(1), grad(1)]; quadorder = 2 * order, kwargs...)
 
@@ -121,10 +120,9 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 		## ESTIMATE : calculate local error estimator contributions
 		@time begin
 			## calculate error estimator
-			JumpInterpolator = FaceInterpolator(gradnormalflux!, [jump(grad(u))]; resultdim = 1, order = order - 1, params = xgrid[FaceNormals], kwargs...)
-			η_F = evaluate(ErrorIntegratorFace, evaluate!(JumpInterpolator, sol))
-			η_F[xgrid[BFaceFaces]] .= 0
-
+			Jumps4Faces = evaluate!(NormalJumpProjector, sol)
+			η_F = evaluate(ErrorIntegratorFace, Jumps4Faces)
+			
 			η_T = evaluate(ErrorIntegratorCell, sol)
 			facecells = xgrid[FaceCells]
 			for face ∈ 1:size(facecells, 2)
@@ -178,7 +176,7 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example210_LshapeAdaptivePoissonProblem, "example210.svg") #hide
+generateplots = default_generateplots(Example210_LshapeAdaptivePoissonProblem, "example210.png") #hide
 function runtests() #hide
 	sol, plt = main(; maxdofs = 1000, order = 2) #hide	
 	@test length(sol.entries) == 1007 #hide

@@ -38,7 +38,7 @@ The discrete divergence is computed via a RT0 reconstruction operator that prese
 
 The computed solution for the default parameters looks like this:
 
-![](example235.svg)
+![](example235.png)
 =#
 
 module Example235_StokesIteratedPenalty
@@ -103,7 +103,7 @@ function main(; Plotter = nothing, λ = 1e4, μ = 1.0, nrefs = 5, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example235_StokesIteratedPenalty, "example235.svg") #hide
+generateplots = default_generateplots(Example235_StokesIteratedPenalty, "example235.png") #hide
 function exact_error!(result, u, qpinfo) #hide
 	u!(result, qpinfo) #hide
 	p!(view(result, 3), qpinfo) #hide

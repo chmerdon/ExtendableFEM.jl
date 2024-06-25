@@ -14,7 +14,7 @@ in a lid driven cavity example over a cone and plots the solution and the formed
 
 The computed solution for the default parameters looks like this:
 
-![](example250.svg)
+![](example250.png)
 
 =#
 
@@ -114,7 +114,7 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example250_NSELidDrivenCavity, "example250.svg") #hide
+generateplots = default_generateplots(Example250_NSELidDrivenCavity, "example250.png") #hide
 function runtests() #hide
 	sol, plt = main(; nrefs = 3, μ_final = 0.005) #hide
 	@test sum(view(sol[1])) ≈ 9.501630403050289 #hide

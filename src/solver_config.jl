@@ -122,7 +122,7 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 
 	## storage for full system
 	FES_active = FES[1:length(unknowns)]
-	A = FEMatrix{TvM, TiM}(FES_active)
+	A = FEMatrix{TvM, TiM}(FES_active; tags = unknowns)
 	b = FEVector{bT}(FES_active; tags = unknowns)
 	res = copy(b)
 

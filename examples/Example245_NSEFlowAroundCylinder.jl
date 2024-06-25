@@ -17,7 +17,7 @@ This script demonstrates the employment of external grid generators and the comp
 
 Note: This example needs the additional packages Triangulate and SimplexGridFactory to generate the mesh.
 
-![](example245.svg)
+![](example245.png)
 
 =#
 
@@ -197,7 +197,7 @@ function make_grid(W, H; n = 20, maxvol = 0.1)
 	simplexgrid(builder, maxvolume = 16 * maxvol, unsuitable = unsuitable)
 end
 
-generateplots = default_generateplots(Example245_NSEFlowAroundCylinder, "example245.svg") #hide
+generateplots = default_generateplots(Example245_NSEFlowAroundCylinder, "example245.png") #hide
 function runtests() #hide
 	dragliftpdiff, plt = main(; maxvol = 5e-3) #hide
 	@test dragliftpdiff[1] ≈ 5.484046680249255 #hide

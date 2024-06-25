@@ -249,8 +249,6 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 					SC.linsolver = linsolve
 				end
 
-
-
 				## compute nonlinear residual
 				if !is_linear
 					fill!(residual.entries, 0)

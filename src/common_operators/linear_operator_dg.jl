@@ -736,7 +736,6 @@ function ExtendableFEM.assemble!(b, O::LinearOperatorDG{Tv, UT}, sol = nothing; 
 	if !assemble_rhs
 		return nothing
 	end
-	@assert UT <: Integer
 	ind_test = O.u_test
 	ind_args = O.u_args
 	if length(O.u_args) > 0

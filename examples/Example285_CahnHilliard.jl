@@ -18,7 +18,7 @@ initial concentration as defined in the code below.
 The computed solution at different timesteps
 for the default parameters and a randomized initial state look like this:
 
-![](example285.svg)
+![](example285.png)
 
 =#
 
@@ -126,5 +126,5 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example285_CahnHilliard, "example285.svg") #hide
+generateplots = default_generateplots(Example285_CahnHilliard, "example285.png") #hide
 end

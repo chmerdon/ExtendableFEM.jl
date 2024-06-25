@@ -28,7 +28,7 @@ and a strategy to solve several small problems in parallel by use of non-overlap
 
 The resulting mesh and error convergence history for the default parameters looks like:
 
-![](example211.svg)
+![](example211.png)
 
 =#
 
@@ -92,14 +92,8 @@ function main(; maxdofs = 4000, μ = 1, order = 2, nlevels = 16, θ = 0.5, Plott
 	xgrid = grid_lshape(Triangle2D)
 
 	## choose some finite elements for primal and dual problem (= for equilibrated fluxes)
-	## (local equilibration for Pk needs at least BDMk)
-	if order == 1
-		FEType, FETypeDual = H1P1{1}, HDIVBDM1{2}
-	elseif order == 2
-		FEType, FETypeDual = H1P2{1, 2}, HDIVBDM2{2}
-	else
-		@error "order must be 1 or 2"
-	end
+	FEType = H1Pk{1,2,order}
+	FETypeDual = HDIVRTk{2, order}
 
 	## setup Poisson problem
 	PD = ProblemDescription("Poisson problem")
@@ -204,6 +198,7 @@ function local_equilibration_estimator!(sol, FETypeDual)
 	weights::Array{Float64, 1} = qf.w
 
 	## some constants
+	offset::Int = sol[u].offset
 	div_penalty::Float64 = 1e5      # divergence constraint is realized by penalisation
 	bnd_penalty::Float64 = 1e60     # penalty for non-involved dofs of a group
 	maxdofs::Int = max_num_targets_per_source(xItemDofs)
@@ -219,155 +214,152 @@ function local_equilibration_estimator!(sol, FETypeDual)
 	end
 	X = Array{Array{Float64, 1}, 1}(undef, maxgroups)
 
+	function solve_patchgroup!(group)
+		## temporary variables
+		graduh = zeros(Float64, 2)
+		coeffs_uh = zeros(Float64, maxdofs_uh)
+		Alocal = zeros(Float64, maxdofs, maxdofs)
+		blocal = zeros(Float64, maxdofs)
+
+		## init system
+		A = ExtendableSparseMatrix{Float64, Int64}(FESDual.ndofs, FESDual.ndofs)
+		b = zeros(Float64, FESDual.ndofs)
+
+		## init FEBasiEvaluators
+		FEE_∇φ = FEEvaluator(POUFES, Gradient, POUqf)
+		FEE_xref = FEEvaluator(POUFES, Identity, qf)
+		FEE_∇u = FEEvaluator(sol[u].FES, Gradient, qf)
+		FEE_div = FEEvaluator(FESDual, Divergence, qf)
+		FEE_id = FEEvaluator(FESDual, Identity, qf)
+		idvals = FEE_id.cvals
+		divvals = FEE_div.cvals
+		xref_vals = FEE_xref.cvals
+		∇φvals = FEE_∇φ.cvals
+
+		## find dofs at boundary of current node patches
+		## and in interior of cells outside of current node patch group
+		is_noninvolveddof = zeros(Bool, FESDual.ndofs)
+		outside_cell::Bool = false
+		for cell ∈ 1:num_cells(xgrid)
+			outside_cell = true
+			for k ∈ 1:3
+				if group4node[xCellNodes[k, cell]] == group
+					outside_cell = false
+					break
+				end
+			end
+			if (outside_cell) # mark interior dofs of outside cell
+				for j ∈ 1:maxdofs
+					is_noninvolveddof[xItemDofs[j, cell]] = true
+				end
+			end
+		end
+
+		for node ∈ 1:nnodes
+			if group4node[node] == group
+				for c ∈ 1:num_targets(xNodeCells, node)
+					cell = xNodeCells[c, node]
+
+					## find local node number of global node z
+					## and evaluate (constant) gradient of nodal basis function phi_z
+					localnode = 1
+					while xCellNodes[localnode, cell] != node
+						localnode += 1
+					end
+					FEE_∇φ.citem[] = cell
+					update_basis!(FEE_∇φ)
+
+					## read coefficients for discrete flux
+					for j ∈ 1:maxdofs_uh
+						coeffs_uh[j] = sol.entries[offset + xItemDofs_uh[j, cell]]
+					end
+
+					## update other FE evaluators
+					FEE_∇u.citem[] = cell
+					FEE_div.citem[] = cell
+					FEE_id.citem[] = cell
+					update_basis!(FEE_∇u)
+					update_basis!(FEE_div)
+					update_basis!(FEE_id)
+
+					## assembly on this cell
+					for i in eachindex(weights)
+						weight = weights[i] * xCellVolumes[cell]
+
+						## evaluate grad(u_h) and nodal basis function at quadrature point
+						fill!(graduh, 0)
+						eval_febe!(graduh, FEE_∇u, coeffs_uh, i)
+
+						## compute residual -f*phi_z + grad(u_h) * grad(phi_z) at quadrature point i ( f = 0 in this example !!! )
+						temp2 = div_penalty * sqrt(xCellVolumes[cell]) * weight
+						temp = temp2 * dot(graduh, view(∇φvals,:,localnode,1))
+						for dof_i ∈ 1:maxdofs
+							## right-hand side for best-approximation (grad(u_h)*phi)
+							blocal[dof_i] += dot(graduh, view(idvals,:,dof_i, i)) * xref_vals[1, localnode, i] * weight
+							## mass matrix Hdiv 
+							for dof_j ∈ dof_i:maxdofs
+								Alocal[dof_i, dof_j] += dot(view(idvals,:,dof_i, i), view(idvals,:,dof_j, i)) * weight
+							end
+							## div-div matrix Hdiv * penalty (quick and dirty to avoid Lagrange multiplier)
+							blocal[dof_i] += temp * divvals[1,dof_i,i]
+							temp3 = temp2 * divvals[1,dof_i,i]
+							for dof_j ∈ dof_i:maxdofs
+								Alocal[dof_i, dof_j] += temp3 * divvals[1,dof_j,i]
+							end
+						end
+					end
+
+					## write into global A and b
+					for dof_i ∈ 1:maxdofs
+						dofi = xItemDofs[dof_i, cell]
+						b[dofi] += blocal[dof_i]
+						for dof_j ∈ 1:maxdofs
+							dofj = xItemDofs[dof_j, cell]
+							if dof_j < dof_i # use that Alocal is symmetric
+								_addnz(A, dofi, dofj, Alocal[dof_j, dof_i], 1)
+							else
+								_addnz(A, dofi, dofj, Alocal[dof_i, dof_j], 1)
+							end
+						end
+					end
+
+					## reset local A and b
+					fill!(Alocal, 0)
+					fill!(blocal, 0)
+				end
+			end
+		end
+
+		## penalize dofs that are not involved
+		for j ∈ 1:FESDual.ndofs
+			if is_noninvolveddof[j]
+				A[j, j] = bnd_penalty
+				b[j] = 0
+			end
+		end
+
+		## solve local problem   
+		return A \ b
+	end
+
+	## solve equilibration problems on vertex patches (in parallel)
 	Threads.@threads for group in groups
 		grouptime = @elapsed begin
 			@info "  Starting equilibrating patch group $group on thread $(Threads.threadid())... "
-			## temporary variables
-			graduh = zeros(Float64, 2)
-			gradphi = zeros(Float64, 2)
-			coeffs_uh = zeros(Float64, maxdofs_uh)
-			eval_i = zeros(Float64, 2)
-			eval_j = zeros(Float64, 2)
-			eval_phi = zeros(Float64, 1)
-			Alocal = zeros(Float64, maxdofs, maxdofs)
-			blocal = zeros(Float64, maxdofs)
-
-			## init FEBasiEvaluators
-			FEE_∇φ = FEEvaluator(POUFES, Gradient, POUqf)
-			FEE_xref = FEEvaluator(POUFES, Identity, qf)
-			FEE_∇u = FEEvaluator(sol[u].FES, Gradient, qf)
-			FEE_div = FEEvaluator(FESDual, Divergence, qf)
-			FEE_id = FEEvaluator(FESDual, Identity, qf)
-
-			## init system
-			A = ExtendableSparseMatrix{Float64, Int64}(FESDual.ndofs, FESDual.ndofs)
-			b = zeros(Float64, FESDual.ndofs)
-
-			## find dofs at boundary of current node patches
-			## and in interior of cells outside of current node patch group
-			is_noninvolveddof = zeros(Bool, FESDual.ndofs)
-			outside_cell::Bool = false
-			for cell ∈ 1:num_cells(xgrid)
-				outside_cell = true
-				for k ∈ 1:3
-					if group4node[xCellNodes[k, cell]] == group
-						outside_cell = false
-						break
-					end
-				end
-				if (outside_cell) # mark interior dofs of outside cell
-					for j ∈ 1:maxdofs
-						is_noninvolveddof[xItemDofs[j, cell]] = true
-					end
-				end
-			end
-
-			for node ∈ 1:nnodes
-				if group4node[node] == group
-					for c ∈ 1:num_targets(xNodeCells, node)
-						cell = xNodeCells[c, node]
-
-						## find local node number of global node z
-						## and evaluate (constant) gradient of nodal basis function phi_z
-						localnode = 1
-						while xCellNodes[localnode, cell] != node
-							localnode += 1
-						end
-						FEE_∇φ.citem[] = cell
-						update_basis!(FEE_∇φ)
-						eval_febe!(gradphi, FEE_∇φ, localnode, 1)
-
-						## read coefficients for discrete flux
-						for j ∈ 1:maxdofs_uh
-							coeffs_uh[j] = sol[u][xItemDofs_uh[j, cell]]
-						end
-
-						## update other FE evaluators
-						FEE_∇u.citem[] = cell
-						FEE_div.citem[] = cell
-						FEE_id.citem[] = cell
-						update_basis!(FEE_∇u)
-						update_basis!(FEE_div)
-						update_basis!(FEE_id)
-
-						## assembly on this cell
-						for i in eachindex(weights)
-							weight = weights[i] * xCellVolumes[cell]
-
-							## evaluate grad(u_h) and nodal basis function at quadrature point
-							fill!(graduh, 0)
-							eval_febe!(graduh, FEE_∇u, coeffs_uh, i)
-							eval_febe!(eval_phi, FEE_xref, localnode, i)
-
-							## compute residual -f*phi_z + grad(u_h) * grad(phi_z) at quadrature point i ( f = 0 in this example !!! )
-							temp2 = div_penalty * sqrt(xCellVolumes[cell]) * weight
-							temp = temp2 * (graduh[1] * gradphi[1] + graduh[2] * gradphi[2])
-							for dof_i ∈ 1:maxdofs
-								eval_febe!(eval_i, FEE_id, dof_i, i)
-								eval_i .*= weight
-								## right-hand side for best-approximation (grad(u_h)*phi)
-								blocal[dof_i] += (graduh[1] * eval_i[1] + graduh[2] * eval_i[2]) * eval_phi[1]
-								## mass matrix Hdiv 
-								for dof_j ∈ dof_i:maxdofs
-									eval_febe!(eval_j, FEE_id, dof_j, i)
-									Alocal[dof_i, dof_j] += (eval_i[1] * eval_j[1] + eval_i[2] * eval_j[2])
-								end
-								## div-div matrix Hdiv * penalty (quick and dirty to avoid Lagrange multiplier)
-								eval_febe!(eval_i, FEE_div, dof_i, i)
-								blocal[dof_i] += temp * eval_i[1]
-								temp3 = temp2 * eval_i[1]
-								for dof_j ∈ dof_i:maxdofs
-									eval_febe!(eval_j, FEE_div, dof_j, i)
-									Alocal[dof_i, dof_j] += temp3 * eval_j[1]
-								end
-							end
-						end
-
-						## write into global A and b
-						for dof_i ∈ 1:maxdofs
-							dofi = xItemDofs[dof_i, cell]
-							b[dofi] += blocal[dof_i]
-							for dof_j ∈ 1:maxdofs
-								dofj = xItemDofs[dof_j, cell]
-								if dof_j < dof_i # use that Alocal is symmetric
-									_addnz(A, dofi, dofj, Alocal[dof_j, dof_i], 1)
-								else
-									_addnz(A, dofi, dofj, Alocal[dof_i, dof_j], 1)
-								end
-							end
-						end
-
-						## reset local A and b
-						fill!(Alocal, 0)
-						fill!(blocal, 0)
-					end
-				end
-			end
-
-			## penalize dofs that are not involved
-			for j ∈ 1:FESDual.ndofs
-				if is_noninvolveddof[j]
-					A[j, j] = bnd_penalty
-					b[j] = 0
-				end
-			end
-
-			## solve local problem   
-			X[group] = A \ b
+			X[group] = solve_patchgroup!(group)
 		end
-
 		@info "Finished equilibration patch group $group on thread $(Threads.threadid()) in $(grouptime)s "
 	end
 
-	## write local solutions to global vector
+	## write local solutions to global vector (sequentially)
 	for group ∈ 1:maxgroups
 		view(sol[σ]) .+= X[group]
 	end
 end
 
-generateplots = default_generateplots(Example211_LshapeAdaptiveEQPoissonProblem, "example211.svg") #hide
+generateplots = default_generateplots(Example211_LshapeAdaptiveEQPoissonProblem, "example211.png") #hide
 function runtests() #hide
 	sol, plt = main(; maxdofs = 1000, order = 2) #hide	
-	@test length(sol.entries) == 6604 #hide
+	@test length(sol.entries) == 8641 #hide
 end #hide
 end

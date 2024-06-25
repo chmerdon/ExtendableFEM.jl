@@ -15,7 +15,7 @@ on a two-dimensional L-shaped domain with homogeneous boundary conditions
 with the help of an iterative solver from [KrylovKit.jl](https://github.com/Jutho/KrylovKit.jl).
 The first twelve computed eigenvectors look like this:
 
-![](example204.svg)
+![](example204.png)
 =#
 
 module Example204_LaplaceEVProblem
@@ -65,5 +65,5 @@ function main(; which = 1:12, ncols = 3, nrefs = 4, order = 1, Plotter = nothing
 	return u, plt
 end
 
-generateplots = default_generateplots(Example204_LaplaceEVProblem, "example204.svg") #hide
+generateplots = default_generateplots(Example204_LaplaceEVProblem, "example204.png") #hide
 end # module

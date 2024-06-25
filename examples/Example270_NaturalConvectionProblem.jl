@@ -43,7 +43,7 @@ Further explanations and discussion on this example can be found in the referenc
 
 The computed solution for the default parameters looks like this:
 
-![](example270.svg)
+![](example270.png)
 
 =#
 
@@ -147,7 +147,7 @@ function main(;
     return Nu, plt
 end
 
-generateplots = default_generateplots(Example270_NaturalConvectionProblem, "example270.svg") #hide
+generateplots = default_generateplots(Example270_NaturalConvectionProblem, "example270.png") #hide
 function runtests() #hide
 	Nu, plt = main(; nrefs = 4) #hide
 	@test Nu ≈ 17.641450080135293 #hide

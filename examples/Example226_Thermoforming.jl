@@ -6,7 +6,7 @@
 This implements the thermoforming example taken from https://arxiv.org/abs/1802.03564 Section 6.4.
 The computed solution for the default parameters looks like this:
 
-![](example226.svg)
+![](example226.png)
 =#
 
 module Example226_Thermoforming
@@ -137,7 +137,7 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example226_Thermoforming, "example226.svg") #hide
+generateplots = default_generateplots(Example226_Thermoforming, "example226.png") #hide
 function runtests() #hide
 	sol1, ~ =  Example226_Thermoforming.main(; sparse_jacobians=true, N = 20) #hide
 	sol2, ~ =  Example226_Thermoforming.main(; sparse_jacobians=false, N = 20) #hide

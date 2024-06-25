@@ -555,16 +555,21 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 			nweights = length(weights)
 
 			for item::Int in items
-				if !(visit_region[itemregions[item]])
-					continue
-				else
-					QPinfos.region = itemregions[item]
-					QPinfos.item = item
-					if has_normals
-						QPinfos.normal .= view(itemnormals, :, item)
+				if itemregions[item] > 0
+					if !(visit_region[itemregions[item]]) || AT == ON_IFACES
+						continue
 					end
-					QPinfos.volume = itemvolumes[item]
+				else
+					if length(regions) > 0
+						continue
+					end
 				end
+				QPinfos.region = itemregions[item]
+				QPinfos.item = item
+				if has_normals
+					QPinfos.normal .= view(itemnormals, :, item)
+				end
+				QPinfos.volume = itemvolumes[item]
 
 				## update FE basis evaluators
 				for j ∈ 1:ntest
@@ -666,7 +671,6 @@ function ExtendableFEM.assemble!(b, O::LinearOperator{Tv, UT}, sol = nothing; as
 	if !assemble_rhs
 		return
 	end
-	@assert UT <: Integer
 	ind_test = O.u_test
 	ind_args = O.u_args
 	if length(O.u_args) > 0

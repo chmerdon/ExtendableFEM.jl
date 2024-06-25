@@ -13,7 +13,7 @@ with right-hand side ``f(x,y) \equiv xy`` and homogeneous Dirichlet boundary con
 on the unit cube domain ``\Omega`` on a given grid. The computed solution for the default
 parameters looks like this:
 
-![](example301.svg)
+![](example301.png)
 
 =#
 
@@ -50,7 +50,7 @@ function main(; μ = 1.0, nrefs = 3, Plotter = nothing, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example301_PoissonProblem, "example301.svg") #hide
+generateplots = default_generateplots(Example301_PoissonProblem, "example301.png") #hide
 function runtests() #hide
 	sol, plt = main(;) #hide
 	@test sum(sol.entries) ≈ 21.874305144549524 #hide

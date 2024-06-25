@@ -58,7 +58,7 @@ function Unknown(u::String; identifier = Symbol(u), name = u, kwargs...)
 end
 
 function Base.show(io::IO, u::Unknown)
-	print(io, "$(u.identifier) (name = $(u.name))")
+	print(io, "$(u.identifier) ($(u.name))")
 end
 
 ## remapping of all function operators

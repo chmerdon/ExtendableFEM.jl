@@ -14,7 +14,7 @@ with homogeneous Neumann boundary conditions.
 
 The solution looks like this:
 
-![](example106.svg)
+![](example106.png)
 
 =#
 
@@ -121,7 +121,7 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example106_NonlinearDiffusion, "example106.svg") #hide
+generateplots = default_generateplots(Example106_NonlinearDiffusion, "example106.png") #hide
 function runtests(; T = 0.01, m = 2, kwargs...) #hide
 	sol, plt = main(; T = T, m = m, use_diffeq = false, kwargs...) #hide	
 	@test maximum(sol.entries) ≈ 4.641588833612778 #hide
