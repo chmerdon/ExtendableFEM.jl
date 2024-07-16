@@ -67,22 +67,20 @@ function advection_kernel!(result, input, qpinfo)
 end
 
 function outflow_kernel!(xgrid)
-    facenormals = xgrid[FaceNormals]
     beta = zeros(Float64, 2)
     function closure(result, input, qpinfo)
         face = qpinfo.item
         β!(beta, qpinfo)
-        result[1] = dot(beta, view(facenormals, :, face)) * input[1]
+        result[1] = dot(beta, qpinfo.normal) * input[1]
     end
 end
 
 function upwind_kernel!(xgrid)
-    facenormals = xgrid[FaceNormals]
     beta = zeros(Float64, 2)
     function closure(result, input, qpinfo)
         face = qpinfo.item
         β!(beta, qpinfo)
-        result[1] = dot(beta, view(facenormals, :, face))
+        result[1] = dot(beta, qpinfo.normal)
         if result[1] > 0 ## wind blows this -> other
             result[1] *= input[1] # upwind value = this
         else ## wind blows this <- other

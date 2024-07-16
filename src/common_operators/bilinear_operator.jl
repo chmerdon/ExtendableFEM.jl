@@ -381,7 +381,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_arg
 		append!(op_offsets_ansatz, cumsum(op_lengths_ansatz))
 		append!(op_offsets_args, cumsum(op_lengths_args))
 		offsets_test = [FE_test[j].offset for j in 1:length(FES_test)]
-		offsets_ansatz = [FE_ansatz[j].offset for j in 1:length(FES_ansatz)]
+		offsets_ansatz = [FE_ansatz[j].offsetY for j in 1:length(FES_ansatz)]
 
 		## prepare sparsity pattern
 		use_sparsity_pattern = O.parameters[:use_sparsity_pattern]
@@ -707,7 +707,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 		append!(op_offsets_test, cumsum(op_lengths_test))
 		append!(op_offsets_ansatz, cumsum(op_lengths_ansatz))
 		offsets_test = [FE_test[j].offset for j in 1:length(FES_test)]
-		offsets_ansatz = [FE_ansatz[j].offset for j in 1:length(FES_ansatz)]
+		offsets_ansatz = [FE_ansatz[j].offsetY for j in 1:length(FES_ansatz)]
 
 		## prepare sparsity pattern
 		use_sparsity_pattern = O.parameters[:use_sparsity_pattern]

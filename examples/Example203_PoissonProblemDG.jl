@@ -22,6 +22,7 @@ module Example203_PoissonProblemDG
 
 using ExtendableFEM
 using ExtendableGrids
+using LinearAlgebra
 using Symbolics
 using Test #hide
 
@@ -32,21 +33,16 @@ function prepare_data(; μ = 1)
 
 	## exact solution
 	u = x^3 - 3 * x * y^2
-
-	## gradient
 	∇u = Symbolics.gradient(u, [x, y])
 
-	## Laplacian
-	Δu = Symbolics.gradient(∇u[1], [x]) + Symbolics.gradient(∇u[2], [y])
-
 	## right-hand side
+	Δu = Symbolics.gradient(∇u[1], [x]) + Symbolics.gradient(∇u[2], [y])
 	f = -μ * Δu[1]
 
 	## build functions
 	u_eval = build_function(u, x, y, expression = Val{false})
 	∇u_eval = build_function(∇u, x, y, expression = Val{false})
 	f_eval = build_function(f, x, y, expression = Val{false})
-
 	return f_eval, u_eval, ∇u_eval[2]
 end
 
@@ -59,7 +55,7 @@ function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quad
 	exact_∇u!(result, qpinfo) = (∇u_eval(result, qpinfo.x[1], qpinfo.x[2]))
 
 	## problem description
-	PD = ProblemDescription()
+	PD = ProblemDescription("Poisson problem")
 	u = Unknown("u"; name = "potential")
 	assign_unknown!(PD, u)
 	assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, kwargs...))
@@ -71,11 +67,10 @@ function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quad
 	FES = FESpace{order == 0 ? L2P0{1} : H1Pk{1, 2, order}}(xgrid; broken = dg)
 
 	## add DG terms
-	assign_operator!(PD, BilinearOperatorDG(dg_kernel(xgrid), [jump(id(u))], [average(grad(u))]; entities = ON_FACES, factor = -μ, kwargs...))
-	assign_operator!(PD, BilinearOperatorDG(dg_kernelT(xgrid), [average(grad(u))], [jump(id(u))]; entities = ON_FACES, factor = -μ, kwargs...))
-	assign_operator!(PD, LinearOperatorDG(dg_kernel_bnd(xgrid, exact_u!), [average(grad(u))]; entities = ON_BFACES, factor = -μ, bonus_quadorder = bonus_quadorder, kwargs...))
-	assign_operator!(PD, BilinearOperatorDG(dg_kernel2(xgrid), [jump(id(u))]; entities = ON_FACES, factor = μ*τ, kwargs...))
-	assign_operator!(PD, LinearOperatorDG(dg_kernel2_bnd(xgrid, exact_u!), [id(u)]; entities = ON_BFACES, regions = 1:4, factor = μ*τ, bonus_quadorder = bonus_quadorder, kwargs...))
+	assign_operator!(PD, BilinearOperatorDG(dg_kernel, [jump(id(u))], [average(grad(u))]; entities = ON_FACES, factor = -μ, transposed_copy = 1, kwargs...))
+	assign_operator!(PD, LinearOperatorDG(dg_kernel_bnd(exact_u!), [average(grad(u))]; entities = ON_BFACES, factor = -μ, bonus_quadorder = bonus_quadorder, kwargs...))
+	assign_operator!(PD, BilinearOperatorDG(dg_kernel2, [jump(id(u))]; entities = ON_FACES, factor = μ*τ, kwargs...))
+	assign_operator!(PD, LinearOperatorDG(dg_kernel2_bnd(exact_u!), [id(u)]; entities = ON_BFACES, regions = 1:4, factor = μ*τ, bonus_quadorder = bonus_quadorder, kwargs...))
 
 	## solve
 	sol = solve(PD, FES; kwargs...)
@@ -108,39 +103,19 @@ function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quad
 	return L2error, plt
 end
 
-function dg_kernel(xgrid)
-	facenormals = xgrid[FaceNormals]
-	facecells = xgrid[FaceCells]
-	facevolumes = xgrid[FaceVolumes]
-	function closure(result, input, qpinfo)
-		result[1] = (input[1] * facenormals[1, qpinfo.item] + input[2] * facenormals[2, qpinfo.item])
-	end
+function dg_kernel(result, input, qpinfo)
+	result[1] = dot(input, qpinfo.normal)
 end
-
-function dg_kernelT(xgrid)
-	facenormals = xgrid[FaceNormals]
-	facecells = xgrid[FaceCells]
-	facevolumes = xgrid[FaceVolumes]
-	function closure(result, input, qpinfo)
-		result[1:2] = input[1] .* view(facenormals, :, qpinfo.item)
-	end
-end
-
-function dg_kernel_bnd(xgrid, uDb! = nothing)
-	facenormals = xgrid[FaceNormals]
-	facecells = xgrid[FaceCells]
-	facevolumes = xgrid[FaceVolumes]
+function dg_kernel_bnd(uDb! = nothing)
 	function closure(result, qpinfo)
 		uDb!(result, qpinfo)
-		result[1:2] = result[1] .* view(facenormals, :, qpinfo.item)
+		result[1:2] = result[1] .* qpinfo.normal
 	end
 end
-function dg_kernel2(xgrid)
-	function closure(result, input, qpinfo)
-		result .= input / qpinfo.volume
-	end
+function dg_kernel2(result, input, qpinfo)
+	result .= input / qpinfo.volume
 end
-function dg_kernel2_bnd(xgrid, uDb! = nothing)
+function dg_kernel2_bnd(uDb! = nothing)
 	function closure(result, qpinfo)
 		uDb!(result, qpinfo)
 		result /= qpinfo.volume
