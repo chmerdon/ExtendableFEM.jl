@@ -41,7 +41,6 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 				"Example270_NaturalConvectionProblem.jl",
 				"Example275_OptimalControlStokes.jl",
 				"Example280_CompressibleStokes.jl",
-				"Example281_CompressibleStokesHamiltonian.jl",
 				"Example282_IncompressibleMHD.jl",
 				"Example284_LevelSetMethod.jl",
 				"Example285_CahnHilliard.jl",
