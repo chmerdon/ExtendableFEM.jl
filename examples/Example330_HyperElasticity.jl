@@ -23,9 +23,10 @@ looks like this:
 
 module Example330_HyperElasticity
 
-using ExtendableFEM, ExtendableFEMBase
-using LinearSolve, LinearAlgebra
-using DiffResults, ForwardDiff
+using ExtendableFEM
+using LinearAlgebra
+using DiffResults
+using ForwardDiff
 using SimplexGridFactory
 using TetGen
 

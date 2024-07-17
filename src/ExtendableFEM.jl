@@ -19,7 +19,7 @@ if !isdefined(Base, :get_extension)
 	using Requires
 end
 
-## reexport stuff from ExtendableFEMBase
+## reexport stuff from ExtendableFEMBase and ExtendableGrids
 export FESpace, FEMatrix, FEVector
 export H1P1, H1P2, H1P3, H1Pk
 export H1Q1, H1Q2
@@ -29,6 +29,7 @@ export HDIVBDM1, HDIVBDM2
 export HCURLN0, HCURLN1
 export HDIVRTkENRICH
 export L2P0, L2P1
+export ON_FACES, ON_BFACES, ON_EDGES, ON_FACES, ON_CELLS, AT_NODES
 export nodevalues, nodevalues!, nodevalues_view, nodevalues_subset!
 export interpolate!, lazy_interpolate!
 export PointEvaluator, evaluate, evaluate!, evaluate_bary!, eval_func, eval_func_bary
