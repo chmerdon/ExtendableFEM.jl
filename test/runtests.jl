@@ -3,6 +3,18 @@ using ExtendableGrids
 using ExtendableFEMBase
 using ExtendableFEM
 using ExampleJuggler
+using Aqua
+
+
+@testset "Aqua.jl" begin
+    Aqua.test_all(
+      ExtendableFEM;
+	  ambiguities = false,
+	  piracies = false
+    )
+    Aqua.test_ambiguities(ExtendableFEM)
+end
+
 
 include("test_dgblf.jl")
 include("test_boundary_operator.jl")

@@ -54,11 +54,9 @@ include("unknowns.jl")
 export Unknown
 export grid, dofgrid
 export id, grad, hessian, div, normalflux, tangentialflux, Δ, apply, curl1, curl2, curl3, laplace, tangentialgrad
-export id_jump, grad_jump, normalflux_jump
 
 include("operators.jl")
 export AbstractOperator
-export AssemblyInformation
 export assemble!, apply_penalties!
 
 include("common_operators/reduction_operator.jl")
@@ -70,7 +68,6 @@ export ProblemDescription
 export assign_unknown!
 export assign_operator!
 export replace_operator!
-export assign_reduction!
 
 include("helper_functions.jl")
 export get_periodic_coupling_info

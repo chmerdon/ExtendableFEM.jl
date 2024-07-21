@@ -732,7 +732,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorDG{Tv, UT}, SC::Sol
 	end
 end
 
-function ExtendableFEM.assemble!(b, O::LinearOperatorDG{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
+function ExtendableFEM.assemble!(b::FEVector, O::LinearOperatorDG{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
 	if !assemble_rhs
 		return nothing
 	end

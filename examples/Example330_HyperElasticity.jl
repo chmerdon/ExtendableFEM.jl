@@ -7,12 +7,13 @@ This examples computes the solution of a nonlinear elasticity problem for hypere
 via minimisation of the (neo-Hookian) energy functional
 ```math
 \begin{aligned}
-	W(u, F(\mathbf{u})) := \int_\Omega \frac{\mu}{2} (F \cdot F - 3 - 2\log(\mathrm{det}(F))) + \frac{\lambda}{2} \log(\mathrm{det}(F))^2 - B \cdot \mathbf{u} \textit{dx} - \int_{\partial \Omega} T \cdot \mathbf{u} \textit{ds}
+	W(u, F(\mathbf{u})) := \int_\Omega \frac{\mu}{2} (F:F - 3 - 2\log(\mathrm{det}(F))) + \frac{\lambda}{2} \log(\mathrm{det}(F))^2 - B \cdot \mathbf{u} \textit{dx} - \int_{\partial \Omega} T \cdot \mathbf{u} \textit{ds}
 \end{aligned}
 ```
 where ``F(\mathbf{u}) := I + \nabla u`` is the deformation gradient and ``\mu`` and ``\lambda`` are the Lame parameters.
 The energy is differentiated twice by automatic differentiation to setup a Newton scheme for a
-Lagrangian finite element approximation of ``\mathbf{u}``.
+Lagrangian finite element approximation of ``\mathbf{u}``, once in the code below to define the kernel for the NonlinearOperator
+and this kernel is differentiated again in the assembly of the Newton scheme for the nonlinear operator.
 
 The deformed unit cube and the displacement for the default parameters and inhomogeneous boundary conditions as defined in the code
 looks like this:
@@ -29,7 +30,6 @@ using DiffResults
 using ForwardDiff
 using SimplexGridFactory
 using TetGen
-
 
 ## inhomogeneous boundary conditions for bregion 1
 function bnd_1!(result, qpinfo)

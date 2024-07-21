@@ -283,7 +283,7 @@ function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown
 	return BilinearOperator(kernel, u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args; kwargs...)
 end
 
-function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0, kwargs...) where {Tv}
+function build_assembler!(A::AbstractMatrix, O::BilinearOperator{Tv}, FE_test, FE_ansatz, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0, kwargs...) where {Tv}
 	## check if FES is the same as last time
 	FES_test = [getFEStest(FE_test[j]) for j ∈ 1:length(FE_test)]
 	FES_ansatz = [getFESansatz(FE_ansatz[j]) for j ∈ 1:length(FE_ansatz)]

@@ -189,7 +189,7 @@ should be multiplied with the matrix and u_test specifies where to put the
 (blocks of the) resulting vector in the system right-hand side.
 
 """
-function LinearOperator(A::AbstractMatrix, u_test, u_args; kwargs...)
+function LinearOperator(A::AbstractMatrix, u_test::Array{<:Union{Unknown, Int},1}, u_args::Array{<:Union{Unknown, Int},1}; kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_linop_kwargs())
 	_update_params!(parameters, kwargs)
 	return LinearOperatorFromMatrix{typeof(u_test[1]), typeof(A)}(u_test, u_args, A, parameters)
@@ -667,7 +667,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperator{Tv, UT}, SC::Solve
 end
 
 
-function ExtendableFEM.assemble!(b, O::LinearOperator{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
+function ExtendableFEM.assemble!(b::FEVector, O::LinearOperator{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
 	if !assemble_rhs
 		return
 	end

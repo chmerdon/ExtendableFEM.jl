@@ -137,7 +137,7 @@ function NonlinearOperator(kernel, oa_test::Array{<:Tuple{Union{Unknown, Int}, D
 	return NonlinearOperator(kernel, u_test, ops_test, u_args, ops_args; kwargs...)
 end
 
-function build_assembler!(A, b, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVectorBlock, 1}, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0, kwargs...) where {Tv}
+function build_assembler!(A::AbstractMatrix, b::AbstractVector, O::NonlinearOperator{Tv}, FE_test::Array{<:FEVectorBlock, 1}, FE_args::Array{<:FEVectorBlock, 1}; time = 0.0, kwargs...) where {Tv}
 	## check if FES is the same as last time
 	FES_test = [FE_test[j].FES for j ∈ 1:length(FE_test)]
 	FES_args = [FE_args[j].FES for j ∈ 1:length(FE_args)]
