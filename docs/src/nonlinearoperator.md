@@ -7,6 +7,14 @@ constructed with special constructors for BilinearOperator or LinearOperator.
 
 ## Constructor
 
+To describe a NonlinearOperator we have to specify a kernel function. 
+These functions are 'flat' in the sense that the input and output vector 
+contain the components of the test-function values and derivatives
+as specified by `oa_test` and `oa_args` respectively.
+The assembly of the local matrix will be done internally 
+by multiplying the subvectors of result with its test-function counterparts.
+For a more detailed explanation of this see the following
+
 ```@autodocs
 Modules = [ExtendableFEM]
 Pages = ["common_operators/nonlinear_operator.jl"]
@@ -15,15 +23,76 @@ Order   = [:type, :function]
 
 ## Example - NSE convection operator
 
-For the 2D Navier--Stokes equations, a kernel function for the convection operator could look like
+
+For the Navier--Stokes equations, we need a kernel function for the nonlinear
+convection term
+```math
+\begin{equation}
+(v,u\cdot\nabla u) = (v,\nabla u^T u)
+\end{equation}
+```
+In 2D the input (as specified below) will contain the two
+components of ``u=(u_1,u_2)'`` and the four components of the gradient 
+``\nabla u = \begin{pmatrix} u_{11} & u_{12} \\ u_{21} & u_{22}\end{pmatrix}``
+in order, i.e. ``(u_1,u_2,u_{11},u_{12},u_{21},u_{22})``.
+As the convection term is tested with ``v``, 
+the ouptut vector ``o`` only has to contain what should be tested with each component
+of ``v``, i.e.
+```math
+\begin{equation}
+    A_\text{local} = (v_1,v_2)^T(o_1,o_2) = 
+        \begin{pmatrix}
+            v_1o_1 & v_1o_2\\
+            v_2o_1 & v_2o_2
+        \end{pmatrix}.
+\end{equation}
+```
+To construct the kernel there are two options, 
+component-wise and based on `tensor_view`.
+For the first we have to write the convection term as individual components
+```math
+\begin{equation}
+o = 
+    \begin{pmatrix}
+        u_1\cdot u_{11}+u_2\cdot u_{12}\\
+        u_1\cdot u_{21}+u_2\cdot u_{22}\\
+    \end{pmatrix}
+= 
+\begin{pmatrix}
+    u\cdot (u_11,u_12)^T\\
+    u\cdot (u_21,u_22)^T
+\end{pmatrix}.
+\end{equation}
+```
+To make our lives a bit easier we will extract the subcompontents of 
+`input` as views, such that `∇u[3]` actually accesses `input[5]`,
+which corresponds to the third entry ``u_{21}`` of ``\nabla u``. 
 ```julia
 function kernel!(result, input, qpinfo)
     u, ∇u = view(input, 1:2), view(input,3:6)
     result[1] = dot(u, view(∇u,1:2))
     result[2] = dot(u, view(∇u,3:4))
+    return nothing
 end
 ```
-and the coressponding NonlinearOperator constructor call reads
+To improve readability of the kernels and to make them easier to understand,
+we provide the function `tensor_view` which constructs a view and reshapes 
+it into an object matching the given `TensorDescription`.
+See the [table](@ref "Which tensor for which unknown?") 
+to see which tensor size is needed for which derivative of a scalar, vector 
+or matrix-valued variable.
+```julia
+function kernel!(result, input, qpinfo)
+    u = tensor_view(input,1,TDVector(2))
+    v = tensor_view(result,1,TDVector(2))
+    ∇u = tensor_view(input,3,TDMatrix(2))
+    tmul!(v,∇u,u)
+    return nothing
+end
+```
+
+The coressponding NonlinearOperator constructor call is the same in both cases 
+and reads
 ```julia
 u = Unknown("u"; name = "velocity")
 NonlinearOperator(kernel!, [id(u)], [id(u),grad(u)])
@@ -55,6 +124,21 @@ triggers that the ```result``` vector of the kernel is multiplied with the Ident
 
     Kernels are allowed to depend on region numbers, space and time coordinates via the qpinfo argument.
 
+!!! note "Dimension independent kernels"
+
+    If done correctly, the operator-based approach allows us to write a kernel 
+    that is 'independent' of the spatial dimension, 
+    i.e. one instead of up to three kernels.
+    Assuming `dim` is a known variable we can re-write the kernel from above as
+    ```julia
+    function kernel!(result, input, qpinfo)
+        u = tensor_view(input,1,TDVector(dim))
+        v = tensor_view(result,1,TDVector(dim))
+        ∇u = tensor_view(input,1+dim,TDMatrix(dim))
+        tmul!(v,∇u,u)
+        return nothing
+    end
+    ```
 
 ## Newton by local jacobians of kernel
 

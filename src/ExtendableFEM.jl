@@ -71,6 +71,17 @@ export replace_operator!
 
 include("helper_functions.jl")
 export get_periodic_coupling_info
+export tmul!
+
+include("tensors.jl")
+export TensorDescription
+export TDScalar
+export TDVector
+export TDMatrix
+export TDRank3
+export TDRank4
+export tensor_view
+
 
 include("solver_config.jl")
 export SolverConfiguration

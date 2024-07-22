@@ -64,7 +64,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 	makedocs(
 		modules = [ExtendableFEM],
 		sitename = "ExtendableFEM.jl",
-		authors = "Christian Merdon",
+		authors = "Christian Merdon, Jan Philipp Thiele",
 		repo = "github.com/chmerdon/ExtendableFEM.jl",
 		clean = false,
 		checkdocs = :all,
@@ -74,6 +74,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 			"Index" => "package_index.md",
 			"Problem Description" => [
 				"problemdescription.md",
+                "tensordescription.md",
 				"nonlinearoperator.md",
 				"bilinearoperator.md",
 				"linearoperator.md",

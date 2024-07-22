@@ -210,3 +210,68 @@ function get_dofmap(FES, xgrid, AT)
 	return FES.dofgrid === xgrid ? FES[DM] : FES[ParentDofmap4Dofmap(DM)]
 end
 
+
+# """
+# ````
+# function tensor_view(input, i, rank, dim)
+# ````
+
+# Returns a view of input[i] and following entries 
+# reshaped as a tensor of rank `rank`.
+# The parameter `dim` specifies the size of a tensor in each direction, 
+# e.g. a 1-Tensor (Vector) of length(dim) or a dim x dim 2-Tensor (matrix).
+# As an example `tensor_view(v,5,2,5)` returns a view of `v(5:29)`  
+# as a 5x5 matrix.
+
+# """
+# function tensor_view(input, i::Int, rank::Int, dim::Int)
+#     if rank == 0
+#         return view(input, i:i)
+#     elseif rank == 1
+#         return view(input, i:i+dim-1)
+#     elseif rank == 2
+#         return reshape(view(input, i:(i+(dim*dim)-1)), (dim,dim))
+#     elseif rank == 3
+#         return reshape(view(input, i:(i+(dim*dim*dim)-1)), (dim, dim,dim))
+#     else
+#         @warn "tensor_view for rank > 3 is a general implementation that needs allocations!"
+#         return reshape(view(input, i:(i+(dim^rank)-1)),ntuple(i->dim,rank))
+#     end
+# end
+
+
+"""
+````
+function tmul!(y,A,x,α=1.0,β=0.0)
+````
+
+Combined inplace  matrix-vector multiply-add ``A^T x α + y β``.
+The result is stored in `y` by overwriting it.  Note that `y` must not be
+aliased with either `A` or `x`.
+
+"""
+function tmul!(y, A, x, α = 1.0, β = 0.0)
+    for i in eachindex(y)
+        y[i] *= β
+        for j in eachindex(x)
+            y[i] += α * A[j, i] * x[j]
+        end
+    end
+end
+
+"""
+````
+function tmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α=1.0, β=0.0) where {T<:AbstractFloat}
+````
+
+Overload of the generic function for types supported by 
+`LinearAlgebra.BLAS.gemv!` to avoid slow run times for large inputs.
+"""
+function tmul!(
+    y::AbstractVector{T},
+    A::AbstractMatrix{T},
+    x::AbstractVector{T},
+    α=1.0,
+    β=0.0) where {T<:AbstractFloat}
+    LinearAlgebra.BLAS.gemv!('T', α, A, x, β, y)
+end

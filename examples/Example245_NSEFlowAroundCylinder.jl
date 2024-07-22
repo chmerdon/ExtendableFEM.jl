@@ -43,18 +43,46 @@ function inflow!(result, qpinfo)
 	result[2] = 0.0
 end
 
+## hand constructed identity matrix for kernel to avoid allocations
+const II = [1 0; 0 1]
+
+
+## Example of a kernel using tensor_view() function to allow for an operator 
+## based style of writing the semilinear form.
+## For comparison we also provide the kernel_nonlinear_flat! function below 
+## that uses a component-wise style of writing the semilinear form.
+
+## 
+## the scalar product ``(\nabla v, \mu \nabla u - p)`` will be evaluated
+## so in general `a = b` corresponds to ``(a,b)``. 
+
+## Note that the order of vector entries between the kernel and the call to 
+## NonlinearOperator have to match.
 function kernel_nonlinear!(result, u_ops, qpinfo)
-	u, ∇u, p = view(u_ops, 1:2), view(u_ops, 3:6), view(u_ops, 7)
-	μ = qpinfo.params[1]
-	result[1] = dot(u, view(∇u, 1:2))
-	result[2] = dot(u, view(∇u, 3:4))
-	result[3] = μ * ∇u[1] - p[1]
-	result[4] = μ * ∇u[2]
-	result[5] = μ * ∇u[3]
-	result[6] = μ * ∇u[4] - p[1]
-	result[7] = -(∇u[1] + ∇u[4])
-	return nothing
+    # Shape values of vectorial u are starting at index 1
+    # view as 1-tensor(vector) of length dim=2 in 2D
+    u = tensor_view(u_ops, 1, TDVector(2))
+    v = tensor_view(result, 1, TDVector(2))
+    # gradients of vectorial u are starting at index 3
+    # view as 2-tensor of size 2x2 in 2D
+    ∇u = tensor_view(u_ops, 3, TDMatrix(2))
+    ∇v = tensor_view(result, 3, TDMatrix(2))
+    # values of scalar p are starting at index 7
+    # view as 0-tensor (single value) 
+    p = tensor_view(u_ops, 7, TDScalar())
+    q = tensor_view(result, 7, TDScalar())
+    # get viscosity at current quadrature point
+    μ = qpinfo.params[1]
+    # Note that all operators should be element-wise to avoid allocations
+    # `(v,u⋅∇u) = (v,∇u^T⋅u)`
+    tmul!(v,∇u,u)
+    # `(∇v,μ∇u-p)`
+    ∇v .= μ .* ∇u .- p[1] .* II
+    # `(q,-∇⋅u)`
+    q[1] = -dot(∇u, II)
+    return nothing
 end
+
 
 ## everything is wrapped in a main function
 function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true, kwargs...)
