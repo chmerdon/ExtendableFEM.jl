@@ -21,11 +21,11 @@ default_combop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::CombineDofs)
+function dependencies_when_linearized(O::CombineDofs)
 	return [O.uX, O.uY]
 end
 
-function ExtendableFEM.fixed_dofs(O::CombineDofs)
+function fixed_dofs(O::CombineDofs)
 	## assembles operator to full matrix A and b
 	return O.dofsY
 end
@@ -51,7 +51,7 @@ function CombineDofs(uX, uY, dofsX, dofsY, factors = ones(Int, length(X)); kwarg
 	return CombineDofs(uX, uY, dofsX, dofsY, factors, nothing, nothing, nothing, parameters)
 end
 
-function ExtendableFEM.apply_penalties!(A, b, sol, O::CombineDofs{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {Tv, UT}
+function apply_penalties!(A, b, sol, O::CombineDofs{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {Tv, UT}
 	if UT <: Integer
 		ind = [O.ux, O.uY]
 	elseif UT <: Unknown

@@ -18,17 +18,17 @@ default_cbop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::CallbackOperator)
+function depends_nonlinearly_on(O::CallbackOperator)
 	return O.u_args
 end
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::CallbackOperator)
+function dependencies_when_linearized(O::CallbackOperator)
 	return O.parameters[:linearized_dependencies]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::CallbackOperator)
+function is_timedependent(O::CallbackOperator)
 	return O.parameters[:time_dependent]
 end
 
@@ -79,7 +79,7 @@ function CallbackOperator(callback::Function, u_args = []; kwargs...)
 	return CallbackOperator{eltype(u_args), typeof(callback), typeof(storage_A), typeof(storage_b)}(callback, u_args, storage_A, storage_b, parameters)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::CallbackOperator{UT}, SC::SolverConfiguration; time = 0, assemble_matrix = true, assemble_rhs = true, kwargs...) where {UT}
+function assemble!(A, b, sol, O::CallbackOperator{UT}, SC::SolverConfiguration; time = 0, assemble_matrix = true, assemble_rhs = true, kwargs...) where {UT}
 	if O.parameters[:store] && size(A) == size(O.storage)
 		add!(A, O.storage_A)
 		add!(b, O.storage_b)

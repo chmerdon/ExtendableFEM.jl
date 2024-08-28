@@ -24,7 +24,7 @@ If no mass matrix is provided the standard mass matrix for the respective
 finite element space(s) for all unknowns is assembled.
 
 Additional keyword arguments:
-$(ExtendableFEM._myprint(default_diffeq_kwargs()))
+$(_myprint(default_diffeq_kwargs()))
 
 """
 function generate_ODEProblem end # Implementation in extension ExtendableFEMDiffEQExt, see ext subfolder

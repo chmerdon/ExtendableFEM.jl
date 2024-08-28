@@ -6,7 +6,7 @@ mutable struct HomogeneousData{UT, AT} <: AbstractOperator
 	parameters::Dict{Symbol, Any}
 end
 
-ExtendableFEM.fixed_dofs(O::HomogeneousData) = O.bdofs
+fixed_dofs(O::HomogeneousData) = O.bdofs
 fixed_vals(O::HomogeneousData) = O.parameters[:value]
 
 
@@ -20,7 +20,7 @@ default_homdata_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::HomogeneousData)
+function dependencies_when_linearized(O::HomogeneousData)
 	return O.u
 end
 
@@ -139,7 +139,7 @@ function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs..
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::SolverConfiguration; kwargs...) where {UT, AT}
+function assemble!(A, b, sol, O::HomogeneousData{UT, AT}, SC::SolverConfiguration; kwargs...) where {UT, AT}
 	if UT <: Integer
 		ind = O.u
 	elseif UT <: Unknown
@@ -157,7 +157,7 @@ function apply!(U::FEVectorBlock, O::HomogeneousData; offset = 0, kwargs...)
 end
 
 
-function ExtendableFEM.apply_penalties!(A, b, sol, O::HomogeneousData{UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, assemble_sol = true, kwargs...) where {UT}
+function apply_penalties!(A, b, sol, O::HomogeneousData{UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, assemble_sol = true, kwargs...) where {UT}
 	time = @elapsed begin
 		if UT <: Integer
 			ind = O.u

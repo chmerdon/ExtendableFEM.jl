@@ -8,17 +8,17 @@ mutable struct BilinearOperatorFromMatrix{UT <: Union{Unknown, Integer}, MT} <: 
 end
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::BilinearOperatorFromMatrix)
+function depends_nonlinearly_on(O::BilinearOperatorFromMatrix)
 	return O.u_args
 end
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::BilinearOperatorFromMatrix)
+function dependencies_when_linearized(O::BilinearOperatorFromMatrix)
 	return [O.u_ansatz, O.u_test]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::BilinearOperatorFromMatrix)
+function is_timedependent(O::BilinearOperatorFromMatrix)
 	return O.parameters[:time_dependent]
 end
 
@@ -78,17 +78,17 @@ getFEStest(FMB::FEMatrixBlock) = FMB.FES
 getFESansatz(FMB::FEMatrixBlock) = FMB.FESY
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::BilinearOperator)
+function depends_nonlinearly_on(O::BilinearOperator)
 	return unique(O.u_args)
 end
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::BilinearOperator)
+function dependencies_when_linearized(O::BilinearOperator)
 	return [unique(O.u_ansatz), unique(O.u_test)]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::BilinearOperator)
+function is_timedependent(O::BilinearOperator)
 	return O.parameters[:time_dependent]
 end
 
@@ -933,7 +933,7 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemblr_rhs = true, kwargs...) where {Tv, UT}
+function assemble!(A, b, sol, O::BilinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemblr_rhs = true, kwargs...) where {Tv, UT}
 	if !assemble_matrix
 		return nothing
 	end
@@ -955,7 +955,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperator{Tv, UT}, SC::Sol
 	end
 end
 
-function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperator{Tv, UT}, sol = nothing; assemble_matrix = true, kwargs...) where {Tv, UT}
+function assemble!(A::FEMatrix, O::BilinearOperator{Tv, UT}, sol = nothing; assemble_matrix = true, kwargs...) where {Tv, UT}
 	if !assemble_matrix
 		return nothing
 	end
@@ -972,7 +972,7 @@ function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperator{Tv, UT}, sol =
 end
 
 
-function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorFromMatrix{UT, MT}, SC::SolverConfiguration; assemble_matrix = true, kwargs...) where {UT, MT}
+function assemble!(A, b, sol, O::BilinearOperatorFromMatrix{UT, MT}, SC::SolverConfiguration; assemble_matrix = true, kwargs...) where {UT, MT}
 	if !assemble_matrix
 		return nothing
 	end

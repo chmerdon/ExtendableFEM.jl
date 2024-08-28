@@ -44,17 +44,17 @@ default_blfopdg_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::BilinearOperatorDG)
+function depends_nonlinearly_on(O::BilinearOperatorDG)
 	return unique(O.u_args)
 end
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::BilinearOperatorDG)
+function dependencies_when_linearized(O::BilinearOperatorDG)
 	return [unique(O.u_ansatz), unique(O.u_test)]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::BilinearOperatorDG)
+function is_timedependent(O::BilinearOperatorDG)
 	return O.parameters[:time_dependent]
 end
 
@@ -934,7 +934,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorDG{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, kwargs...) where {Tv, UT}
+function assemble!(A, b, sol, O::BilinearOperatorDG{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, kwargs...) where {Tv, UT}
 	if !assemble_matrix
 		return nothing
 	end
@@ -956,7 +956,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::BilinearOperatorDG{Tv, UT}, SC::S
 	end
 end
 
-function ExtendableFEM.assemble!(A::FEMatrix, O::BilinearOperatorDG{Tv, UT}, sol = nothing; assemble_matrix = true, kwargs...) where {Tv, UT}
+function assemble!(A::FEMatrix, O::BilinearOperatorDG{Tv, UT}, sol = nothing; assemble_matrix = true, kwargs...) where {Tv, UT}
 	if !assemble_matrix
 		return nothing
 	end

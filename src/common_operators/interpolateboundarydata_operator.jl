@@ -9,7 +9,7 @@ mutable struct InterpolateBoundaryData{UT, DFT} <: AbstractOperator
 	parameters::Dict{Symbol, Any}
 end
 
-ExtendableFEM.fixed_dofs(O::InterpolateBoundaryData) = O.bdofs
+fixed_dofs(O::InterpolateBoundaryData) = O.bdofs
 fixed_vals(O::InterpolateBoundaryData) = view(O.bddata.entries, O.bdofs)
 
 default_bndop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
@@ -23,12 +23,12 @@ default_bndop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::InterpolateBoundaryData)
+function dependencies_when_linearized(O::InterpolateBoundaryData)
 	return O.u
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::InterpolateBoundaryData)
+function is_timedependent(O::InterpolateBoundaryData)
 	return O.parameters[:time_dependent]
 end
 
@@ -62,7 +62,7 @@ function InterpolateBoundaryData(u, data = nothing; kwargs...)
 	return InterpolateBoundaryData{typeof(u), typeof(data)}(u, data, zeros(Int, 0), zeros(Int, 0), nothing, nothing, nothing, parameters)
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...) where UT
+function assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...) where UT
 	if UT <: Integer
 		ind = O.u
 		ind_sol = ind
@@ -143,7 +143,7 @@ function apply!(U::FEVectorBlock, O::InterpolateBoundaryData; offset = 0, kwargs
 	end
 end
 
-function ExtendableFEM.apply_penalties!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...) where {UT}
+function apply_penalties!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...) where {UT}
 	time = @elapsed begin
 		if UT <: Integer
 			ind = O.u

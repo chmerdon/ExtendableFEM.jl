@@ -48,17 +48,17 @@ default_nlop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::NonlinearOperator)
+function depends_nonlinearly_on(O::NonlinearOperator)
 	return unique(O.u_args)
 end
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::NonlinearOperator)
+function dependencies_when_linearized(O::NonlinearOperator)
 	return [unique(O.u_test), unique(O.u_args)]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::NonlinearOperator)
+function is_timedependent(O::NonlinearOperator)
 	return O.parameters[:time_dependent]
 end
 
@@ -462,7 +462,7 @@ function build_assembler!(A::AbstractMatrix, b::AbstractVector, O::NonlinearOper
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::NonlinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, time = 0.0, kwargs...) where {Tv, UT}
+function assemble!(A, b, sol, O::NonlinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, time = 0.0, kwargs...) where {Tv, UT}
 	if assemble_matrix * assemble_rhs == false
 		return nothing
 	end
@@ -479,7 +479,7 @@ end
 
 
 
-function ExtendableFEM.assemble!(A, b, O::NonlinearOperator{Tv, UT}, sol; assemble_matrix = true, assemble_rhs = true, time = 0.0, kwargs...) where {Tv, UT}
+function assemble!(A, b, O::NonlinearOperator{Tv, UT}, sol; assemble_matrix = true, assemble_rhs = true, time = 0.0, kwargs...) where {Tv, UT}
 	if assemble_matrix * assemble_rhs == false
 		return nothing
 	end

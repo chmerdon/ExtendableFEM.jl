@@ -35,17 +35,17 @@ default_lfopdg_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::LinearOperatorDG)
+function depends_nonlinearly_on(O::LinearOperatorDG)
 	return unique(O.u_args)
 end
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::LinearOperatorDG)
+function dependencies_when_linearized(O::LinearOperatorDG)
 	return [unique(O.u_test)]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::LinearOperatorDG)
+function is_timedependent(O::LinearOperatorDG)
 	return O.parameters[:time_dependent]
 end
 
@@ -712,7 +712,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorDG{Tv, UT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {Tv, UT}
+function assemble!(A, b, sol, O::LinearOperatorDG{Tv, UT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {Tv, UT}
 	if !assemble_rhs
 		return nothing
 	end
@@ -732,7 +732,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorDG{Tv, UT}, SC::Sol
 	end
 end
 
-function ExtendableFEM.assemble!(b::FEVector, O::LinearOperatorDG{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
+function assemble!(b::FEVector, O::LinearOperatorDG{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
 	if !assemble_rhs
 		return nothing
 	end

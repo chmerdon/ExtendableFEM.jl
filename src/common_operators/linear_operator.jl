@@ -46,17 +46,17 @@ default_linop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::LinearOperator)
+function depends_nonlinearly_on(O::LinearOperator)
 	return unique(O.u_args)
 end
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::LinearOperator)
+function dependencies_when_linearized(O::LinearOperator)
 	return [unique(O.u_test)]
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::LinearOperator)
+function is_timedependent(O::LinearOperator)
 	return O.parameters[:time_dependent]
 end
 
@@ -646,7 +646,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 	end
 end
 
-function ExtendableFEM.assemble!(A, b, sol, O::LinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {Tv, UT}
+function assemble!(A, b, sol, O::LinearOperator{Tv, UT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {Tv, UT}
 	if !assemble_rhs
 		return
 	end
@@ -667,7 +667,7 @@ function ExtendableFEM.assemble!(A, b, sol, O::LinearOperator{Tv, UT}, SC::Solve
 end
 
 
-function ExtendableFEM.assemble!(b::FEVector, O::LinearOperator{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
+function assemble!(b::FEVector, O::LinearOperator{Tv, UT}, sol = nothing; assemble_rhs = true, kwargs...) where {Tv, UT}
 	if !assemble_rhs
 		return
 	end
@@ -683,7 +683,7 @@ function ExtendableFEM.assemble!(b::FEVector, O::LinearOperator{Tv, UT}, sol = n
 end
 
 
-function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromVector{UT, bT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {UT, bT}
+function assemble!(A, b, sol, O::LinearOperatorFromVector{UT, bT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {UT, bT}
 	if !assemble_rhs
 		return
 	end
@@ -704,7 +704,7 @@ end
 
 
 
-function ExtendableFEM.assemble!(A, b, sol, O::LinearOperatorFromMatrix{UT, MT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {UT, MT}
+function assemble!(A, b, sol, O::LinearOperatorFromMatrix{UT, MT}, SC::SolverConfiguration; assemble_rhs = true, kwargs...) where {UT, MT}
 	if !assemble_rhs
 		return
 	end

@@ -27,12 +27,12 @@ default_iiopdg_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::ItemIntegratorDG)
+function depends_nonlinearly_on(O::ItemIntegratorDG)
 	return unique(O.u_args)
 end
 
 # informs solver when operator needs reassembly in a time dependent setting
-function ExtendableFEM.is_timedependent(O::ItemIntegratorDG)
+function is_timedependent(O::ItemIntegratorDG)
 	return O.parameters[:time_dependent]
 end
 

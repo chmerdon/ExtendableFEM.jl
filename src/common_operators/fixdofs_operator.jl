@@ -12,7 +12,7 @@ mutable struct FixDofs{UT, AT, VT} <: AbstractOperator
 	parameters::Dict{Symbol, Any}
 end
 
-ExtendableFEM.fixed_dofs(O::FixDofs) = O.dofs .+ O.offset
+fixed_dofs(O::FixDofs) = O.dofs .+ O.offset
 fixed_vals(O::FixDofs) = O.vals
 
 default_fixdofs_kwargs() = Dict{Symbol, Tuple{Any, String}}(
@@ -22,7 +22,7 @@ default_fixdofs_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::FixDofs)
+function dependencies_when_linearized(O::FixDofs)
 	return O.u
 end
 
@@ -51,7 +51,7 @@ function FixDofs(u; dofs = [], vals = zeros(Float64, length(dofs)), kwargs...)
 	return FixDofs{typeof(u), typeof(dofs), typeof(vals)}(u, dofs, 0, vals, nothing, parameters)
 end
 
-function ExtendableFEM.apply_penalties!(A, b, sol, O::FixDofs{UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {UT}
+function apply_penalties!(A, b, sol, O::FixDofs{UT}, SC::SolverConfiguration; assemble_matrix = true, assemble_rhs = true, kwargs...) where {UT}
 	if UT <: Integer
 		ind = O.u
 	elseif UT <: Unknown

@@ -17,12 +17,12 @@ default_redop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 )
 
 # informs solver when operator needs reassembly
-function ExtendableFEM.depends_nonlinearly_on(O::FixbyInterpolation, u::Unknown)
+function depends_nonlinearly_on(O::FixbyInterpolation, u::Unknown)
 	return []
 end
 
 # informs solver in which blocks the operator assembles to
-function ExtendableFEM.dependencies_when_linearized(O::FixbyInterpolation)
+function dependencies_when_linearized(O::FixbyInterpolation)
 	return [O.u_in]
 end
 
