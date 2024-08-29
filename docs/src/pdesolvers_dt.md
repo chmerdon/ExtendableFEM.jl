@@ -8,11 +8,10 @@ Several time-dependent examples are available where both options are implemented
 and Example205 (Heat equation).
 
 
-## Extension ExtendableFEMDiffEQExt.jl
+## Using SciMLBase.ODEProblem and DifferentialEquations.jl
 
-This extension is automatically loaded when also DifferentialEquations.jl is used. It allows to easily reframe
-the ProblemDescription for the spacial differential operator of the PDE
-as the right-hand side of an ODE. Here, the ProblemDescription contains
+It is possible to reframe the ProblemDescription for the spacial differential operator of the PDE
+as the right-hand side of an ODEProblem. Here, the ProblemDescription contains
 the right-hand side description of the ODE
 ```math
 \begin{aligned}

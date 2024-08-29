@@ -1,7 +1,7 @@
 name = "ExtendableFEM"
 uuid = "a722555e-65e0-4074-a036-ca7ce79a4aed"
 authors = ["Christian Merdon <merdon@wias-berlin.de>"]
-version = "0.5.0"
+version = "0.6.0"
 
 [deps]
 CommonSolve = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
