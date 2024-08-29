@@ -192,4 +192,7 @@ export plot, plot!
 export default_generateplots
 export plot_unicode
 
+include("diffeq_interface.jl")
+export generate_ODEProblem
+
 end #module
