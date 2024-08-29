@@ -4,7 +4,7 @@
 
 General type for an `R`-tensor of dimension/extent `D`.
 Mathematically, this describes the shape of an element 
-in ``\\underbrace{\\mathbb{R}^D\\times\\cdots\\times\\mathbb{R}^D}_{R} \\text{ times}}``.
+in ``\\underbrace{\\mathbb{R}^D\\times\\cdots\\times\\mathbb{R}^D}_{R} \\text{ times}``.
 
 See also: 
 [TDScalar{D}](@ref),

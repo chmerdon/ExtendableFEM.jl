@@ -10,11 +10,10 @@ end
 import ExtendableFEM: SolverConfiguration, generate_ODEProblem
 import ExtendableFEMBase: FEMatrix
 
-using DifferentialEquations
-using LinearAlgebra
-using ExtendableFEM
-using ExtendableFEMBase
-using ExtendableSparse
+using DifferentialEquations: DifferentialEquations
+using ExtendableFEMBase: ExtendableFEMBase, FESpace, fill!, mul!, norm
+using ExtendableSparse: ExtendableSparse, ExtendableSparseMatrix, flush!
+using LinearAlgebra: LinearAlgebra
 
 include("diffeq_interface.jl")
 
