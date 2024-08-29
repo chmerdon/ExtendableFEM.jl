@@ -63,6 +63,7 @@ using SparseArrays: SparseArrays, AbstractSparseArray, SparseMatrixCSC, nnz,
 using SparseDiffTools: SparseDiffTools, ForwardColorJacCache,
 					   forwarddiff_color_jacobian!, matrix_colors
 using Symbolics: Symbolics
+using SciMLBase: SciMLBase
 
 if !isdefined(Base, :get_extension)
 	using Requires
@@ -190,13 +191,5 @@ export vectorplot!
 export plot, plot!
 export default_generateplots
 export plot_unicode
-
-@static if !isdefined(Base, :get_extension)
-	function __init__()
-		@require DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa" begin
-			include("../ext/ExtendableFEMDiffEQExt.jl")
-		end
-	end
-end
 
 end #module
