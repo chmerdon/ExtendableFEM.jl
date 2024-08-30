@@ -167,7 +167,7 @@ function main(;
     ## plot
     plt = GridVisualizer(; Plotter = Plotter, layout = (2,2), clear = true, size = (1000,1000))
     scalarplot!(plt[1,1],xgrid, view(nodevalues(sol[u]; abs = true),1,:), levels = 0, colorbarticks = 7)
-    vectorplot!(plt[1,1],xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), spacing = 0.1, clear = false, title = "u_h (abs + quiver)")
+    vectorplot!(plt[1,1],xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), rasterpoints = 10, clear = false, title = "u_h (abs + quiver)")
     scalarplot!(plt[2,1],xgrid, view(nodevalues(sol[ϱ]),1,:), levels = 11, title = "ϱ_h")
     plot_convergencehistory!(plt[1,2], NDofs, Results[:,1:4]; add_h_powers = [order,order+1], X_to_h = X -> 0.2*X.^(-1/2), legend = :best, ylabels = ["|| u - u_h ||", "|| ∇(u - u_h) ||", "|| ϱ - ϱ_h ||", "|| ϱu - ϱu_h ||","#its"])
     gridplot!(plt[2,2],xgrid)

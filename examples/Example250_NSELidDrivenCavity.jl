@@ -97,8 +97,8 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 			initialize!(PE, sol)
 		end
 		scalarplot!(plt[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity (μ = $(extra_params[1]))", Plotter = Plotter)
-		vectorplot!(plt[1, 1], xgrid, eval_func_bary(PE), spacing = 0.05, clear = false)
-		streamplot!(plt[1, 2], xgrid, eval_func_bary(PE), spacing = 0.01, density = 2, title = "streamlines")
+		vectorplot!(plt[1, 1], xgrid, eval_func_bary(PE), rasterpoints = 20, clear = false)
+		streamplot!(plt[1, 2], xgrid, eval_func_bary(PE), rasterpoints = 50, density = 2, title = "streamlines")
 		
 		if extra_params[1] <= μ_final
 			break
@@ -108,8 +108,8 @@ function main(; μ_final = 0.0005, order = 2, nrefs = 5, Plotter = nothing, kwar
 	end
 
 	scalarplot!(plt[1, 1], xgrid, nodevalues(sol[1]; abs = true)[1, :]; title = "velocity (μ = $(extra_params[1]))", Plotter = Plotter)
-	vectorplot!(plt[1, 1], xgrid, eval_func_bary(PE), spacing = 0.05, clear = false)
-	streamplot!(plt[1, 2], xgrid, eval_func_bary(PE), spacing = 0.01, density = 2, title = "streamlines")
+	vectorplot!(plt[1, 1], xgrid, eval_func_bary(PE), rasterpoints = 20, clear = false)
+	streamplot!(plt[1, 2], xgrid, eval_func_bary(PE), rasterpoints = 50, density = 2, title = "streamlines")
 
 	return sol, plt
 end

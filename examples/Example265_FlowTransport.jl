@@ -128,7 +128,7 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     println("\n[min(c),max(c)] = [$(minimum(view(sol[T]))),$(maximum(view(sol[T])))]")
 
     ## plot
-    plt = plot([id(u), id(T)], sol; Plotter = Plotter, ncols = 1, spacing = 0.25, width = 800, height = 800)
+    plt = plot([id(u), id(T)], sol; Plotter = Plotter, ncols = 1, rasterpoints = 40, width = 800, height = 800)
 
     return sol, plt
 end

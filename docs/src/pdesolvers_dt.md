@@ -28,7 +28,7 @@ reassembly can be skipped if constant_matrix = true is used in the SolverConfigu
 
 ```@autodocs
 Modules = [ExtendableFEM]
-Pages = ["solvers_diffeq.jl"]
+Pages = ["solvers_diffeq.jl", "diffeq_interface.jl"]
 Order   = [:type, :function]
 ```
 

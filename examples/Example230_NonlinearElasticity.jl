@@ -135,8 +135,8 @@ function main(;
 	end
 	scalarplot!(plt[1, 1], xgrid, view(strain_nodevals, 1, :), levels = 3, colorbarticks = 7, xlimits = [-scale[2] / 2 - 10, scale[2] / 2 + 10], ylimits = [-30, scale[1] + 20], title = "ϵ(u)_xx + displacement")
 	scalarplot!(plt[2, 1], xgrid, view(strain_nodevals, 2, :), levels = 1, colorbarticks = 7, xlimits = [-scale[2] / 2 - 10, scale[2] / 2 + 10], ylimits = [-30, scale[1] + 20], title = "ϵ(u)_yy + displacement")
-	vectorplot!(plt[1, 1], xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), spacing = [50, 25], clear = false)
-	vectorplot!(plt[2, 1], xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), spacing = [50, 25], clear = false)
+	vectorplot!(plt[1, 1], xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), rasterpoints = 20, clear = false)
+	vectorplot!(plt[2, 1], xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), rasterpoints = 20, clear = false)
 	displace_mesh!(xgrid, sol[u])
 	gridplot!(plt[3, 1], xgrid, linewidth = 1, title = "displaced mesh")
 	println(stdout, unicode_gridplot(xgrid))
