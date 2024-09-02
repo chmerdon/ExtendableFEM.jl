@@ -75,7 +75,7 @@ end
 
 
 ## everything is wrapped in a main function
-function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = true, μ = 1, kwargs...)
+function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = true, parallel = false, npart = 8, μ = 1, kwargs...)
     
     ## load mesh and refine
     xgrid = uniform_refine(simplexgrid(Triangulate;
@@ -85,6 +85,10 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     regionpoints = [0.5 0.5;]',
     regionnumbers = [1],
     regionvolumes = [1.0]), nrefs)
+
+	if parallel
+		xgrid = partition(xgrid, RecursiveMetisPartitioning(npart=npart))
+	end
 
     ## define unknowns
     u = Unknown("u"; name = "velocity", dim = 2)
@@ -97,8 +101,8 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     PD = ProblemDescription("Stokes problem")
     assign_unknown!(PD, u)
     assign_unknown!(PD, p)
-    assign_operator!(PD, BilinearOperator(kernel_stokes_standard!, [grad(u), id(p)]; params = [μ], kwargs...))  
-    assign_operator!(PD, InterpolateBoundaryData(u, u_inlet!; regions = 4, kwargs...))
+    assign_operator!(PD, BilinearOperator(kernel_stokes_standard!, [grad(u), id(p)]; params = [μ], parallel = parallel, kwargs...))  
+    assign_operator!(PD, InterpolateBoundaryData(u, u_inlet!; regions = 4, parallel = parallel, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1,3], kwargs...))
 
     ## add transport equation of species
@@ -107,11 +111,11 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     if FVtransport ## FVM discretisation of transport equation (pure upwind convection)
         τ = 1e3
         assign_operator!(PDT, CallbackOperator(assemble_fv_operator!(), [u]; kwargs...))
-        assign_operator!(PDT, BilinearOperator([id(T)]; store = true, factor = 1/τ, kwargs...))
-        assign_operator!(PDT, LinearOperator([id(T)], [id(T)]; factor = 1/τ, kwargs...))
+        assign_operator!(PDT, BilinearOperator([id(T)]; store = true, factor = 1/τ, parallel = parallel, kwargs...))
+        assign_operator!(PDT, LinearOperator([id(T)], [id(T)]; factor = 1/τ, parallel = parallel, kwargs...))
     else ## FEM discretisation of transport equation (with small diffusion term)
-        assign_operator!(PDT, BilinearOperator([grad(T)]; factor = 1e-6, kwargs...))
-        assign_operator!(PDT, BilinearOperator(kernel_convection!, [id(T)], [grad(T)], [id_u]; kwargs...))
+        assign_operator!(PDT, BilinearOperator([grad(T)]; factor = 1e-6, parallel = parallel, kwargs...))
+        assign_operator!(PDT, BilinearOperator(kernel_convection!, [id(T)], [grad(T)], [id_u]; parallel = parallel, kwargs...))
         assign_operator!(PDT, InterpolateBoundaryData(T, c_inlet!; regions = [4], kwargs...))
     end
     

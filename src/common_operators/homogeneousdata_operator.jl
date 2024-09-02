@@ -132,7 +132,7 @@ function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs..
 			end
 		end
 		if O.parameters[:verbosity] > 0
-			@info "$(O.parameters[:name]) : penalizing $(length(bdofs)) dofs of '$(O.u.name)' ($AT)"
+			@info "$(O.parameters[:name]) : penalizing $(length(bdofs)) dofs of '$(O.u.name)' ($AT, regions = $(O.parameters[:regions]))"
 		end
 		O.bdofs = bdofs
 		O.FES = FES
