@@ -115,7 +115,7 @@ function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true,
 	sol = solve(PD, FES; maxiterations = 50, target_residual = 1e-10)
 
 	## postprocess : compute drag/lift (see function below)
-	draglift = get_draglift(sol, μ)
+	draglift = get_draglift(sol, μ; parallel = parallel, kwargs...)
 	pdiff = get_pressure_difference(sol)
 	println("[drag, lift] = $draglift")
 	println("p difference = $pdiff")
@@ -144,7 +144,7 @@ function get_pressure_difference(sol::FEVector)
 	return p_left - p_right
 end
 
-function get_draglift(sol::FEVector, μ)
+function get_draglift(sol::FEVector, μ; parallel = false, kwargs...)
 
 	## this function is interpolated for drag/lift test function creation
 	function DL_testfunction(component)
@@ -168,7 +168,7 @@ function get_draglift(sol::FEVector, μ)
 		result[1] *= -(2 / (umean^2 * L))
 		return nothing
 	end
-	DLIntegrator = ItemIntegrator(draglift_kernel, [id(1), grad(1), id(2), id(3), grad(3)]; quadorder = 4)
+	DLIntegrator = ItemIntegrator(draglift_kernel, [id(1), grad(1), id(2), id(3), grad(3)]; quadorder = 4, parallel = parallel, kwargs...)
 
 	## test for drag
 	TestFunction = FEVector(sol[1].FES; name = "drag/lift testfunction")

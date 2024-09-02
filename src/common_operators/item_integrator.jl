@@ -18,6 +18,7 @@ default_iiop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
 	:factor => (1, "factor that should be multiplied during assembly"),
 	:piecewise => (true, "returns piecewise integrations, otherwise a global integration"),
+	:parallel => (false, "assemble operator in parallel using partitions information"),
 	:quadorder => ("auto", "quadrature order"),
 	:bonus_quadorder => (0, "additional quadrature order added to quadorder"),
 	:verbosity => (0, "verbosity level"),
@@ -85,20 +86,29 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 	if (O.FES_args != FES_args)
 
 		if O.parameters[:verbosity] > 0
-			@info ".... building assembler for $(O.parameters[:name])"
+			@info "$(O.parameters[:name]) : building assembler"
 		end
 
 		## determine grid
 		xgrid = determine_assembly_grid(FES_args)
-
-		## prepare assembly
 		AT = O.parameters[:entities]
 		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[1]), AT)
+
+		## prepare assembly
 		Ti = typeof(xgrid).parameters[2]
-		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
-		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
-		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
+		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
+		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
+		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		if num_pcolors(xgrid) > 1 && gridAT == ON_CELLS
+			maxnpartitions = maximum(num_partitions_per_color(xgrid))
+			pc = xgrid[PartitionCells]
+			itemassemblygroups = [pc[j]:pc[j+1]-1 for j = 1 : num_partitions(xgrid)]
+			# assuming here that all cells of one partition have the same geometry
+		else
+			itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
+			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+		end
+		Ti = typeof(xgrid).parameters[2]
 		has_normals = true
 		if gridAT <: ON_FACES
 			itemnormals = xgrid[FaceNormals]
@@ -108,7 +118,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 			has_normals = false
 		end
 		FETypes_args = [eltype(F) for F in FES_args]
-		EGs = [itemgeometries[itemassemblygroups[1, j]] for j ∈ 1:num_sources(itemassemblygroups)]
+		EGs = [itemgeometries[itemassemblygroups[j][1]] for j ∈ 1:length(itemassemblygroups)]
 
 		## prepare assembly
 		nargs = length(FES_args)
@@ -228,12 +238,22 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 
 		function assembler(b, sol; kwargs...)
 			time_assembly = @elapsed begin
-				for j ∈ 1:length(EGs)
-					assembly_loop(b, sol, view(itemassemblygroups, :, j), EGs[j], O.QF[j], O.BE_args[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+				if O.parameters[:parallel] && O.parameters[:piecewise]
+					pcp = xgrid[PColorPartitions]
+					if O.parameters[:verbosity] > 0
+						@info "$(O.parameters[:name]) : assembling in parallel with $(length(EGs)) partitions and $(Threads.nthreads()) threads"
+					end
+					Threads.@threads for j ∈ 1:length(EGs)
+						assembly_loop(b, sol, itemassemblygroups[j], EGs[j], O.QF[j], O.BE_args[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+					end
+				else
+					for j ∈ 1:length(EGs)
+						assembly_loop(b, sol, itemassemblygroups[j], EGs[j], O.QF[j], O.BE_args[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+					end
 				end
 			end
-			if O.parameters[:verbosity] > 1
-				@info ".... assembly of $(O.parameters[:name]) took $time_assembly s"
+			if O.parameters[:verbosity] > 0
+				@info "$(O.parameters[:name]) : assembly took $time_assembly s"
 			end
 		end
 		O.assembler = assembler

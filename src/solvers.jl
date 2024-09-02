@@ -295,6 +295,17 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 				@printf "\t\t\tSUM -->\t%.2f\n\n" allocs_final / alloc_factor
 			end
 			break
+		elseif isnan(nlres)
+			if SC.parameters[:verbosity] > -1
+				@printf " END\t"
+				@printf "%.3e\t" nlres
+				@printf "\t\t\t%.2f\t\t%.2f\t" time_assembly time_total
+				@printf "\t%.2f\t\t%.2f\n" allocs_assembly / alloc_factor allocs_assembly / alloc_factor
+				@printf "\tdid not converge"
+				@printf "\t\t\tSUM -->\t%.2f" time_final
+				@printf "\t\t\tSUM -->\t%.2f\n\n" allocs_final / alloc_factor
+			end
+			break
 		elseif (j == maxits + 1) && !(is_linear)
 			if SC.parameters[:verbosity] > -1
 				@printf " END\t"
