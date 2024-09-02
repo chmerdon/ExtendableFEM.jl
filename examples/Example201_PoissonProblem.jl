@@ -22,6 +22,7 @@ module Example201_PoissonProblem
 
 using ExtendableFEM
 using ExtendableGrids
+using Metis
 using Test #hide
 
 ## define variables
@@ -32,16 +33,20 @@ function f!(fval, qpinfo)
 	fval[1] = qpinfo.x[1] * qpinfo.x[2]
 end
 
-function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, kwargs...)
+function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, parallel = false, kwargs...)
 	## problem description
 	PD = ProblemDescription()
 	assign_unknown!(PD, u)
-	assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, kwargs...))
-	assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
+	assign_operator!(PD, BilinearOperator([grad(u)]; parallel = parallel, factor = μ, kwargs...))
+	assign_operator!(PD, LinearOperator(f!, [id(u)]; parallel = parallel, kwargs...))
 	assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
 
 	## discretize
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
+	if parallel
+		@show parallel
+		xgrid = partition(xgrid, PlainMetisPartitioning(npart=20))
+	end
 	FES = FESpace{H1Pk{1, 2, order}}(xgrid)
 
 	## solve

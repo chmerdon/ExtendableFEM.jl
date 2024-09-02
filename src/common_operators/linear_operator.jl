@@ -35,6 +35,7 @@ default_linop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:entities => (ON_CELLS, "assemble operator on these grid entities (default = ON_CELLS)"),
 	:name => ("LinearOperator", "name for operator used in printouts"),
 	:parallel_groups => (false, "assemble operator in parallel using CellAssemblyGroups"),
+	:parallel => (false, "assemble operator in parallel using colors/partitions information"),
 	:params => (nothing, "array of parameters that should be made available in qpinfo argument of kernel function"),
 	:factor => (1, "factor that should be multiplied during assembly"),
 	:store => (false, "store matrix separately (and copy from there when reassembly is triggered)"),
@@ -246,7 +247,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 	if (O.FES_test != FES_test) || (O.FES_args != FES_args)
 
 		if O.parameters[:verbosity] > 0
-			@info ".... building assembler for $(O.parameters[:name])"
+			@info "$(O.parameters[:name]) : building assembler"
 		end
 
 		## determine grid
@@ -461,19 +462,32 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 	if (O.FES_test != FES_test)
 
 		if O.parameters[:verbosity] > 0
-			@info ".... building assembler for $(O.parameters[:name])"
+			@info "$(O.parameters[:name]) : building assembler"
 		end
 
 		## determine grid
+		AT = O.parameters[:entities]
 		xgrid = determine_assembly_grid(FES_test)
+		if xgrid == FES_test[1].dofgrid
+			gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
+		else
+			gridAT = AT
+		end
 
 		## prepare assembly
-		AT = O.parameters[:entities]
 		Ti = typeof(xgrid).parameters[2]
-		itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(AT)]
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
 		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		if num_pcolors(xgrid) > 1 && gridAT == ON_CELLS
+			maxnpartitions = maximum(num_partitions_per_color(xgrid))
+			pc = xgrid[PartitionCells]
+			itemassemblygroups = [pc[j]:pc[j+1]-1 for j = 1 : num_partitions(xgrid)]
+			# assuming here that all cells of one partition have the same geometry
+		else
+			itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
+			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+		end
 		has_normals = true
 		if AT <: ON_FACES
 			itemnormals = xgrid[FaceNormals]
@@ -483,7 +497,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 			has_normals = false
 		end
 		FETypes_test = [eltype(F) for F in FES_test]
-		EGs = [itemgeometries[itemassemblygroups[1, j]] for j ∈ 1:num_sources(itemassemblygroups)]
+		EGs = [itemgeometries[itemassemblygroups[j][1]] for j ∈ 1:length(itemassemblygroups)]
 
 		## prepare assembly
 		ntest = length(FES_test)
@@ -613,17 +627,28 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 					s = b
 				end
 				time = @elapsed begin
-					if O.parameters[:parallel_groups]
+					if O.parameters[:parallel]
+						pcp = xgrid[PColorPartitions]
+						ncolors = length(pcp)-1
+						if O.parameters[:verbosity] > 0
+							@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
+						end
+						for color in 1:ncolors
+							Threads.@threads for part in pcp[color]:pcp[color+1]-1
+								assembly_loop(s, itemassemblygroups[part], EGs[part], O.QF[part], O.BE_test[part], O.BE_test_vals[part], O.L2G[part], O.QP_infos[part]; kwargs...)
+							end
+						end
+					elseif O.parameters[:parallel_groups]
 						Threads.@threads for j ∈ 1:length(EGs)
 							fill!(bj[j], 0)
-							assembly_loop(bj[j], view(itemassemblygroups, :, j), EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+							assembly_loop(bj[j], itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
 						end
 						for j ∈ 1:length(EGs)
 							s .+= bj[j]
 						end
 					else
 						for j ∈ 1:length(EGs)
-							assembly_loop(s, view(itemassemblygroups, :, j), EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+							@time assembly_loop(s, itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
 						end
 					end
 					if O.parameters[:store]
@@ -633,8 +658,8 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 				end
 			end
 
-			if O.parameters[:verbosity] > 1
-				@info ".... assembly of $(O.parameters[:name]) took $time s"
+			if O.parameters[:verbosity] > 0
+				@info "$(O.parameters[:name]) : assembly took $time s"
 			end
 		end
 		O.assembler = assembler
