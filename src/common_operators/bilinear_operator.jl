@@ -127,7 +127,11 @@ function BilinearOperator(kernel::Function, u_test, ops_test, u_ansatz = u_test,
 	@assert length(u_ansatz) == length(ops_ansatz)
 	@assert length(u_test) == length(ops_test)
 	if parameters[:store]
-		storage = ExtendableSparseMatrix{Float64, Int}(0, 0)
+		if parameters[:parallel]
+			storage = MTExtendableSparseMatrixCSC{Float64, Int}(0, 0, 1)
+		else
+			storage = ExtendableSparseMatrix{Float64, Int}(0, 0)
+		end
 	else
 		storage = nothing
 	end
@@ -902,15 +906,19 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 		O.FES_ansatz = FES_ansatz
 
 		function assembler(A, b; kwargs...)
+			time = @elapsed begin
 			if O.parameters[:store] && size(A) == size(O.storage)
 				add!(A, O.storage)
 			else
 				if O.parameters[:store]
-					S = ExtendableSparseMatrix{Float64, Int}(size(A, 1), size(A, 2))
+					if O.parameters[:parallel]
+						S = MTExtendableSparseMatrixCSC{Float64, Int}(size(A, 1), size(A, 2), length(EGs))
+					else
+						S = ExtendableSparseMatrix{Float64, Int}(size(A, 1), size(A, 2))
+					end
 				else
 					S = A
 				end
-				time = @elapsed begin
 					if O.parameters[:parallel]
 						pcp = xgrid[PColorPartitions]
 						ncolors = length(pcp)-1
@@ -936,14 +944,14 @@ function build_assembler!(A, O::BilinearOperator{Tv}, FE_test, FE_ansatz; time =
 						end
 					end
 					flush!(S)
-				end
-				if O.parameters[:verbosity] > 0
-					@info "$(O.parameters[:name]) : assembly took $time s"
-				end
 				if O.parameters[:store]
 					add!(A, S)
 					O.storage = S
 				end
+			end
+			end
+			if O.parameters[:verbosity] > 0
+				@info "$(O.parameters[:name]) : assembly took $time s"
 			end
 		end
 		O.assembler = assembler

@@ -618,6 +618,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 		O.FES_test = FES_test
 
 		function assembler(b; kwargs...)
+			time = @elapsed begin
 			if O.parameters[:store] && size(b) == size(O.storage)
 				b .+= O.storage
 			else
@@ -626,36 +627,35 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 				else
 					s = b
 				end
-				time = @elapsed begin
-					if O.parameters[:parallel]
-						pcp = xgrid[PColorPartitions]
-						ncolors = length(pcp)-1
-						if O.parameters[:verbosity] > 0
-							@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
-						end
-						for color in 1:ncolors
-							Threads.@threads for part in pcp[color]:pcp[color+1]-1
-								assembly_loop(s, itemassemblygroups[part], EGs[part], O.QF[part], O.BE_test[part], O.BE_test_vals[part], O.L2G[part], O.QP_infos[part]; kwargs...)
-							end
-						end
-					elseif O.parameters[:parallel_groups]
-						Threads.@threads for j ∈ 1:length(EGs)
-							fill!(bj[j], 0)
-							assembly_loop(bj[j], itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
-						end
-						for j ∈ 1:length(EGs)
-							s .+= bj[j]
-						end
-					else
-						for j ∈ 1:length(EGs)
-							@time assembly_loop(s, itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+				if O.parameters[:parallel]
+					pcp = xgrid[PColorPartitions]
+					ncolors = length(pcp)-1
+					if O.parameters[:verbosity] > 0
+						@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
+					end
+					for color in 1:ncolors
+						Threads.@threads for part in pcp[color]:pcp[color+1]-1
+							assembly_loop(s, itemassemblygroups[part], EGs[part], O.QF[part], O.BE_test[part], O.BE_test_vals[part], O.L2G[part], O.QP_infos[part]; kwargs...)
 						end
 					end
-					if O.parameters[:store]
-						b .+= s
-						O.storage = s
+				elseif O.parameters[:parallel_groups]
+					Threads.@threads for j ∈ 1:length(EGs)
+						fill!(bj[j], 0)
+						assembly_loop(bj[j], itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+					end
+					for j ∈ 1:length(EGs)
+						s .+= bj[j]
+					end
+				else
+					for j ∈ 1:length(EGs)
+						assembly_loop(s, itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
 					end
 				end
+				if O.parameters[:store]
+					b .+= s
+					O.storage = s
+				end
+			end
 			end
 
 			if O.parameters[:verbosity] > 0

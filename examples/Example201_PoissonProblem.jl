@@ -22,6 +22,7 @@ module Example201_PoissonProblem
 
 using ExtendableFEM
 using ExtendableGrids
+using GridVisualize
 using Metis
 using Test #hide
 
@@ -33,7 +34,7 @@ function f!(fval, qpinfo)
 	fval[1] = qpinfo.x[1] * qpinfo.x[2]
 end
 
-function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, parallel = false, kwargs...)
+function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, parallel = false, npart = 8, kwargs...)
 	## problem description
 	PD = ProblemDescription()
 	assign_unknown!(PD, u)
@@ -44,8 +45,7 @@ function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, parallel = fa
 	## discretize
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
 	if parallel
-		@show parallel
-		xgrid = partition(xgrid, PlainMetisPartitioning(npart=20))
+		xgrid = partition(xgrid, RecursiveMetisPartitioning(npart=npart))
 	end
 	FES = FESpace{H1Pk{1, 2, order}}(xgrid)
 

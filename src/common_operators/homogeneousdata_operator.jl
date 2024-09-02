@@ -132,7 +132,7 @@ function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs..
 			end
 		end
 		if O.parameters[:verbosity] > 0
-			@info ".... $(O.parameters[:name]) penalizes $(length(bdofs)) dofs of '$(O.u.name)' ($AT)"
+			@info "$(O.parameters[:name]) : penalizing $(length(bdofs)) dofs of '$(O.u.name)' ($AT)"
 		end
 		O.bdofs = bdofs
 		O.FES = FES
@@ -188,6 +188,6 @@ function apply_penalties!(A, b, sol, O::HomogeneousData{UT}, SC::SolverConfigura
 		end
 	end
 	if O.parameters[:verbosity] > 1
-		@info ".... applying penalties of $(O.parameters[:name]) took $time s"
+		@info "$(O.parameters[:name]) : applying penalties took $time s"
 	end
 end

@@ -42,18 +42,21 @@ function obstacle_penalty_kernel!(result, input, qpinfo)
 	return nothing
 end
 
-function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, kwargs...)
+function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, parallel = false, npart = 8, kwargs...)
 
 	## choose initial mesh
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
+	if parallel
+		xgrid = partition(xgrid, RecursiveMetisPartitioning(npart=npart))
+	end
 
 	## problem description
 	PD = ProblemDescription()
 	u = Unknown("u"; name = "potential")
 	assign_unknown!(PD, u)
-	assign_operator!(PD, NonlinearOperator(obstacle_penalty_kernel!, [id(u)]; factor = 1 / ϵ, kwargs...))
-	assign_operator!(PD, BilinearOperator([grad(u)]; kwargs...))
-	assign_operator!(PD, LinearOperator([id(u)]; factor = -1, kwargs...))
+	assign_operator!(PD, NonlinearOperator(obstacle_penalty_kernel!, [id(u)]; factor = 1 / ϵ, parallel = parallel, kwargs...))
+	assign_operator!(PD, BilinearOperator([grad(u)]; store = true, parallel = parallel, kwargs...))
+	assign_operator!(PD, LinearOperator([id(u)]; store = true, parallel = parallel, factor = -1, kwargs...))
 	assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
 
 	## create finite element space

@@ -271,8 +271,8 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 					else
 						nlres = norm(residual.entries)
 					end
-					if SC.parameters[:verbosity] > 0
-						@info norms(residual)
+					if SC.parameters[:verbosity] > 0 && length(residual) > 1
+						@info "sub-residuals = $(norms(residual))"
 					end
 				end
 			end
