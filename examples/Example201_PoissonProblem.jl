@@ -34,7 +34,7 @@ function f!(fval, qpinfo)
 	fval[1] = qpinfo.x[1] * qpinfo.x[2]
 end
 
-function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, parallel = false, npart = 8, kwargs...)
+function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, parallel = false, npart = parallel ? 8 : 1, kwargs...)
 	## problem description
 	PD = ProblemDescription()
 	assign_unknown!(PD, u)
@@ -44,8 +44,8 @@ function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, parallel = fa
 
 	## discretize
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
-	if parallel
-		xgrid = partition(xgrid, RecursiveMetisPartitioning(npart=npart))
+	if npart > 1
+		xgrid = partition(xgrid, PlainMetisPartitioning(npart=npart))
 	end
 	FES = FESpace{H1Pk{1, 2, order}}(xgrid)
 
@@ -60,7 +60,9 @@ end
 
 generateplots = default_generateplots(Example201_PoissonProblem, "example201.png") #hide
 function runtests() #hide
-	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
+	sol, plt = main(; μ = 1.0, nrefs = 2, parallel = false, order = 2, npart = 2) #hide
 	@test sum(sol.entries) ≈ 1.1140313632246377 #hide
+	sol_parallel, plt = main(; μ = 1.0, nrefs = 2, order = 2, parallel = true, npart = 2) #hide
+	@assert sum((sol_parallel.entries .- sol.entries).^2) ≈ 0.0
 end #hide
 end # module
