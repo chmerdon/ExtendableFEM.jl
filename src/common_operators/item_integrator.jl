@@ -96,9 +96,9 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 
 		## prepare assembly
 		Ti = typeof(xgrid).parameters[2]
-		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
-		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
-		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
+		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
+		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
 		if num_pcolors(xgrid) > 1 && gridAT == ON_CELLS
 			maxnpartitions = maximum(num_partitions_per_color(xgrid))
 			pc = xgrid[PartitionCells]

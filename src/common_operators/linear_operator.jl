@@ -261,9 +261,9 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 
 		## prepare assembly
 		Ti = typeof(xgrid).parameters[2]
-		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
-		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
-		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
+		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
+		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
 		if num_pcolors(xgrid) > 1 && gridAT == ON_CELLS
 			maxnpartitions = maximum(num_partitions_per_color(xgrid))
 			pc = xgrid[PartitionCells]
@@ -501,9 +501,9 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 
 		## prepare assembly
 		Ti = typeof(xgrid).parameters[2]
-		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(AT)]
-		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(AT)]
-		itemregions = xgrid[GridComponentRegions4AssemblyType(AT)]
+		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
+		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
+		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
 		if num_pcolors(xgrid) > 1 && gridAT == ON_CELLS
 			maxnpartitions = maximum(num_partitions_per_color(xgrid))
 			pc = xgrid[PartitionCells]
