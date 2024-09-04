@@ -9,11 +9,12 @@ This example studies the level-set method of some level function ``\mathbf{\phi}
 \phi_t + \mathbf{u} \cdot \nabla \phi & = 0.
 \end{aligned}
 ```
-Here this is tested with the (conservative) initial level set function ``\phi(x) = 0.5 \tanh((\lvert x - (0.25,0.25) \rvert - 0.1)/(2ϵ) + 1)``
+Here this is tested with the (conservative) initial level set function ``\phi(x) = 0.5 \tanh((\lvert x - (0.5,0.75) \rvert - 0.15)/(2ϵ) + 1)``
 such that the level ``\phi \equiv 0.5`` forms a circle which is then convected by the velocity
-``\mathbf{u} = (0.5,1)^T``. No reinitialisation step is performed.
+``\mathbf{u} = \mathrm{curl} \pi^{-1} \sin^2(\pi x) \sin^2(\pi y)``.
+No reinitialisation step is performed.
 
-The initial condition and the final solution for the default parameters looks like this:
+The initial condition and the solution at ``T = 1`` for the default parameters looks like this:
 
 ![](example284.png)
 
@@ -24,21 +25,34 @@ module Example284_LevelSetMethod
 using ExtendableFEM
 using ExtendableGrids
 using GridVisualize
+using LinearAlgebra
 using DifferentialEquations
 
 function ϕ_init!(result, qpinfo)
 	x = qpinfo.x
 	ϵ = qpinfo.params[1]
-	result[1] = 1 / 2 * (tanh((sqrt((x[1] - 0.25)^2 + (x[2] - 0.25)^2) - 0.1) / (2 * ϵ)) + 1)
+	result[1] = 1 / 2 * (tanh((sqrt((x[1] - 0.5)^2 + (x[2] - 0.75)^2) - 0.15) / (2 * ϵ)) + 1)
 end
 
-function kernel_convection!(result, input, qpinfo)
-	result[1] = 0.5 * input[1] + input[2]
+function velocity!(result, qpinfo)
+	result[1] = 0.5
+	result[2] = 1.0
+	result[1] = -2*cos(π*qpinfo.x[2])*sin(π*qpinfo.x[2]) * sin(π*qpinfo.x[1])^2
+	result[2] = 2*cos(π*qpinfo.x[1])*sin(π*qpinfo.x[1]) * sin(π*qpinfo.x[2])^2
+end
+
+
+function kernel_convection!()
+	u = zeros(Float64, 2)
+	function closure(result, input, qpinfo)
+		velocity!(u, qpinfo)
+		result[1] = dot(u, input)
+	end
 end
 
 ## everything is wrapped in a main function
-function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-3, T = 0.4, order = 2, nref = 5, use_diffeq = true,
-	solver = ImplicitEuler(autodiff = false), kwargs...)
+function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 1.0, order = 2, nref = 6, use_diffeq = false,
+	solver = ImplicitEuler(autodiff = false), verbosity = -1, kwargs...)
 
 	## initial grid and final time
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nref)
@@ -47,7 +61,7 @@ function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-3, T = 0.4, order = 2, nre
 	PD = ProblemDescription("level set problem")
 	ϕ = Unknown("ϕ"; name = "level set function")
 	assign_unknown!(PD, ϕ)
-	assign_operator!(PD, BilinearOperator(kernel_convection!, [id(ϕ)], [grad(ϕ)]; kwargs...))
+	assign_operator!(PD, BilinearOperator(kernel_convection!(), [id(ϕ)], [grad(ϕ)]; kwargs...))
 	assign_operator!(PD, HomogeneousBoundaryData(ϕ; value = 1, regions = 1:4, kwargs...))
 
 	## generate FESpace and solution vector and interpolate initial state
@@ -77,13 +91,14 @@ function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-3, T = 0.4, order = 2, nre
 		assign_operator!(PD, LinearOperator(M, [ϕ], [ϕ]; factor = 1 / τ, kwargs...))
 
 		## generate solver configuration
-		SC = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, constant_matrix = true, kwargs...)
+		SC = SolverConfiguration(PD, FES; init = sol, maxiterations = 1, constant_matrix = true, verbosity = verbosity, kwargs...)
 
 		## iterate tspan
 		t = 0
 		for it ∈ 1:Int(floor(T / τ))
 			t += τ
 			ExtendableFEM.solve(PD, FES, SC; time = t)
+			#scalarplot!(plt[1, 2], id(ϕ), sol; levels = [0.5], flimits = [-0.05, 1.05], colorbarticks = [0, 0.25, 0.5, 0.75, 1], title = "ϕ (t = $t)")
 		end
 	end
 

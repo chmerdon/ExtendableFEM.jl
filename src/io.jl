@@ -3,11 +3,12 @@
 #
 function _myprint(dict::Dict{Symbol, Tuple{Any, String}})
 	lines_out = IOBuffer()
-	for (k, v) in dict
+	for k in sort!(collect(keys(dict)))
+		v = dict[k]
 		if typeof(v[1]) <: String
-			println(lines_out, "  - $(k): $(v[2]). Default: ''$(v[1])''\n")
+			println(lines_out, "  - `$(k)`: $(v[2]). Default: ''$(v[1])''\n")
 		else
-			println(lines_out, "  - $(k): $(v[2]). Default: $(v[1])\n")
+			println(lines_out, "  - `$(k)`: $(v[2]). Default: $(v[1])\n")
 		end
 	end
 	String(take!(lines_out))

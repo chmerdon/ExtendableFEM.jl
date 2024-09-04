@@ -54,7 +54,7 @@ iterate_until_stationarity
 ## Parallel Assembly
 
 Within the solve call, all operators will be assembled according to their configured parameters.
-Whenn the :parallel switch option is used, the operators will be assembled in parallel
+Whenn 'parallel = true' is used, the operators will be assembled in parallel
 based on the color partitions within the grid. Hence, the used grid must provide
 partitions, see [Documentation of ExtendableGrids.jl on Partitioning](https://j-fu.github.io/ExtendableGrids.jl/stable/partitioning/)
 for details. Also the sparse system matrix needs to be able to work on different
