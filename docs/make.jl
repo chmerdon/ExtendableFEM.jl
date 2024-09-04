@@ -88,6 +88,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 			"Solving" => Any[
 				"pdesolvers.md",
 				"pdesolvers_dt.md",
+				"parallel_assembly.md"
 			],
 			"Postprocessing" => Any[
 				"postprocessing.md",
