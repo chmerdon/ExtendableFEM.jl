@@ -101,6 +101,9 @@ function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0
 		O.bdofs = bdofs
 		O.bddata = bddata
 		O.bfaces = bfaces
+		if O.parameters[:verbosity] > 0
+			@info "$(O.parameters[:name]) : penalizing $(length(O.bdofs)) dofs of '$(O.u.name)' (ON_BFACES, regions = $(O.parameters[:regions]))"
+		end
 	end
 	time = @elapsed begin
 		bddata = O.bddata
@@ -130,8 +133,8 @@ function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0
 			println(stdout, unicode_scalarplot(bddata[1]; title = "boundary data for $(O.u)"))
 		end
 	end
-	if O.parameters[:verbosity] > 1
-		@info ".... assembly of $(O.parameters[:name]) took $time s"
+	if O.parameters[:verbosity] > 0
+		@info "$(O.parameters[:name]) : assembly took $time s"
 	end
 end
 
@@ -168,6 +171,6 @@ function apply_penalties!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverC
 		apply!(sol[ind_sol], O; offset = offset)
 	end
 	if O.parameters[:verbosity] > 1
-		@info ".... applying penalties of $(O.parameters[:name]) took $time s"
+		@info "$(O.parameters[:name]) : applying penalties took $time s"
 	end
 end

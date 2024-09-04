@@ -85,10 +85,13 @@ end
 
 
 ## everything is wrapped in a main function
-function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true, kwargs...)
+function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true, parallel = false, npart = 8, kwargs...)
 
 	## load grid (see function below)
 	xgrid = make_grid(W, H; n = Int(ceil(sqrt(1 / maxvol))), maxvol = maxvol)
+	if parallel
+		xgrid = partition(xgrid, RecursiveMetisPartitioning(npart=npart))
+	end
 
 	## problem description
 	PD = ProblemDescription()
@@ -98,7 +101,7 @@ function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true,
 
 	assign_unknown!(PD, u)
 	assign_unknown!(PD, p)
-	assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [id_u, grad(u), id(p)]; params = [μ], kwargs...))
+	assign_operator!(PD, NonlinearOperator(kernel_nonlinear!, [id_u, grad(u), id(p)]; params = [μ], parallel = parallel, kwargs...))
 	assign_operator!(PD, InterpolateBoundaryData(u, inflow!; regions = 4))
 	assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1, 3, 5]))
 
@@ -112,15 +115,15 @@ function main(; Plotter = nothing, μ = 1e-3, maxvol = 1e-3, reconstruct = true,
 	sol = solve(PD, FES; maxiterations = 50, target_residual = 1e-10)
 
 	## postprocess : compute drag/lift (see function below)
-	draglift = get_draglift(sol, μ)
+	draglift = get_draglift(sol, μ; parallel = parallel, kwargs...)
 	pdiff = get_pressure_difference(sol)
 	println("[drag, lift] = $draglift")
 	println("p difference = $pdiff")
 
 	## plots via GridVisualize
 	plt = GridVisualizer(; Plotter = Plotter, layout = (4, 1), clear = true, size = (800, 1200))
-	gridplot!(plt[1, 1], xgrid, linewidth = 1)
-	gridplot!(plt[2, 1], xgrid, linewidth = 1, xlimits = [0, 0.3], ylimits = [0.1, 0.3])
+	gridplot!(plt[1, 1], xgrid, cellcoloring = :partitions, linewidth = 1)
+	gridplot!(plt[2, 1], xgrid, cellcoloring = :partitions, linewidth = 1, xlimits = [0, 0.3], ylimits = [0.1, 0.3])
 	scalarplot!(plt[3, 1], xgrid, nodevalues(sol[u]; abs = true)[1, :])
 	vectorplot!(plt[3, 1], xgrid, eval_func_bary(PointEvaluator([id(u)], sol)), rasterpoints = 20, clear = false)
 	scalarplot!(plt[4, 1], xgrid, view(nodevalues(sol[p]), 1, :), levels = 11, title = "p_h")
@@ -141,7 +144,7 @@ function get_pressure_difference(sol::FEVector)
 	return p_left - p_right
 end
 
-function get_draglift(sol::FEVector, μ)
+function get_draglift(sol::FEVector, μ; parallel = false, kwargs...)
 
 	## this function is interpolated for drag/lift test function creation
 	function DL_testfunction(component)
@@ -165,7 +168,7 @@ function get_draglift(sol::FEVector, μ)
 		result[1] *= -(2 / (umean^2 * L))
 		return nothing
 	end
-	DLIntegrator = ItemIntegrator(draglift_kernel, [id(1), grad(1), id(2), id(3), grad(3)]; quadorder = 4)
+	DLIntegrator = ItemIntegrator(draglift_kernel, [id(1), grad(1), id(2), id(3), grad(3)]; quadorder = 4, parallel = parallel, kwargs...)
 
 	## test for drag
 	TestFunction = FEVector(sol[1].FES; name = "drag/lift testfunction")
