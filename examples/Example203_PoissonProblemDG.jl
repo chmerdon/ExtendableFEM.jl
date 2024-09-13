@@ -47,7 +47,7 @@ function prepare_data(; μ = 1)
 	return f_eval, u_eval, ∇u_eval[2]
 end
 
-function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quadorder = 2, parallel = parallel, npart = parallel ? 8 : 1, Plotter = nothing, kwargs...)
+function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quadorder = 2, parallel = false, npart = parallel ? 8 : 1, Plotter = nothing, kwargs...)
 
 	## prepare problem data
 	f_eval, u_eval, ∇u_eval = prepare_data(; μ = μ)
