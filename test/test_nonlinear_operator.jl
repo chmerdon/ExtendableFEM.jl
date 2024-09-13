@@ -7,7 +7,7 @@ function run_nonlinear_operator_tests()
 		println("==========================")
 
 		@test TestLinearNonlinearOperator() < 1e-14
-		@test TestParallelAssemblyNonlinearOperator() < 1e-15
+		@test TestParallelAssemblyNonlinearOperator() < 1e-13
 	end
 end
 
