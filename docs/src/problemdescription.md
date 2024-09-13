@@ -30,8 +30,8 @@ Order   = [:type, :function]
 ## Operators
 
 Operator is a quite general concept and is everything that makes modifications
-to the system matrix, hence classical represenations of weak discretisations of differential operators,
-penalisations for boundary conditions or global constraints, or stabilisation terms.
+to the system matrix, hence classical representations of weak discretisations of differential operators,
+penalisations for boundary conditions or constraints, or stabilisation terms.
 
 ### Types of operators
 

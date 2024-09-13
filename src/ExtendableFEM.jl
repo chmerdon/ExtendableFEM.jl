@@ -36,7 +36,7 @@ using ExtendableGrids: ExtendableGrids, AT_NODES, AbstractElementGeometry,
 					   CellNodes, CellRegions, Coordinates, EdgeNodes,
 					   ElementGeometries, ExtendableGrid, FaceCells, FaceEdges,
 					   FaceNodes, FaceNormals, FaceRegions, FaceVolumes,
-					   PColorPartitions, PartitionCells,
+					   PColorPartitions, PartitionCells, PartitionEdges
 					   GridComponentAssemblyGroups4AssemblyType,
 					   GridComponentGeometries4AssemblyType,
 					   GridComponentRegions4AssemblyType,

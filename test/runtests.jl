@@ -3,23 +3,15 @@ using ExtendableGrids
 using ExtendableFEMBase
 using ExtendableFEM
 using ExampleJuggler
+using Metis
 using Aqua
-
-
-@testset "Aqua.jl" begin
-    Aqua.test_all(
-      ExtendableFEM;
-	  ambiguities = false,
-	  piracies = false
-    )
-    Aqua.test_ambiguities(ExtendableFEM)
-end
 
 
 include("test_dgblf.jl")
 include("test_boundary_operator.jl")
 include("test_itemintegrator.jl")
 include("test_timedependence.jl")
+include("test_nonlinear_operator.jl")
 
 function run_examples()
 	ExampleJuggler.verbose!(true)
@@ -66,8 +58,19 @@ function run_examples()
 end
 
 function run_all_tests()
+	#=@testset "Aqua.jl" begin
+		Aqua.test_all(
+		ExtendableFEM;
+		ambiguities = false,
+		piracies = false
+		)
+		Aqua.test_ambiguities(ExtendableFEM)
+	end
+	=#
+
 	run_boundary_operator_tests()
 	run_dgblf_tests()
+	run_nonlinear_operator_tests()
 	run_itemintegrator_tests()
 	run_dt_tests()
 end

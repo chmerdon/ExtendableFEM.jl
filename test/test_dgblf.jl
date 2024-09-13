@@ -6,6 +6,8 @@ function run_dgblf_tests()
 		println("Testing BilinearOperatorDG")
 		println("==========================")
 
+		@test TestParallelAssemblyDGBLF() < 1e-15
+
 		for operator in [jump(grad(1)), jump(id(1))]
 			TestDGBLF(H1Pk{1, 2, 1}, 1, operator)
 			TestDGBLF(H1Pk{1, 2, 2}, 2, operator)
@@ -62,4 +64,28 @@ function TestDGBLF(FEType = H1Pk{1, 2, 3}, order = get_polynomialorder(FEType, T
 
 
 	return error
+end
+
+function TestParallelAssemblyDGBLF(FEType = H1Pk{1, 2, 3}, order = get_polynomialorder(FEType, Triangle2D), operator = jump(grad(1)), verbosity = 1)
+
+	dgblf_seq = BilinearOperatorDG(stab_kernel!, [operator]; entities = ON_IFACES, quadorder = 2*order, factor = 1e-2, parallel = false, verbosity = verbosity)
+	dgblf_par = BilinearOperatorDG(stab_kernel!, [operator]; entities = ON_IFACES, quadorder = 2*order, factor = 1e-2, parallel = true, verbosity = verbosity)
+	
+	## sequential assembly
+	xgrid = uniform_refine(grid_unitsquare(Triangle2D), 4)
+	FES = FESpace{FEType}(xgrid)
+	Aseq = FEMatrix(FES, FES)
+	assemble!(Aseq, dgblf_seq)
+
+	## parallel assembly on same grid
+	xgrid = partition(xgrid, PlainMetisPartitioning(npart = 20), edges = true)
+	FES = FESpace{FEType}(xgrid)
+	Apar = FEMatrix(FES, FES; npartitions = num_partitions(xgrid))
+	assemble!(Apar, dgblf_par)
+
+	## compare the two matrices
+	## since partitioning changes dof enumeration only norms are compared
+	nor = abs(norm(Apar.entries.cscmatrix) - norm(Aseq.entries.cscmatrix))
+	@info "difference between norms of sequantially and parallel assembled DG matrix = $nor"
+	return nor
 end
