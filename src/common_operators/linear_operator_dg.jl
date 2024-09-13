@@ -218,24 +218,25 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
 		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
-		if num_pcolors(xgrid) > 1
-			maxnpartitions = maximum(num_partitions_per_color(xgrid))
-			pe = xgrid[PartitionEdges]
-			itemassemblygroups = [pe[j]:pe[j+1]-1 for j = 1 : num_partitions(xgrid)]
+		if on_bfaces
+			itemassemblygroups = [xgrid[BFaceFaces]]
+			EGs = [xgrid[UniqueCellGeometries][1]]
+			if O.parameters[:parallel]
+				@warn "parallel assembly on boundary faces not supported yet"
+				O.parameters[:parallel] = false
+			end
 		else
-			if on_bfaces
-				bfaces = xgrid[BFaceFaces]
-				itemassemblygroups = zeros(Int, length(bfaces), 1)
-				itemassemblygroups[:] .= bfaces
+			if num_pcolors(xgrid) > 1
+				maxnpartitions = maximum(num_partitions_per_color(xgrid))
+				pe = xgrid[PartitionEdges]
+				itemassemblygroups = [pe[j]:pe[j+1]-1 for j = 1 : num_partitions(xgrid)]
 			else
 				itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
+				itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
 			end
-			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+			EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j = 1 : num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
 		end
 		FETypes_test = [eltype(F) for F in FES_test]
-
-		EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j = 1 : num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
-
 
 		coeffs_ops_test = Array{Array{Float64, 1}, 1}([])
 		coeffs_ops_args = Array{Array{Float64, 1}, 1}([])
@@ -525,24 +526,27 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
 		itemregions = xgrid[GridComponentRegions4AssemblyType(gridAT)]
-		if num_pcolors(xgrid) > 1
-			maxnpartitions = maximum(num_partitions_per_color(xgrid))
-			pe = xgrid[PartitionEdges]
-			itemassemblygroups = [pe[j]:pe[j+1]-1 for j = 1 : num_partitions(xgrid)]
+		if on_bfaces
+			itemassemblygroups = [xgrid[BFaceFaces]]
+			EGs = [xgrid[UniqueCellGeometries][1]]
+			if O.parameters[:parallel]
+				@warn "parallel assembly on boundary faces not supported yet"
+				O.parameters[:parallel] = false
+			end
 		else
-			if on_bfaces
-				bfaces = xgrid[BFaceFaces]
-				itemassemblygroups = zeros(Int, length(bfaces), 1)
-				itemassemblygroups[:] .= bfaces
+			if num_pcolors(xgrid) > 1
+				maxnpartitions = maximum(num_partitions_per_color(xgrid))
+				pe = xgrid[PartitionEdges]
+				itemassemblygroups = [pe[j]:pe[j+1]-1 for j = 1 : num_partitions(xgrid)]
 			else
 				itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
+				itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
 			end
-			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+			EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j = 1 : num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
 		end
 		FETypes_test = [eltype(F) for F in FES_test]
 
-		EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j = 1 : num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
-
+		
 
 		coeffs_ops_test = Array{Array{Float64, 1}, 1}([])
 		for op in O.ops_test

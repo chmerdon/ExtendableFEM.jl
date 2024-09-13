@@ -23,6 +23,7 @@ module Example203_PoissonProblemDG
 using ExtendableFEM
 using ExtendableGrids
 using LinearAlgebra
+using Metis
 using Symbolics
 using Test #hide
 
@@ -46,7 +47,7 @@ function prepare_data(; μ = 1)
 	return f_eval, u_eval, ∇u_eval[2]
 end
 
-function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quadorder = 2, Plotter = nothing, kwargs...)
+function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quadorder = 2, parallel = parallel, npart = parallel ? 8 : 1, Plotter = nothing, kwargs...)
 
 	## prepare problem data
 	f_eval, u_eval, ∇u_eval = prepare_data(; μ = μ)
@@ -58,20 +59,24 @@ function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quad
 	PD = ProblemDescription("Poisson problem")
 	u = Unknown("u"; name = "potential")
 	assign_unknown!(PD, u)
-	assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, kwargs...))
-	assign_operator!(PD, LinearOperator(rhs!, [id(u)]; bonus_quadorder = bonus_quadorder, kwargs...))
+	assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, parallel = parallel, kwargs...))
+	assign_operator!(PD, LinearOperator(rhs!, [id(u)]; bonus_quadorder = bonus_quadorder, parallel = parallel, kwargs...))
 	assign_operator!(PD, InterpolateBoundaryData(u, exact_u!; bonus_quadorder = bonus_quadorder, regions = 1:4))
 
 	## discretize
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
+	if npart > 1
+		xgrid = partition(xgrid, PlainMetisPartitioning(npart=npart); edges = true)
+	end
 	FES = FESpace{order == 0 ? L2P0{1} : H1Pk{1, 2, order}}(xgrid; broken = dg)
 
 	## add DG terms
-	assign_operator!(PD, BilinearOperatorDG(dg_kernel, [jump(id(u))], [average(grad(u))]; entities = ON_FACES, factor = -μ, transposed_copy = 1, kwargs...))
-	assign_operator!(PD, LinearOperatorDG(dg_kernel_bnd(exact_u!), [average(grad(u))]; entities = ON_BFACES, factor = -μ, bonus_quadorder = bonus_quadorder, kwargs...))
-	assign_operator!(PD, BilinearOperatorDG(dg_kernel2, [jump(id(u))]; entities = ON_FACES, factor = μ*τ, kwargs...))
-	assign_operator!(PD, LinearOperatorDG(dg_kernel2_bnd(exact_u!), [id(u)]; entities = ON_BFACES, regions = 1:4, factor = μ*τ, bonus_quadorder = bonus_quadorder, kwargs...))
-
+	assign_operator!(PD, BilinearOperatorDG(dg_kernel, [jump(id(u))], [average(grad(u))]; entities = ON_FACES, factor = -μ, transposed_copy = 1, parallel = parallel, kwargs...))
+	assign_operator!(PD, LinearOperatorDG(dg_kernel_bnd(exact_u!), [average(grad(u))]; entities = ON_BFACES, factor = -μ, bonus_quadorder = bonus_quadorder, parallel = parallel, kwargs...))
+	assign_operator!(PD, BilinearOperatorDG(dg_kernel2, [jump(id(u))]; entities = ON_FACES, factor = μ*τ, parallel = parallel, kwargs...))
+	assign_operator!(PD, LinearOperatorDG(dg_kernel2_bnd(exact_u!), [id(u)]; entities = ON_BFACES, regions = 1:4, factor = μ*τ, bonus_quadorder = bonus_quadorder, parallel = parallel, kwargs...))
+		
+	
 	## solve
 	sol = solve(PD, FES; kwargs...)
 
@@ -123,8 +128,8 @@ function dg_kernel2_bnd(uDb! = nothing)
 end
 
 generateplots = default_generateplots(Example203_PoissonProblemDG, "example203.png") #hide
-function runtests() #hide
-	L2error, ~ = main(; μ = 0.25, nrefs = 2, order = 2) #hide	
+function runtests(; kwargs...) #hide
+	L2error, ~ = main(; μ = 0.25, nrefs = 2, order = 2, kwargs...) #hide	
 	@test L2error ≈ 0.00020400470505497443 #hide
 end #hide
 end # module

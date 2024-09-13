@@ -58,7 +58,7 @@ function run_examples()
 end
 
 function run_all_tests()
-	#=@testset "Aqua.jl" begin
+	@testset "Aqua.jl" begin
 		Aqua.test_all(
 		ExtendableFEM;
 		ambiguities = false,
@@ -66,7 +66,7 @@ function run_all_tests()
 		)
 		Aqua.test_ambiguities(ExtendableFEM)
 	end
-	=#
+	
 
 	run_boundary_operator_tests()
 	run_dgblf_tests()
