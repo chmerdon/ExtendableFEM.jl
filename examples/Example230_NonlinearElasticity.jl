@@ -86,9 +86,9 @@ function main(;
 
 	## compute Lame' coefficients μ and λ from ν and E
 	## and thermal misfit strain and assign to operator operator
-	op.μ .= E ./ (2 .* (1 .+ ν .^ (-1)))
-	op.λ .= E .* ν ./ ((1 .- 2 * ν) .* (1 .+ ν))
-	op.ϵT .= ΔT .* α
+	@. op.μ = E / (2 * (1 + ν ))
+	@. op.λ = E * ν / ((1 - 2 * ν) * (1 + ν))
+	@. op.ϵT = ΔT * α
 
 	## generate bimetal mesh
 	xgrid = bimetal_strip2D(; scale = scale, n = 2 * (nrefs + 1))
@@ -164,6 +164,6 @@ end
 generateplots = default_generateplots(Example230_NonlinearElasticity, "example230.png") #hide
 function runtests() #hide
 	strain, plt = main(;) #hide
-	@test maximum(strain) ≈ 0.17318901080065996 #hide
+	@test maximum(strain) ≈ 0.17289633483008537 #hide
 end #hide
 end
