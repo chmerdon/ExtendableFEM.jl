@@ -1,11 +1,11 @@
-[![Build status](https://github.com/chmerdon/ExtendableFEM.jl/workflows/linux-macos-windows/badge.svg)](https://github.com/chmerdon/ExtendableFEM.jl/actions)
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/stable/index.html)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/dev/index.html)
+[![Build status](https://github.com/WIAS-PDELib/ExtendableFEM.jl/workflows/linux-macos-windows/badge.svg)](https://github.com/WIAS-PDELib/ExtendableFEM.jl/actions)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://wias-pdelib.github.io/ExtendableFEM.jl/stable/index.html)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://wias-pdelib.github.io/ExtendableFEM.jl/dev/index.html)
 [![DOI](https://zenodo.org/badge/668345991.svg)](https://zenodo.org/doi/10.5281/zenodo.10563834)
 
 # ExtendableFEM
 High Level API Finite Element Methods based on [ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl) (for grid management)
-and [ExtendableFEMBase.jl](https://github.com/chmerdon/ExtendableFEMBase.jl) (for finite element basis functions and dof management). 
+and [ExtendableFEMBase.jl](https://github.com/WIAS-PDELib/ExtendableFEMBase.jl) (for finite element basis functions and dof management). 
 It offers a ProblemDescription interface, that basically involves assigning Unknowns and Operators. Such operators usually stem from a weak formulation of the problem and mainly consist of three types that can be customized via kernel functions:
 
 - BilinearOperator,
