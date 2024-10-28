@@ -4,7 +4,7 @@
 [![DOI](https://zenodo.org/badge/668345991.svg)](https://zenodo.org/doi/10.5281/zenodo.10563834)
 
 # ExtendableFEM
-High Level API Finite Element Methods based on [ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl) (for grid management)
+High Level API Finite Element Methods based on [ExtendableGrids.jl](https://github.com/WIAS-PDELib/ExtendableGrids.jl) (for grid management)
 and [ExtendableFEMBase.jl](https://github.com/WIAS-PDELib/ExtendableFEMBase.jl) (for finite element basis functions and dof management). 
 It offers a ProblemDescription interface, that basically involves assigning Unknowns and Operators. Such operators usually stem from a weak formulation of the problem and mainly consist of three types that can be customized via kernel functions:
 
