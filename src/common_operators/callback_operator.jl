@@ -60,7 +60,7 @@ Keyword arguments:
 $(_myprint(default_cbop_kwargs()))
 
 """
-function CallbackOperator(callback::Function, u_args = []; kwargs...)
+function CallbackOperator(callback, u_args = []; kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_cbop_kwargs())
 	_update_params!(parameters, kwargs)
 	if parameters[:linearized_dependencies] == :auto

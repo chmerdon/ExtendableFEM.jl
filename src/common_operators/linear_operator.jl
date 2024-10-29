@@ -11,7 +11,7 @@ mutable struct LinearOperatorFromMatrix{UT <: Union{Unknown, Integer}, MT} <: Ab
 	parameters::Dict{Symbol, Any}
 end
 
-mutable struct LinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: Function, ST} <: AbstractOperator
+mutable struct LinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT, ST} <: AbstractOperator
 	u_test::Array{UT, 1}
 	ops_test::Array{DataType, 1}
 	u_args::Array{UT, 1}
@@ -103,7 +103,7 @@ function LinearOperator(kernel, u_test, ops_test, u_args, ops_args; Tv = Float64
 	)
 end
 
-function LinearOperator(kernel::Function, u_test, ops_test::Array{DataType, 1}; Tv = Float64, kwargs...)
+function LinearOperator(kernel, u_test, ops_test::Array{DataType, 1}; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_linop_kwargs())
 	_update_params!(parameters, kwargs)
 	@assert length(u_test) == length(ops_test)

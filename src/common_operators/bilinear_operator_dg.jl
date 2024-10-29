@@ -1,5 +1,5 @@
 
-mutable struct BilinearOperatorDG{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: Function, MT} <: AbstractOperator
+mutable struct BilinearOperatorDG{Tv <: Real, UT <: Union{Unknown, Integer}, KFT, MT} <: AbstractOperator
 	u_test::Array{UT, 1}
 	ops_test::Array{DataType, 1}
 	u_ansatz::Array{UT, 1}
@@ -66,7 +66,7 @@ function Base.show(io::IO, O::BilinearOperatorDG)
 end
 
 
-function BilinearOperatorDG(kernel::Function, u_test, ops_test, u_ansatz = u_test, ops_ansatz = ops_test; Tv = Float64, kwargs...)
+function BilinearOperatorDG(kernel, u_test, ops_test, u_ansatz = u_test, ops_ansatz = ops_test; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_blfopdg_kwargs())
 	_update_params!(parameters, kwargs)
 	@assert length(u_ansatz) == length(ops_ansatz)
@@ -102,7 +102,7 @@ function BilinearOperatorDG(kernel::Function, u_test, ops_test, u_ansatz = u_tes
 	)
 end
 
-function BilinearOperatorDG(kernel::Function, u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args; Tv = Float64, kwargs...)
+function BilinearOperatorDG(kernel, u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_blfopdg_kwargs())
 	_update_params!(parameters, kwargs)
 	@assert length(u_args) == length(ops_args)
@@ -139,7 +139,7 @@ function BilinearOperatorDG(kernel::Function, u_test, ops_test, u_ansatz, ops_an
 	)
 end
 
-function BilinearOperatorDG(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_ansatz::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1} = oa_test; kwargs...)
+function BilinearOperatorDG(kernel, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_ansatz::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1} = oa_test; kwargs...)
 	u_test = [oa[1] for oa in oa_test]
 	u_ansatz = [oa[1] for oa in oa_ansatz]
 	ops_test = [oa[2] for oa in oa_test]
@@ -217,7 +217,7 @@ Keyword arguments:
 $(_myprint(default_blfop_kwargs()))
 
 """
-function BilinearOperatorDG(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_ansatz::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
+function BilinearOperatorDG(kernel, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_ansatz::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
 	u_test = [oa[1] for oa in oa_test]
 	u_ansatz = [oa[1] for oa in oa_ansatz]
 	u_args = [oa[1] for oa in oa_args]

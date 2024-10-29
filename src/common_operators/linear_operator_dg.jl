@@ -1,5 +1,5 @@
 
-mutable struct LinearOperatorDG{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: Function, MT} <: AbstractOperator
+mutable struct LinearOperatorDG{Tv <: Real, UT <: Union{Unknown, Integer}, KFT, MT} <: AbstractOperator
 	u_test::Array{UT, 1}
 	ops_test::Array{DataType, 1}
 	u_args::Array{UT, 1}
@@ -57,7 +57,7 @@ function Base.show(io::IO, O::LinearOperatorDG)
 end
 
 
-function LinearOperatorDG(kernel::Function, u_test, ops_test; Tv = Float64, kwargs...)
+function LinearOperatorDG(kernel, u_test, ops_test; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_lfopdg_kwargs())
 	_update_params!(parameters, kwargs)
 	@assert length(u_test) == length(ops_test)
@@ -87,7 +87,7 @@ function LinearOperatorDG(kernel::Function, u_test, ops_test; Tv = Float64, kwar
 	)
 end
 
-function LinearOperatorDG(kernel::Function, u_test, ops_test, u_args, ops_args; Tv = Float64, kwargs...)
+function LinearOperatorDG(kernel, u_test, ops_test, u_args, ops_args; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_lfopdg_kwargs())
 	_update_params!(parameters, kwargs)
 	@assert length(u_args) == length(ops_args)
@@ -118,7 +118,7 @@ function LinearOperatorDG(kernel::Function, u_test, ops_test, u_args, ops_args; 
 	)
 end
 
-function LinearOperatorDG(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
+function LinearOperatorDG(kernel, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
 	u_test = [oa[1] for oa in oa_test]
 	ops_test = [oa[2] for oa in oa_test]
 	return LinearOperatorDG(kernel, u_test, ops_test; kwargs...)
@@ -184,7 +184,7 @@ Keyword arguments:
 $(_myprint(default_lfopdg_kwargs()))
 
 """
-function LinearOperatorDG(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
+function LinearOperatorDG(kernel, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
 	u_test = [oa[1] for oa in oa_test]
 	u_args = [oa[1] for oa in oa_args]
 	ops_test = [oa[2] for oa in oa_test]

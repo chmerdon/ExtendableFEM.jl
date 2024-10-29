@@ -1,5 +1,5 @@
 
-mutable struct ItemIntegratorDG{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: Function} <: AbstractOperator
+mutable struct ItemIntegratorDG{Tv <: Real, UT <: Union{Unknown, Integer}, KFT} <: AbstractOperator
 	u_args::Array{UT, 1}
 	ops_args::Array{DataType, 1}
 	kernel::KFT
@@ -42,7 +42,7 @@ function Base.show(io::IO, O::ItemIntegratorDG)
 	return nothing
 end
 
-function ItemIntegratorDG(kernel::Function, u_args, ops_args; Tv = Float64, kwargs...)
+function ItemIntegratorDG(kernel, u_args, ops_args; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_iiopdg_kwargs())
 	_update_params!(parameters, kwargs)
 	@assert length(u_args) == length(ops_args)
@@ -91,7 +91,7 @@ Keyword arguments:
 $(_myprint(default_iiopdg_kwargs()))
 
 """
-function ItemIntegratorDG(kernel::Function, oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
+function ItemIntegratorDG(kernel, oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
 	u_args = [oa[1] for oa in oa_args]
 	ops_args = [oa[2] for oa in oa_args]
 	return ItemIntegratorDG(kernel, u_args, ops_args; kwargs...)

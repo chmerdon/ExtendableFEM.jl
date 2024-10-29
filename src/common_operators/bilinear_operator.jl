@@ -29,7 +29,7 @@ function Base.show(io::IO, O::BilinearOperatorFromMatrix)
 end
 
 
-mutable struct BilinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT <: Function, MT} <: AbstractOperator
+mutable struct BilinearOperator{Tv <: Real, UT <: Union{Unknown, Integer}, KFT, MT} <: AbstractOperator
 	u_test::Array{UT, 1}
 	ops_test::Array{DataType, 1}
 	u_ansatz::Array{UT, 1}
@@ -114,14 +114,14 @@ multiple blocks. The arguments u_test and u_ansatz
 specify where to put the (blocks of the) matrix in the system.
 
 """
-function BilinearOperator(A::AbstractMatrix, u_test, u_ansatz = u_test, u_args = []; kwargs...)
+function BilinearOperator(A::AbstractMatrix, u_test::Vector{<:Union{Unknown, Int}}, u_ansatz = u_test, u_args = []; kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_blfop_kwargs())
 	_update_params!(parameters, kwargs)
 	return BilinearOperatorFromMatrix{typeof(u_test[1]), typeof(A)}(u_test, u_ansatz, u_args, A, parameters)
 end
 
 
-function BilinearOperator(kernel::Function, u_test, ops_test, u_ansatz = u_test, ops_ansatz = ops_test; Tv = Float64, kwargs...)
+function BilinearOperator(kernel, u_test, ops_test, u_ansatz = u_test, ops_ansatz = ops_test; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_blfop_kwargs())
 	_update_params!(parameters, kwargs)
 	@assert length(u_ansatz) == length(ops_ansatz)
@@ -161,7 +161,7 @@ function BilinearOperator(kernel::Function, u_test, ops_test, u_ansatz = u_test,
 	)
 end
 
-function BilinearOperator(kernel::Function, u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args; Tv = Float64, kwargs...)
+function BilinearOperator(kernel, u_test, ops_test, u_ansatz, ops_ansatz, u_args, ops_args; Tv = Float64, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_blfop_kwargs())
 	_update_params!(parameters, kwargs)
 	@assert length(u_args) == length(ops_args)
@@ -198,7 +198,7 @@ function BilinearOperator(kernel::Function, u_test, ops_test, u_ansatz, ops_ansa
 	)
 end
 
-function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_ansatz::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1} = oa_test; kwargs...)
+function BilinearOperator(kernel, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_ansatz::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1} = oa_test; kwargs...)
 	u_test = [oa[1] for oa in oa_test]
 	u_ansatz = [oa[1] for oa in oa_ansatz]
 	ops_test = [oa[2] for oa in oa_test]
@@ -278,7 +278,7 @@ Keyword arguments:
 $(_myprint(default_blfop_kwargs()))
 
 """
-function BilinearOperator(kernel::Function, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_ansatz::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
+function BilinearOperator(kernel, oa_test::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_ansatz::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}, oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
 	u_test = [oa[1] for oa in oa_test]
 	u_ansatz = [oa[1] for oa in oa_ansatz]
 	u_args = [oa[1] for oa in oa_args]
