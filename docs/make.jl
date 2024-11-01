@@ -65,7 +65,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 		modules = [ExtendableFEM],
 		sitename = "ExtendableFEM.jl",
 		authors = "Christian Merdon, Jan Philipp Thiele",
-		format = Documenter.HTML(; repolink = "https://github.com/chmerdon/ExtendableFEM.jl", mathengine = MathJax3()),
+		format = Documenter.HTML(; repolink = "https://github.com/WIAS-PDELib/ExtendableFEM.jl", mathengine = MathJax3()),
 		clean = false,
 		checkdocs = :all,
 		warnonly = false,
