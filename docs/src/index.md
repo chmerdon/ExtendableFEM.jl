@@ -1,6 +1,6 @@
-[![Build status](https://github.com/chmerdon/ExtendableFEM.jl/workflows/linux-macos-windows/badge.svg)](https://github.com/chmerdon/ExtendableFEM.jl/actions)
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/stable/index.html)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://chmerdon.github.io/ExtendableFEM.jl/dev/index.html)
+[![Build status](https://github.com/WIAS-PDELib/ExtendableFEM.jl/workflows/linux-macos-windows/badge.svg)](https://github.com/WIAS-PDELib/ExtendableFEM.jl/actions)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://wias-pdelib.github.io/ExtendableFEM.jl/stable/index.html)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://wias-pdelib.github.io/ExtendableFEM.jl/dev/index.html)
 [![DOI](https://zenodo.org/badge/668345991.svg)](https://zenodo.org/doi/10.5281/zenodo.10563834)
 
 # ExtendableFEM.jl
@@ -8,9 +8,7 @@
 This package offers a toolkit to easily setup (mostly low-order, standard and non-standard) finite element methods for multiphysics problems in Julia
 and to run fixed-point iterations to solve them.
 
-The implementation is based on [ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl) (for meshing and administration) and [ExtendableFEMBase.jl](https://github.com/chmerdon/ExtendableFEMBase.jl) (for quadrature and FEM basis functions).
-
-Also note, that this package is part of the meta-package [PDELIB.jl](https://github.com/WIAS-BERLIN/PDELib.jl)
+The implementation is based on [ExtendableGrids.jl](https://github.com/WIAS-PDELib/ExtendableGrids.jl) (for meshing and administration) and [ExtendableFEMBase.jl](https://github.com/WIAS-PDELib/ExtendableFEMBase.jl) (for quadrature and FEM basis functions).
 
 !!! note
 
@@ -19,10 +17,10 @@ Also note, that this package is part of the meta-package [PDELIB.jl](https://git
 
 #### Dependencies on other Julia packages
 
-[ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl)\
-[ExtendableSparse.jl](https://github.com/j-fu/ExtendableSparse.jl)\
-[ExtendableFEMBase.jl](https://github.com/chmerdon/ExtendableFEMBase.jl)\
-[GridVisualize.jl](https://github.com/j-fu/GridVisualize.jl)\
+[ExtendableGrids.jl](https://github.com/WIAS-PDELib/ExtendableGrids.jl)\
+[ExtendableSparse.jl](https://github.com/WIAS-PDELib/ExtendableSparse.jl)\
+[ExtendableFEMBase.jl](https://github.com/WIAS-PDELib/ExtendableFEMBase.jl)\
+[GridVisualize.jl](https://github.com/WIAS-PDELib/GridVisualize.jl)\
 [DocStringExtensions.jl](https://github.com/JuliaDocs/DocStringExtensions.jl)\
 [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl)\
 [DiffResults.jl](https://github.com/JuliaDiff/DiffResults.jl)\
@@ -35,7 +33,7 @@ The general work-flow is as follows:
 #### 1. Geometry description / meshing
 
 The geometry description and meshing is not really separated.
-For meshes of rectangular domains, there are simple constructors available in [ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl), e.g.
+For meshes of rectangular domains, there are simple constructors available in [ExtendableGrids.jl](https://github.com/WIAS-PDELib/ExtendableGrids.jl), e.g.
 ```julia
 using ExtendableGrids
 ## unit square criss-cross into Triangles
@@ -47,8 +45,8 @@ xgrid2 = simplexgrid(0:0.1:1, 0:0.2:2)
 Note that these grids generate boundary regions from 1 to 4 (bottom, left, top, right) that can be used
 to assign boundary conditions.
 
-More complex grids can be created via the mesh generators in [SimplexGridFactory.jl](https://github.com/j-fu/SimplexGridFactory.jl),
-see e.g. Examples 245 or 265, or by loading a Gmsh grid file via the corresponding [ExtendableGrids.jl](https://github.com/j-fu/ExtendableGrids.jl) extension.
+More complex grids can be created via the mesh generators in [SimplexGridFactory.jl](https://github.com/WIAS-PDELib/SimplexGridFactory.jl),
+see e.g. Examples 245 or 265, or by loading a Gmsh grid file via the corresponding [ExtendableGrids.jl](https://github.com/WIAS-PDELib/ExtendableGrids.jl) extension.
 
 #### 2. Problem description
 
@@ -109,7 +107,7 @@ and control the algebraic level manually via
 assembling the operators directly into an FEMatrix,
 see e.g. Example310.
 It is also possible to take control over the low-level
-assembly of the operators, see [ExtendableFEMBase.jl](https://github.com/chmerdon/ExtendableFEMBase.jl)
+assembly of the operators, see [ExtendableFEMBase.jl](https://github.com/WIAS-PDELib/ExtendableFEMBase.jl)
 for details.
 
 
