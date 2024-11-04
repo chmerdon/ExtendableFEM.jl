@@ -107,5 +107,5 @@ end
 make_all(; with_examples = true, run_examples = true, run_notebooks = false)
 
 deploydocs(
-	repo = "github.com/chmerdon/ExtendableFEM.jl",
+	repo = "github.com/WIAS-PDELib/ExtendableFEM.jl",
 )
