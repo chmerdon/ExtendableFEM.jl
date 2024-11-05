@@ -67,6 +67,7 @@ using SparseDiffTools: SparseDiffTools, ForwardColorJacCache,
 					   forwarddiff_color_jacobian!, matrix_colors
 using Symbolics: Symbolics
 using SciMLBase: SciMLBase
+using UnicodePlots: UnicodePlots
 
 if !isdefined(Base, :get_extension)
 	using Requires
