@@ -2,7 +2,7 @@ mutable struct InterpolateBoundaryData{UT, DFT} <: AbstractOperator
 	u::UT
 	data::DFT
 	bdofs::Array{Int, 1}
-	bfaces::Array{Int,1}
+	bfaces::Array{Int, 1}
 	FES::Any
 	bddata::Any
 	assembler::Any
@@ -76,7 +76,7 @@ end
 function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0, kwargs...)
 	regions = O.parameters[:regions]
 	bdofs::Array{Int, 1} = O.bdofs
-	bfaces::Array{Int,1} = O.bfaces
+	bfaces::Array{Int, 1} = O.bfaces
 	if O.FES !== FES
 		bddata = FEVector(FES)
 		xgrid = FES.dofgrid
@@ -120,7 +120,7 @@ function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0
 			dof::Int = 0
 			dofc::Int = 0
 			for bface ∈ 1:nbfaces
-				for k = 1 : num_targets(bfacedofs, bface)
+				for k ∈ 1:num_targets(bfacedofs, bface)
 					dof = bfacedofs[k, bface]
 					dofc = bfacedofs_c[k, bface]
 					bddata.entries[dof] = Targetc.entries[dofc]

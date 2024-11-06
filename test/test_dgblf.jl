@@ -21,19 +21,19 @@ end
 
 ## stab_kernel!
 function stab_kernel!(result, input, qpinfo)
-	result .= input/qpinfo.volume
+	result .= input / qpinfo.volume
 end
 
 function TestDGBLF(FEType = H1Pk{1, 2, 3}, order = get_polynomialorder(FEType, Triangle2D), operator = jump(grad(1)), tol = 1e-12)
 	## tests if jumps of polynomial in ansatz space is zero
 	ncomponents = get_ncomponents(FEType)
 	function u!(result, qpinfo)
-		for j = 1 : ncomponents
-			result[j] = qpinfo.x[1]^order + j*qpinfo.x[2]^order
+		for j ∈ 1:ncomponents
+			result[j] = qpinfo.x[1]^order + j * qpinfo.x[2]^order
 		end
 	end
 
-	xgrid = uniform_refine(grid_unitsquare(Triangle2D),2)
+	xgrid = uniform_refine(grid_unitsquare(Triangle2D), 2)
 	FES = FESpace{FEType}(xgrid)
 
 	## first test: interpolate a smooth function from the discrete space and check if its interpolation has no jumps
@@ -41,7 +41,7 @@ function TestDGBLF(FEType = H1Pk{1, 2, 3}, order = get_polynomialorder(FEType, T
 	interpolate!(uh[1], u!)
 	A = FEMatrix(FES, FES)
 
-	dgblf = BilinearOperatorDG(stab_kernel!, [operator]; entities = ON_IFACES, quadorder = 2*order, factor = 1e-2)
+	dgblf = BilinearOperatorDG(stab_kernel!, [operator]; entities = ON_IFACES, quadorder = 2 * order, factor = 1e-2)
 	assemble!(A, dgblf)
 
 	error = uh.entries' * A.entries * uh.entries
@@ -68,9 +68,9 @@ end
 
 function TestParallelAssemblyDGBLF(FEType = H1Pk{1, 2, 3}, order = get_polynomialorder(FEType, Triangle2D), operator = jump(grad(1)), verbosity = 1)
 
-	dgblf_seq = BilinearOperatorDG(stab_kernel!, [operator]; entities = ON_IFACES, quadorder = 2*order, factor = 1e-2, parallel = false, verbosity = verbosity)
-	dgblf_par = BilinearOperatorDG(stab_kernel!, [operator]; entities = ON_IFACES, quadorder = 2*order, factor = 1e-2, parallel = true, verbosity = verbosity)
-	
+	dgblf_seq = BilinearOperatorDG(stab_kernel!, [operator]; entities = ON_IFACES, quadorder = 2 * order, factor = 1e-2, parallel = false, verbosity = verbosity)
+	dgblf_par = BilinearOperatorDG(stab_kernel!, [operator]; entities = ON_IFACES, quadorder = 2 * order, factor = 1e-2, parallel = true, verbosity = verbosity)
+
 	## sequential assembly
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), 4)
 	FES = FESpace{FEType}(xgrid)

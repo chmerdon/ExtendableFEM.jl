@@ -102,11 +102,11 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 		if num_pcolors(xgrid) > 1 && gridAT == ON_CELLS
 			maxnpartitions = maximum(num_partitions_per_color(xgrid))
 			pc = xgrid[PartitionCells]
-			itemassemblygroups = [pc[j]:pc[j+1]-1 for j = 1 : num_partitions(xgrid)]
+			itemassemblygroups = [pc[j]:pc[j+1]-1 for j ∈ 1:num_partitions(xgrid)]
 			# assuming here that all cells of one partition have the same geometry
 		else
 			itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+			itemassemblygroups = [view(itemassemblygroups, :, j) for j ∈ 1:num_sources(itemassemblygroups)]
 		end
 		Ti = typeof(xgrid).parameters[2]
 		has_normals = true
@@ -171,7 +171,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 		end
 
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j ∈ 1:nargs]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j ∈ 1:nargs]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
@@ -259,7 +259,7 @@ function build_assembler!(O::ItemIntegrator{Tv}, FE_args::Array{<:FEVectorBlock,
 		O.assembler = assembler
 	else
 		## update the time
-		for j = 1 : length(O.QP_infos)
+		for j ∈ 1:length(O.QP_infos)
 			O.QP_infos[j].time = time
 		end
 	end

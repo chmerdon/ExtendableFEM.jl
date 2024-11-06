@@ -15,26 +15,34 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.9' # Replace this with the minimum Julia version that your package supports. E.g. if your package requires Julia 1.5 or higher, change this to '1.5'.
+          - 'lts' # Replace this with the minimum Julia version that your package supports. E.g. if your package requires Julia 1.5 or higher, change this to '1.5'.
           - '1'   # Leave this line unchanged. '1' will automatically expand to the latest stable 1.x release of Julia.
-          # - 'nightly' # some problems with JLD2
+#          - 'pre'
         os:
           - ubuntu-latest
-          - macos-latest
-          - windows-latest # disable due to Powershell hassles (nested strings...)
+          - windows-latest
+          - macOS-13 # intel
+          - macOS-14 # arm
         arch:
           - x64
+          - aarch64
+        exclude:
+          - os: ubuntu-latest
+            arch: aarch64
+          - os: windows-latest
+            arch: aarch64
+          - os: macOS-13
+            arch: aarch64
+          - os: macOS-14
+            arch: x64
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-#      - run: |
-#          julia --project=docs docs/add_nursery.jl
-      - uses: actions/cache@v1
+      - uses: actions/cache@v4
         env:
-          PYTHON: ""
           cache-name: cache-artifacts
         with:
           path: ~/.julia/artifacts
@@ -45,20 +53,18 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+        # env:
+        #   JULIA_NUM_THREADS: 4
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v1
-        with:
-          file: lcov.info
+      - uses: codecov/codecov-action@v4
   docs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-      - run: |
-          julia --project=docs docs/add_nursery.jl
       - run: |
           julia --project=docs -e '
             using Pkg
@@ -71,7 +77,5 @@ jobs:
       #       doctest(MYPACKAGE)'
       - run: julia --project=docs docs/make.jl
         env:
-          PYTHON: ""
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
-          

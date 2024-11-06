@@ -190,7 +190,7 @@ should be multiplied with the matrix and u_test specifies where to put the
 (blocks of the) resulting vector in the system right-hand side.
 
 """
-function LinearOperator(A::AbstractMatrix, u_test::Array{<:Union{Unknown, Int},1}, u_args::Array{<:Union{Unknown, Int},1}; kwargs...)
+function LinearOperator(A::AbstractMatrix, u_test::Array{<:Union{Unknown, Int}, 1}, u_args::Array{<:Union{Unknown, Int}, 1}; kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_linop_kwargs())
 	_update_params!(parameters, kwargs)
 	return LinearOperatorFromMatrix{typeof(u_test[1]), typeof(A)}(u_test, u_args, A, parameters)
@@ -267,11 +267,11 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 		if num_pcolors(xgrid) > 1 && gridAT == ON_CELLS
 			maxnpartitions = maximum(num_partitions_per_color(xgrid))
 			pc = xgrid[PartitionCells]
-			itemassemblygroups = [pc[j]:pc[j+1]-1 for j = 1 : num_partitions(xgrid)]
+			itemassemblygroups = [pc[j]:pc[j+1]-1 for j ∈ 1:num_partitions(xgrid)]
 			# assuming here that all cells of one partition have the same geometry
 		else
 			itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+			itemassemblygroups = [view(itemassemblygroups, :, j) for j ∈ 1:num_sources(itemassemblygroups)]
 		end
 		Ti = typeof(xgrid).parameters[2]
 		has_normals = true
@@ -353,8 +353,8 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j ∈ 1:ntest]
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j ∈ 1:nargs]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j ∈ 1:ntest]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j ∈ 1:nargs]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
@@ -369,7 +369,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 			BE_test_vals::Array{Array{Tv, 3}, 1},
 			BE_args_vals::Array{Array{Tv, 3}, 1},
 			L2G::L2GTransformer,
-			QPinfos::QPInfos
+			QPinfos::QPInfos,
 		) where {T}
 
 			## prepare parameters
@@ -445,7 +445,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 			time = @elapsed begin
 				if O.parameters[:parallel]
 					pcp = xgrid[PColorPartitions]
-					ncolors = length(pcp)-1
+					ncolors = length(pcp) - 1
 					if O.parameters[:verbosity] > 0
 						@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
 					end
@@ -475,7 +475,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test, FE_args; time = 0.0
 		O.assembler = assembler
 	else
 		## update the time
-		for j = 1 : length(O.QP_infos)
+		for j ∈ 1:length(O.QP_infos)
 			O.QP_infos[j].time = time
 		end
 	end
@@ -507,11 +507,11 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 		if num_pcolors(xgrid) > 1 && gridAT == ON_CELLS
 			maxnpartitions = maximum(num_partitions_per_color(xgrid))
 			pc = xgrid[PartitionCells]
-			itemassemblygroups = [pc[j]:pc[j+1]-1 for j = 1 : num_partitions(xgrid)]
+			itemassemblygroups = [pc[j]:pc[j+1]-1 for j ∈ 1:num_partitions(xgrid)]
 			# assuming here that all cells of one partition have the same geometry
 		else
 			itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+			itemassemblygroups = [view(itemassemblygroups, :, j) for j ∈ 1:num_sources(itemassemblygroups)]
 		end
 		has_normals = true
 		if AT <: ON_FACES
@@ -579,7 +579,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 		end
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), AT) for j ∈ 1:ntest]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j ∈ 1:ntest]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
@@ -644,43 +644,43 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 
 		function assembler(b; kwargs...)
 			time = @elapsed begin
-			if O.parameters[:store] && size(b) == size(O.storage)
-				b .+= O.storage
-			else
-				if O.parameters[:store]
-					s = zeros(eltype(b), length(b))
+				if O.parameters[:store] && size(b) == size(O.storage)
+					b .+= O.storage
 				else
-					s = b
-				end
-				if O.parameters[:parallel]
-					pcp = xgrid[PColorPartitions]
-					ncolors = length(pcp)-1
-					if O.parameters[:verbosity] > 0
-						@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
+					if O.parameters[:store]
+						s = zeros(eltype(b), length(b))
+					else
+						s = b
 					end
-					for color in 1:ncolors
-						Threads.@threads for part in pcp[color]:pcp[color+1]-1
-							assembly_loop(s, itemassemblygroups[part], EGs[part], O.QF[part], O.BE_test[part], O.BE_test_vals[part], O.L2G[part], O.QP_infos[part]; kwargs...)
+					if O.parameters[:parallel]
+						pcp = xgrid[PColorPartitions]
+						ncolors = length(pcp) - 1
+						if O.parameters[:verbosity] > 0
+							@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
+						end
+						for color in 1:ncolors
+							Threads.@threads for part in pcp[color]:pcp[color+1]-1
+								assembly_loop(s, itemassemblygroups[part], EGs[part], O.QF[part], O.BE_test[part], O.BE_test_vals[part], O.L2G[part], O.QP_infos[part]; kwargs...)
+							end
+						end
+					elseif O.parameters[:parallel_groups]
+						Threads.@threads for j ∈ 1:length(EGs)
+							fill!(bj[j], 0)
+							assembly_loop(bj[j], itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+						end
+						for j ∈ 1:length(EGs)
+							s .+= bj[j]
+						end
+					else
+						for j ∈ 1:length(EGs)
+							assembly_loop(s, itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
 						end
 					end
-				elseif O.parameters[:parallel_groups]
-					Threads.@threads for j ∈ 1:length(EGs)
-						fill!(bj[j], 0)
-						assembly_loop(bj[j], itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
-					end
-					for j ∈ 1:length(EGs)
-						s .+= bj[j]
-					end
-				else
-					for j ∈ 1:length(EGs)
-						assembly_loop(s, itemassemblygroups[j], EGs[j], O.QF[j], O.BE_test[j], O.BE_test_vals[j], O.L2G[j], O.QP_infos[j]; kwargs...)
+					if O.parameters[:store]
+						b .+= s
+						O.storage = s
 					end
 				end
-				if O.parameters[:store]
-					b .+= s
-					O.storage = s
-				end
-			end
 			end
 
 			if O.parameters[:verbosity] > 0
@@ -690,7 +690,7 @@ function build_assembler!(b, O::LinearOperator{Tv}, FE_test::Array{<:FEVectorBlo
 		O.assembler = assembler
 	else
 		## update the time
-		for j = 1 : length(O.QP_infos)
+		for j ∈ 1:length(O.QP_infos)
 			O.QP_infos[j].time = time
 		end
 	end

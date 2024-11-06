@@ -18,7 +18,7 @@ function kernel!(result, u_ops, qpinfo)
 	u, ∇u, p = view(u_ops, 1:2), view(u_ops, 3:6), view(u_ops, 7)
 	μ = qpinfo.params[1]
 	α = qpinfo.params[2]
-	result[1] = ∇u[1] + α * u[1] 
+	result[1] = ∇u[1] + α * u[1]
 	result[2] = ∇u[3] + α * u[2]
 	result[3] = μ * ∇u[1] - p[1]
 	result[4] = μ * ∇u[2]
@@ -28,15 +28,15 @@ function kernel!(result, u_ops, qpinfo)
 end
 function TestLinearNonlinearOperator(; μ = 0.1, α = 2, sparse = true)
 
-	
+
 	nlop = NonlinearOperator(kernel!, [id(1), grad(1), id(2)]; params = [μ, α], sparse_jacobians = sparse)
 	blop = BilinearOperator(kernel!, [id(1), grad(1), id(2)]; params = [μ, α], use_sparsity_pattern = sparse)
 
-	xgrid = uniform_refine(grid_unitsquare(Triangle2D),2)
-	FES = [FESpace{H1P2{2,2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
+	xgrid = uniform_refine(grid_unitsquare(Triangle2D), 2)
+	FES = [FESpace{H1P2{2, 2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
 	u = FEVector(FES)
-	interpolate!(u[1], (result, qpinfo) -> (result[1] = qpinfo.x[1]^2; result[2] = sum(qpinfo.x);))
-	interpolate!(u[2], (result, qpinfo) -> (result[1] = qpinfo.x[2]^2;))
+	interpolate!(u[1], (result, qpinfo) -> (result[1] = qpinfo.x[1]^2; result[2] = sum(qpinfo.x)))
+	interpolate!(u[2], (result, qpinfo) -> (result[1] = qpinfo.x[2]^2))
 	bnonlin = FEVector(FES)
 	Anonlin = FEMatrix(FES, FES)
 	Alin = FEMatrix(FES, FES)
@@ -50,26 +50,26 @@ end
 
 function TestParallelAssemblyNonlinearOperator(; μ = 0.1, α = 2, sparse = true, verbosity = 1)
 
-	
+
 	nlop_seq = NonlinearOperator(kernel!, [id(1), grad(1), id(2)]; params = [μ, α], sparse_jacobians = sparse, parallel = false, verbosity = verbosity)
 	nlop_par = NonlinearOperator(kernel!, [id(1), grad(1), id(2)]; params = [μ, α], sparse_jacobians = sparse, parallel = true, verbosity = verbosity)
 
 	## sequential assembly
 	xgrid = uniform_refine(grid_unitsquare(Triangle2D), 4)
-	FES = [FESpace{H1P2{2,2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
+	FES = [FESpace{H1P2{2, 2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
 	u = FEVector(FES)
-	interpolate!(u[1], (result, qpinfo) -> (result[1] = qpinfo.x[1]^2; result[2] = sum(qpinfo.x);))
-	interpolate!(u[2], (result, qpinfo) -> (result[1] = qpinfo.x[2]^2;))
+	interpolate!(u[1], (result, qpinfo) -> (result[1] = qpinfo.x[1]^2; result[2] = sum(qpinfo.x)))
+	interpolate!(u[2], (result, qpinfo) -> (result[1] = qpinfo.x[2]^2))
 	bseq = FEVector(FES)
 	Aseq = FEMatrix(FES, FES)
 	assemble!(Aseq, bseq, nlop_seq, u)
 
 	## parallel assembly on same grid
 	xgrid = partition(xgrid, PlainMetisPartitioning(npart = 20))
-	FES = [FESpace{H1P2{2,2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
+	FES = [FESpace{H1P2{2, 2}}(xgrid), FESpace{H1P1{1}}(xgrid)]
 	u = FEVector(FES)
-	interpolate!(u[1], (result, qpinfo) -> (result[1] = qpinfo.x[1]^2; result[2] = sum(qpinfo.x);))
-	interpolate!(u[2], (result, qpinfo) -> (result[1] = qpinfo.x[2]^2;))
+	interpolate!(u[1], (result, qpinfo) -> (result[1] = qpinfo.x[1]^2; result[2] = sum(qpinfo.x)))
+	interpolate!(u[2], (result, qpinfo) -> (result[1] = qpinfo.x[2]^2))
 	bpar = FEVector(FES)
 	Apar = FEMatrix(FES, FES; npartitions = num_partitions(xgrid))
 	assemble!(Apar, bpar, nlop_par, u)

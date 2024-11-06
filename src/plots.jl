@@ -84,7 +84,7 @@ function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) +
 end
 
 function plot_unicode(sol; kwargs...)
-	for u = 1 : length(sol)
+	for u ∈ 1:length(sol)
 		println(stdout, unicode_scalarplot(sol[u]; title = sol[u].name, kwargs...))
 	end
 end

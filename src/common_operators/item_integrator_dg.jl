@@ -111,17 +111,17 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 
 		## prepare assembly
 		AT = O.parameters[:entities]
-		@assert AT <: ON_FACES  || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
-        if AT <: ON_BFACES
-            AT = ON_FACES
-            bfaces = xgrid[BFaceFaces]
-            itemassemblygroups = zeros(Int, length(bfaces), 1)
-            itemassemblygroups[:] .= bfaces
-            gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[1]), AT)
-        else
-            gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[1]), AT)
-            itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-        end
+		@assert AT <: ON_FACES || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
+		if AT <: ON_BFACES
+			AT = ON_FACES
+			bfaces = xgrid[BFaceFaces]
+			itemassemblygroups = zeros(Int, length(bfaces), 1)
+			itemassemblygroups[:] .= bfaces
+			gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[1]), AT)
+		else
+			gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[1]), AT)
+			itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
+		end
 		Ti = typeof(xgrid).parameters[2]
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
 		itemvolumes = xgrid[GridComponentVolumes4AssemblyType(gridAT)]
@@ -183,7 +183,7 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 
 		op_offsets_args = [0]
 		append!(op_offsets_args, cumsum(op_lengths_args))
-		offsets_args = [FE_args[j].offset for j in 1:length(FES_args)]	
+		offsets_args = [FE_args[j].offset for j in 1:length(FES_args)]
 		resultdim::Int = O.parameters[:resultdim]
 		if resultdim == 0
 			resultdim = op_offsets_args[end]
@@ -191,7 +191,7 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 		end
 
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), ON_CELLS) for j ∈ 1:nargs]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j ∈ 1:nargs]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
@@ -228,7 +228,7 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 
-                boundary_face = itemcells[2, item] == 0
+				boundary_face = itemcells[2, item] == 0
 				if AT <: ON_IFACES
 					if boundary_face
 						continue
@@ -236,7 +236,7 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 				end
 
 				for qp ∈ 1:nweights
-                    ## evaluate arguments at quadrature points
+					## evaluate arguments at quadrature points
 					fill!(input_args, 0)
 					for c1 ∈ 1:2
 						cell1 = itemcells[c1, item]
@@ -263,12 +263,12 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 						end
 					end
 
-                    ## get global x for quadrature point
-                    eval_trafo!(QPinfos.x, L2G, xref[qp])
+					## get global x for quadrature point
+					eval_trafo!(QPinfos.x, L2G, xref[qp])
 
-                    # evaluate kernel
-                    O.kernel(result_kernel, input_args, QPinfos)
-                    result_kernel .*= factor * weights[qp] * itemvolumes[item]
+					# evaluate kernel
+					O.kernel(result_kernel, input_args, QPinfos)
+					result_kernel .*= factor * weights[qp] * itemvolumes[item]
 
 					# integrate over item
 					if piecewise
@@ -296,7 +296,7 @@ function build_assembler!(O::ItemIntegratorDG{Tv}, FE_args::Array{<:FEVectorBloc
 		O.assembler = assembler
 	else
 		## update the time
-		for j = 1 : length(O.QP_infos)
+		for j ∈ 1:length(O.QP_infos)
 			O.QP_infos[j].time = time
 		end
 	end

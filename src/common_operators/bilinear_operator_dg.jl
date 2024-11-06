@@ -253,17 +253,17 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 		if num_pcolors(xgrid) > 1
 			maxnpartitions = maximum(num_partitions_per_color(xgrid))
 			pe = xgrid[PartitionEdges]
-			itemassemblygroups = [pe[j]:pe[j+1]-1 for j = 1 : num_partitions(xgrid)]
+			itemassemblygroups = [pe[j]:pe[j+1]-1 for j ∈ 1:num_partitions(xgrid)]
 		else
 			itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+			itemassemblygroups = [view(itemassemblygroups, :, j) for j ∈ 1:num_sources(itemassemblygroups)]
 		end
 
 		FETypes_test = [eltype(F) for F in FES_test]
 		FETypes_ansatz = [eltype(F) for F in FES_ansatz]
 		FETypes_args = [eltype(F) for F in FES_args]
 
-		EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j = 1 : num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
+		EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j ∈ 1:num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
 
 		coeffs_ops_test = Array{Array{Float64, 1}, 1}([])
 		coeffs_ops_ansatz = Array{Array{Float64, 1}, 1}([])
@@ -385,9 +385,9 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j ∈ 1:ntest]
 		FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), ON_CELLS) for j ∈ 1:nansatz]
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), ON_CELLS) for j ∈ 1:nargs]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
-		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_ansatz[j], xgrid, FEATs_ansatz[j]) for j = 1 : nansatz]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j ∈ 1:ntest]
+		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_ansatz[j], xgrid, FEATs_ansatz[j]) for j ∈ 1:nansatz]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j ∈ 1:nargs]
 		factor = O.parameters[:factor]
 		transposed_copy = O.parameters[:transposed_copy]
 		entry_tol = O.parameters[:entry_tolerance]
@@ -408,7 +408,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 			BE_args_vals::Vector{Matrix{Array{Tv, 3}}},
 			L2G::L2GTransformer,
 			QPinfos::QPInfos,
-			part = 1
+			part = 1,
 		) where {T}
 
 			input_ansatz = zeros(T, op_offsets_ansatz[end])
@@ -444,7 +444,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 
-                boundary_face = itemcells[2, item] == 0
+				boundary_face = itemcells[2, item] == 0
 				if AT <: ON_IFACES
 					if boundary_face
 						continue
@@ -584,13 +584,28 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz, FE_a
 			time = @elapsed begin
 				if O.parameters[:parallel]
 					pcp = xgrid[PColorPartitions]
-					ncolors = length(pcp)-1
+					ncolors = length(pcp) - 1
 					if O.parameters[:verbosity] > 0
 						@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
 					end
 					for color in 1:ncolors
 						Threads.@threads for part in pcp[color]:pcp[color+1]-1
-							assembly_loop(A, itemassemblygroups[part], EGs[part], O.QF[part], O.BE_test[part], O.BE_ansatz[part], O.BE_args[part], O.BE_test_vals[part], O.BE_ansatz_vals[part], O.BE_args_vals[part], O.L2G[part], O.QP_infos[part], part; kwargs...)
+							assembly_loop(
+								A,
+								itemassemblygroups[part],
+								EGs[part],
+								O.QF[part],
+								O.BE_test[part],
+								O.BE_ansatz[part],
+								O.BE_args[part],
+								O.BE_test_vals[part],
+								O.BE_ansatz_vals[part],
+								O.BE_args_vals[part],
+								O.L2G[part],
+								O.QP_infos[part],
+								part;
+								kwargs...,
+							)
 						end
 					end
 				elseif O.parameters[:parallel_groups]
@@ -633,7 +648,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 
 		## prepare assembly
 		AT = O.parameters[:entities]
-		@assert AT <: ON_FACES  || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
+		@assert AT <: ON_FACES || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
 		Ti = typeof(xgrid).parameters[2]
 		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
 
@@ -644,15 +659,15 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 		if num_pcolors(xgrid) > 1
 			maxnpartitions = maximum(num_partitions_per_color(xgrid))
 			pe = xgrid[PartitionEdges]
-			itemassemblygroups = [pe[j]:pe[j+1]-1 for j = 1 : num_partitions(xgrid)]
+			itemassemblygroups = [pe[j]:pe[j+1]-1 for j ∈ 1:num_partitions(xgrid)]
 		else
 			itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-			itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+			itemassemblygroups = [view(itemassemblygroups, :, j) for j ∈ 1:num_sources(itemassemblygroups)]
 		end
-	
+
 		FETypes_test = [eltype(F) for F in FES_test]
 		FETypes_ansatz = [eltype(F) for F in FES_ansatz]
-		EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j = 1 : num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
+		EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j ∈ 1:num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
 
 		coeffs_ops_test = Array{Array{Float64, 1}, 1}([])
 		coeffs_ops_ansatz = Array{Array{Float64, 1}, 1}([])
@@ -760,8 +775,8 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j ∈ 1:ntest]
 		FEATs_ansatz = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_ansatz[j]), ON_CELLS) for j ∈ 1:nansatz]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
-		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_ansatz[j], xgrid, FEATs_ansatz[j]) for j = 1 : nansatz]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j ∈ 1:ntest]
+		itemdofs_ansatz::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_ansatz[j], xgrid, FEATs_ansatz[j]) for j ∈ 1:nansatz]
 		factor = O.parameters[:factor]
 		transposed_copy = O.parameters[:transposed_copy]
 		entry_tol = O.parameters[:entry_tolerance]
@@ -779,7 +794,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 			BE_ansatz_vals::Vector{Matrix{Array{Tv, 3}}},
 			L2G::L2GTransformer,
 			QPinfos::QPInfos,
-			part = 1
+			part = 1,
 		) where {T}
 
 			input_ansatz = zeros(T, op_offsets_ansatz[end])
@@ -818,7 +833,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 
-                boundary_face = itemcells[2, item] == 0
+				boundary_face = itemcells[2, item] == 0
 				if AT <: ON_IFACES
 					if boundary_face
 						continue
@@ -938,7 +953,7 @@ function build_assembler!(A, O::BilinearOperatorDG{Tv}, FE_test, FE_ansatz; time
 				time = @elapsed begin
 					if O.parameters[:parallel]
 						pcp = xgrid[PColorPartitions]
-						ncolors = length(pcp)-1
+						ncolors = length(pcp) - 1
 						if O.parameters[:verbosity] > 0
 							@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
 						end

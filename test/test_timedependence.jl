@@ -18,7 +18,7 @@ function test_heatequation(; nrefs = 2, T = 2.0, τ = 0.5, order = 2, kwargs...)
 	function exact_u!(result, qpinfo)
 		x = qpinfo.x
 		t = qpinfo.time
-		result[1] = t + (x[1]^2 + x[2]^2)/4
+		result[1] = t + (x[1]^2 + x[2]^2) / 4
 	end
 
 	## kernel for exact error calculation

@@ -164,7 +164,7 @@ function determine_assembly_grid(FES_test, FES_ansatz = [], FES_args = [])
 	dofgrid = FES_test[1].dofgrid
 	all_same_xgrid = true
 	all_same_dofgrid = true
-	for j = 2 : length(FES_test)
+	for j ∈ 2:length(FES_test)
 		if xgrid !== FES_test[j].xgrid
 			all_same_xgrid = false
 		end
@@ -172,7 +172,7 @@ function determine_assembly_grid(FES_test, FES_ansatz = [], FES_args = [])
 			all_same_dofgrid = false
 		end
 	end
-	for j = 1 : length(FES_ansatz)
+	for j ∈ 1:length(FES_ansatz)
 		if xgrid !== FES_ansatz[j].xgrid
 			all_same_xgrid = false
 		end
@@ -180,7 +180,7 @@ function determine_assembly_grid(FES_test, FES_ansatz = [], FES_args = [])
 			all_same_dofgrid = false
 		end
 	end
-	for j = 1 : length(FES_args)
+	for j ∈ 1:length(FES_args)
 		if xgrid !== FES_args[j].xgrid
 			all_same_xgrid = false
 		end
@@ -205,7 +205,7 @@ function get_dofmap(FES, xgrid, AT)
 	if FES.dofgrid !== xgrid && FES.xgrid !== xgrid
 		@warn "warning assembly grid does neither match FES dofgrid or parent grid!"
 		return FES[DM]
-	end	
+	end
 	FES[DM]
 	return FES.dofgrid === xgrid ? FES[DM] : FES[ParentDofmap4Dofmap(DM)]
 end
@@ -251,12 +251,12 @@ aliased with either `A` or `x`.
 
 """
 function tmul!(y, A, x, α = 1.0, β = 0.0)
-    for i in eachindex(y)
-        y[i] *= β
-        for j in eachindex(x)
-            y[i] += α * A[j, i] * x[j]
-        end
-    end
+	for i in eachindex(y)
+		y[i] *= β
+		for j in eachindex(x)
+			y[i] += α * A[j, i] * x[j]
+		end
+	end
 end
 
 """
@@ -268,10 +268,10 @@ Overload of the generic function for types supported by
 `LinearAlgebra.BLAS.gemv!` to avoid slow run times for large inputs.
 """
 function tmul!(
-    y::AbstractVector{T},
-    A::AbstractMatrix{T},
-    x::AbstractVector{T},
-    α=1.0,
-    β=0.0) where {T<:AbstractFloat}
-    LinearAlgebra.BLAS.gemv!('T', α, A, x, β, y)
+	y::AbstractVector{T},
+	A::AbstractMatrix{T},
+	x::AbstractVector{T},
+	α = 1.0,
+	β = 0.0) where {T <: AbstractFloat}
+	LinearAlgebra.BLAS.gemv!('T', α, A, x, β, y)
 end

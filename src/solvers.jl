@@ -38,22 +38,22 @@ function CommonSolve.solve(PD::ProblemDescription, SC = nothing; init = nothing,
 	return solve(PD, [init[u].FES for u in unknowns], SC; init = init, unknowns = unknowns, kwargs...)
 end
 
-function symmetrize_structure!(A::ExtendableSparseMatrix{Tv,Ti}; diagval = 1e-16) where {Tv,Ti}
+function symmetrize_structure!(A::ExtendableSparseMatrix{Tv, Ti}; diagval = 1e-16) where {Tv, Ti}
 	cscmat = A.cscmatrix
 	rows::Array{Ti, 1} = rowvals(cscmat)
 	nzvals::Array{Tv, 1} = cscmat.nzval
 	for col ∈ 1:size(cscmat, 2)
 		for r in nzrange(cscmat, col)
-			A[col, rows[r]] += 1e-16*nzvals[r]
+			A[col, rows[r]] += 1e-16 * nzvals[r]
 		end
-		if A[col,col] == 0 && diagval !== 0
-			A[col,col] = diagval
+		if A[col, col] == 0 && diagval !== 0
+			A[col, col] = diagval
 		end
 	end
 	flush!(A)
 end
 
-function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<:FESpace}}, SC = nothing; unknowns = PD.unknowns, kwargs...)
+function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace, Vector{<:FESpace}}, SC = nothing; unknowns = PD.unknowns, kwargs...)
 	if typeof(FES) <: FESpace
 		FES = [FES]
 	end
@@ -98,10 +98,10 @@ function CommonSolve.solve(PD::ProblemDescription, FES::Union{<:FESpace,Vector{<
 
 	if SC.parameters[:verbosity] > -1
 		if length(freedofs) > 0
-		@info "SOLVING $(PD.name) @ time = $(SC.parameters[:time])
-			unknowns = $([u.name for u in unknowns])
-			fetypes = $(["$(get_FEType(FES[j]))" for j = 1 : length(unknowns)])
-			ndofs = $([FES[j].ndofs for j = 1 : length(unknowns)]) (restricted to $(length.(SC.parameters[:restrict_dofs])))"
+			@info "SOLVING $(PD.name) @ time = $(SC.parameters[:time])
+				unknowns = $([u.name for u in unknowns])
+				fetypes = $(["$(get_FEType(FES[j]))" for j = 1 : length(unknowns)])
+				ndofs = $([FES[j].ndofs for j = 1 : length(unknowns)]) (restricted to $(length.(SC.parameters[:restrict_dofs])))"
 		else
 			@info "SOLVING $(PD.name) @ time = $(SC.parameters[:time])
 				unknowns = $([u.name for u in unknowns])
@@ -642,7 +642,7 @@ function iterate_until_stationarity(
 							linsolve.b = b.entries
 						end
 						SC.parameters[:initialized] = true
-						
+
 
 						## solve
 						x = LinearSolve.solve!(linsolve)
@@ -682,7 +682,7 @@ function iterate_until_stationarity(
 
 		if energy_integrator !== nothing
 			error = evaluate(energy_integrator, sol)
-			@printf "   energy = %.3e" sum([sum(view(error,j,:)) for j = 1:size(error,1)])
+			@printf "   energy = %.3e" sum([sum(view(error, j, :)) for j ∈ 1:size(error, 1)])
 		end
 		@printf "\n"
 	end

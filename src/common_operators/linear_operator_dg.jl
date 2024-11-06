@@ -173,7 +173,7 @@ of the test function(s). Hence, this can be used as a linearization of a
 nonlinear operator. The header of the kernel functions needs to be conform
 to the interface
 
-    kernel!(result, eval_args, qpinfo)
+	kernel!(result, eval_args, qpinfo)
 
 where qpinfo allows to access information at the current quadrature point.
 
@@ -207,12 +207,12 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 
 		## prepare assembly
 		AT = O.parameters[:entities]
-		@assert AT <: ON_FACES  || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
+		@assert AT <: ON_FACES || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
 		on_bfaces = false
-        if AT <: ON_BFACES
-            AT = ON_FACES
+		if AT <: ON_BFACES
+			AT = ON_FACES
 			on_bfaces = true
-        end
+		end
 		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
 		Ti = typeof(xgrid).parameters[2]
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
@@ -229,12 +229,12 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 			if num_pcolors(xgrid) > 1
 				maxnpartitions = maximum(num_partitions_per_color(xgrid))
 				pe = xgrid[PartitionEdges]
-				itemassemblygroups = [pe[j]:pe[j+1]-1 for j = 1 : num_partitions(xgrid)]
+				itemassemblygroups = [pe[j]:pe[j+1]-1 for j ∈ 1:num_partitions(xgrid)]
 			else
 				itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-				itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+				itemassemblygroups = [view(itemassemblygroups, :, j) for j ∈ 1:num_sources(itemassemblygroups)]
 			end
-			EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j = 1 : num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
+			EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j ∈ 1:num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
 		end
 		FETypes_test = [eltype(F) for F in FES_test]
 
@@ -304,7 +304,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 		append!(op_offsets_test, cumsum(op_lengths_test))
 		append!(op_offsets_args, cumsum(op_lengths_args))
 		offsets_test = [FE_test[j].offset for j in 1:length(FES_test)]
-		offsets_args = [FE_args[j].offset for j in 1:length(FES_args)]	
+		offsets_args = [FE_args[j].offset for j in 1:length(FES_args)]
 
 		## prepare parallel assembly
 		if O.parameters[:parallel_groups]
@@ -316,8 +316,8 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j ∈ 1:ntest]
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), ON_CELLS) for j ∈ 1:nargs]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j ∈ 1:ntest]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j ∈ 1:nargs]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
@@ -365,7 +365,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 
-                boundary_face = itemcells[2, item] == 0
+				boundary_face = itemcells[2, item] == 0
 				if AT <: ON_IFACES
 					if boundary_face
 						continue
@@ -423,20 +423,20 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 							## get global x for quadrature point
 							eval_trafo!(QPinfos.x, L2G, xref[qp])
 
-                            # evaluate kernel
-                            O.kernel(result_kernel, input_args[qp], QPinfos)
-                            result_kernel .*= factor * weights[qp] * itemvolumes[item]
+							# evaluate kernel
+							O.kernel(result_kernel, input_args[qp], QPinfos)
+							result_kernel .*= factor * weights[qp] * itemvolumes[item]
 
-                            # multiply test function operator evaluation on cell 1
-                            for idt = 1 : ntest
-                                coeff_test = boundary_face ? 1 : coeffs_ops_test[idt][c1]
-                                for k ∈ 1:ndofs_test[idt]
-                                    dof = itemdofs_test[idt][k, cell1] + offsets_test[idt]
-                                    for d ∈ 1:op_lengths_test[idt]
-                                        b[dof] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeff_test
-                                    end
-                                end
-                            end
+							# multiply test function operator evaluation on cell 1
+							for idt ∈ 1:ntest
+								coeff_test = boundary_face ? 1 : coeffs_ops_test[idt][c1]
+								for k ∈ 1:ndofs_test[idt]
+									dof = itemdofs_test[idt][k, cell1] + offsets_test[idt]
+									for d ∈ 1:op_lengths_test[idt]
+										b[dof] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeff_test
+									end
+								end
+							end
 						end
 					end
 				end
@@ -458,7 +458,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 				time = @elapsed begin
 					if O.parameters[:parallel]
 						pcp = xgrid[PColorPartitions]
-						ncolors = length(pcp)-1
+						ncolors = length(pcp) - 1
 						if O.parameters[:verbosity] > 0
 							@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
 						end
@@ -494,7 +494,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test, FE_args::Array{<:
 		O.assembler = assembler
 	else
 		## update the time
-		for j = 1 : length(O.QP_infos)
+		for j ∈ 1:length(O.QP_infos)
 			O.QP_infos[j].time = time
 		end
 	end
@@ -515,12 +515,12 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 
 		## prepare assembly
 		AT = O.parameters[:entities]
-		@assert AT <: ON_FACES  || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
+		@assert AT <: ON_FACES || AT <: ON_BFACES "only works for entities <: ON_FACES or ON_BFACES"
 		on_bfaces = false
-        if AT <: ON_BFACES
-            AT = ON_FACES
+		if AT <: ON_BFACES
+			AT = ON_FACES
 			on_bfaces = true
-        end
+		end
 		gridAT = ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[1]), AT)
 		Ti = typeof(xgrid).parameters[2]
 		itemgeometries = xgrid[GridComponentGeometries4AssemblyType(gridAT)]
@@ -537,16 +537,16 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 			if num_pcolors(xgrid) > 1
 				maxnpartitions = maximum(num_partitions_per_color(xgrid))
 				pe = xgrid[PartitionEdges]
-				itemassemblygroups = [pe[j]:pe[j+1]-1 for j = 1 : num_partitions(xgrid)]
+				itemassemblygroups = [pe[j]:pe[j+1]-1 for j ∈ 1:num_partitions(xgrid)]
 			else
 				itemassemblygroups = xgrid[GridComponentAssemblyGroups4AssemblyType(gridAT)]
-				itemassemblygroups = [view(itemassemblygroups,:,j) for j = 1 : num_sources(itemassemblygroups)]
+				itemassemblygroups = [view(itemassemblygroups, :, j) for j ∈ 1:num_sources(itemassemblygroups)]
 			end
-			EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j = 1 : num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
+			EGs = num_pcolors(xgrid) > 1 ? [xgrid[UniqueCellGeometries][1] for j ∈ 1:num_partitions(xgrid)] : xgrid[UniqueCellGeometries]
 		end
 		FETypes_test = [eltype(F) for F in FES_test]
 
-		
+
 
 		coeffs_ops_test = Array{Array{Float64, 1}, 1}([])
 		for op in O.ops_test
@@ -613,7 +613,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 		end
 
 		FEATs_test = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_test[j]), ON_CELLS) for j ∈ 1:ntest]
-		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j = 1 : ntest]
+		itemdofs_test::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_test[j], xgrid, FEATs_test[j]) for j ∈ 1:ntest]
 		factor = O.parameters[:factor]
 
 		## Assembly loop for fixed geometry
@@ -659,7 +659,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 				QPinfos.volume = itemvolumes[item]
 				update_trafo!(L2G, item)
 
-                boundary_face = itemcells[2, item] == 0
+				boundary_face = itemcells[2, item] == 0
 				if AT <: ON_IFACES
 					if boundary_face
 						continue
@@ -687,20 +687,20 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 							## get global x for quadrature point
 							eval_trafo!(QPinfos.x, L2G, xref[qp])
 
-                            # evaluate kernel
-                            O.kernel(result_kernel, QPinfos)
-                            result_kernel .*= factor * weights[qp] * itemvolumes[item]
+							# evaluate kernel
+							O.kernel(result_kernel, QPinfos)
+							result_kernel .*= factor * weights[qp] * itemvolumes[item]
 
-                            # multiply test function operator evaluation on cell 1
-                            for idt ∈ 1:ntest
-                                coeff_test = boundary_face ? 1 : coeffs_ops_test[idt][c1]
-                                for k ∈ 1:ndofs_test[idt]
-                                    dof = itemdofs_test[idt][k, cell1] + offsets_test[idt]
-                                    for d ∈ 1:op_lengths_test[idt]
-                                        b[dof] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeff_test
-                                    end
-                                end
-                            end
+							# multiply test function operator evaluation on cell 1
+							for idt ∈ 1:ntest
+								coeff_test = boundary_face ? 1 : coeffs_ops_test[idt][c1]
+								for k ∈ 1:ndofs_test[idt]
+									dof = itemdofs_test[idt][k, cell1] + offsets_test[idt]
+									for d ∈ 1:op_lengths_test[idt]
+										b[dof] += result_kernel[d+op_offsets_test[idt]] * BE_test_vals[idt][itempos1, orientation1][d, k, qp] * coeff_test
+									end
+								end
+							end
 						end
 					end
 				end
@@ -721,7 +721,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 				time = @elapsed begin
 					if O.parameters[:parallel]
 						pcp = xgrid[PColorPartitions]
-						ncolors = length(pcp)-1
+						ncolors = length(pcp) - 1
 						if O.parameters[:verbosity] > 0
 							@info "$(O.parameters[:name]) : assembling in parallel with $ncolors colors, $(length(EGs)) partitions and $(Threads.nthreads()) threads"
 						end
@@ -757,7 +757,7 @@ function build_assembler!(b, O::LinearOperatorDG{Tv}, FE_test; time = 0.0, kwarg
 		O.assembler = assembler
 	else
 		## update the time
-		for j = 1 : length(O.QP_infos)
+		for j ∈ 1:length(O.QP_infos)
 			O.QP_infos[j].time = time
 		end
 	end

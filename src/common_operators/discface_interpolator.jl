@@ -156,7 +156,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 		#A = FEMatrix(FES_target, FES_target)
 
 		FEATs_args = [ExtendableFEMBase.EffAT4AssemblyType(get_AT(FES_args[j]), AT) for j ∈ 1:nargs]
-		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j = 1 : nargs]
+		itemdofs_args::Array{Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}}, 1} = [get_dofmap(FES_args[j], xgrid, FEATs_args[j]) for j ∈ 1:nargs]
 		facedofs_target::Union{Adjacency{Ti}, SerialVariableTargetAdjacency{Ti}} = FES_target[CellDofs]
 
 		O.FES_args = FES_args
@@ -202,7 +202,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 					end
 					QPinfos.item = face
 					QPinfos.volume = facevolumes[face]
-					QPinfos.normal .= view(facenormals,: , face)
+					QPinfos.normal .= view(facenormals, :, face)
 
 					left_or_right = facecells[1, face] == item ? 1 : 2
 
@@ -249,7 +249,7 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 		O.assembler = assembler
 	else
 		## update the time
-		for j = 1 : length(O.QP_infos)
+		for j ∈ 1:length(O.QP_infos)
 			O.QP_infos[j].time = time
 		end
 	end

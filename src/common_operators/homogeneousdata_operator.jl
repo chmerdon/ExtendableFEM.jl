@@ -65,7 +65,7 @@ function HomogeneousBoundaryData(u; entities = ON_BFACES, kwargs...)
 	return HomogeneousData(u; entities = entities, kwargs...)
 end
 
-function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs...) where {UT,AT}
+function assemble!(O::HomogeneousData{UT, AT}, FES = O.FES; offset = 0, kwargs...) where {UT, AT}
 	if O.FES !== FES
 		regions = O.parameters[:regions]
 		xgrid = FES.dofgrid

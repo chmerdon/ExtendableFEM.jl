@@ -23,8 +23,10 @@ The computed solution for the default parameters looks like this:
 module Example230_NonlinearElasticity
 
 using ExtendableFEM
+using ExtendableFEMBase
 using ExtendableGrids
 using GridVisualize
+using UnicodePlots
 using Test #hide
 
 ## parameter-dependent nonlinear operator uses a callable struct to reduce allocations

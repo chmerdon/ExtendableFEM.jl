@@ -1,5 +1,9 @@
 # CHANGES
 
+## next version
+  - added tests for explicit imports and undocumented names
+  - JuliaFormatter
+  
 ## v0.8 November 1, 2024
   - started changelog
   - first registered version since repository move (fixed some URL links in the doc and readme)

@@ -3,6 +3,7 @@ using ExtendableGrids
 using ExtendableFEMBase
 using ExtendableFEM
 using ExampleJuggler
+using ExplicitImports
 using Metis
 using Aqua
 
@@ -60,13 +61,24 @@ end
 function run_all_tests()
 	@testset "Aqua.jl" begin
 		Aqua.test_all(
-		ExtendableFEM;
-		ambiguities = false,
-		piracies = false
+			ExtendableFEM;
+			ambiguities = false,
+			piracies = false,
 		)
 		Aqua.test_ambiguities(ExtendableFEM)
 	end
-	
+
+	@testset "ExplicitImports" begin
+		@test ExplicitImports.check_no_implicit_imports(ExtendableFEMBase) === nothing
+		@test ExplicitImports.check_no_stale_explicit_imports(ExtendableFEMBase) === nothing
+	end
+
+	if isdefined(Docs, :undocumented_names) # >=1.11
+		@testset "UndocumentedNames" begin
+			@test isempty(Docs.undocumented_names(ExtendableFEMBase))
+		end
+	end
+
 
 	run_boundary_operator_tests()
 	run_dgblf_tests()

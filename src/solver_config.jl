@@ -12,12 +12,12 @@ default_statistics() = Dict{Symbol, Vector{Real}}(
 
 mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	PD::ProblemDescription
-	A::AT					## stores system matrix
-	b::bT					## stores right-hand side
-	sol::xT					## stores solution
-	tempsol::xT				## temporary solution
+	A::AT## stores system matrix
+	b::bT## stores right-hand side
+	sol::xT## stores solution
+	tempsol::xT## temporary solution
 	res::xT
-	freedofs::Vector{Int}	## stores indices of free dofs
+	freedofs::Vector{Int}## stores indices of free dofs
 	LP::LinearProblem
 	statistics::Dict{Symbol, Vector{Real}}
 	linsolver::Any
@@ -141,7 +141,7 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 	if haskey(parameters, :restrict_dofs)
 		if length(parameters[:restrict_dofs]) > 0
 			freedofs = Vector{Int}(parameters[:restrict_dofs][1])
-			for j = 2 : length(parameters[:restrict_dofs])
+			for j ∈ 2:length(parameters[:restrict_dofs])
 				parameters[:restrict_dofs][j] .+= FES[j-1].ndofs
 				append!(freedofs, parameters[:restrict_dofs][j])
 			end
@@ -157,7 +157,7 @@ function SolverConfiguration(Problem::ProblemDescription, unknowns::Array{Unknow
 
 	## construct linear problem
 	if length(freedofs) > 0
-		LP = LinearProblem(A.entries.cscmatrix[freedofs,freedofs], b.entries[freedofs])
+		LP = LinearProblem(A.entries.cscmatrix[freedofs, freedofs], b.entries[freedofs])
 	else
 		LP = LinearProblem(A.entries.cscmatrix, b.entries)
 	end
