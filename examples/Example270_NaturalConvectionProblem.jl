@@ -147,7 +147,7 @@ function main(;
     return Nu, plt
 end
 
-generateplots = default_generateplots(Example270_NaturalConvectionProblem, "example270.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example270_NaturalConvectionProblem, "example270.png") #hide
 function runtests() #hide
 	Nu, plt = main(; nrefs = 4) #hide
 	@test Nu ≈ 17.641450080135293 #hide

@@ -1,9 +1,34 @@
 
+"""
+	DiscontinuousFunctionOperator
 
+Subtype of AbstractFunctionOperator dedicated to evaluations of discontinuous quantities on faces
+like jumps, averages etc.
+"""
 abstract type DiscontinuousFunctionOperator <: AbstractFunctionOperator end
+"""
+	Jump{StandardFunctionOperator}
+
+evaluates the jump of a StandardFunctionOperator
+"""
 abstract type Jump{O} <: DiscontinuousFunctionOperator where {O <: StandardFunctionOperator} end # calculates the jump between both sides of the face
+"""
+	Average{StandardFunctionOperator}
+
+evaluates the average of a StandardFunctionOperator
+"""
 abstract type Average{O} <: DiscontinuousFunctionOperator where {O <: StandardFunctionOperator} end # calculates the average between both sides of the face
+"""
+	Left{StandardFunctionOperator}
+
+evaluates the left (w.r.t. orientation of the face) value of a StandardFunctionOperator
+"""
 abstract type Left{O} <: DiscontinuousFunctionOperator where {O <: StandardFunctionOperator} end # calculates the value on left side of the face
+"""
+	Average{StandardFunctionOperator}
+
+evaluates the right (w.r.t. orientation of the face) value of a StandardFunctionOperator
+"""
 abstract type Right{O} <: DiscontinuousFunctionOperator where {O <: StandardFunctionOperator} end # calculates the value on right side of the face
 
 

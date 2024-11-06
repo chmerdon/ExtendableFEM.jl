@@ -108,7 +108,7 @@ function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, use_LM = true, nref = 4, o
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example206_CoupledSubGridProblems, "example206.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example206_CoupledSubGridProblems, "example206.png") #hide
 
 function jump_l2norm!(result, u, qpinfo) #hide
     result[1] = (u[1] - u[2])^2 #hide

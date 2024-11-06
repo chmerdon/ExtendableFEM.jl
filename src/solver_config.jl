@@ -28,6 +28,14 @@ mutable struct SolverConfiguration{AT <: AbstractMatrix, bT, xT}
 	parameters::Dict{Symbol, Any} # dictionary with user parameters
 end
 
+"""
+````
+residual(S::SolverConfiguration)
+````
+
+returns the residual of the last solve
+
+"""
 residual(S::SolverConfiguration) = S.statistics[:nonlinear_residuals][end]
 
 

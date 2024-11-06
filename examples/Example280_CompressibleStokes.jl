@@ -316,7 +316,7 @@ function prepare_data!(; M = 1, c = 1, μ = 1, ufac = 100, laplacian_in_rhs = tr
     return ϱ_eval, g_eval[2], f == 0 ? nothing : f_eval[2], u_eval[2], ∇u_eval[2]
 end
 
-generateplots = default_generateplots(Example280_CompressibleStokes, "example280.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example280_CompressibleStokes, "example280.png") #hide
 function runtests(;) #hide
 	Results, plt = main(; nrefs = 2) #hide
 	@test Results[end,1] ≈ 6.732891488265023e-7 #hide

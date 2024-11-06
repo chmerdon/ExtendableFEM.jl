@@ -147,7 +147,7 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     return [div_error, L2error], plt
 end
 
-generateplots = default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.png") #hide
 function runtests() #hide
 	errors, plt = main(; nrefs = 1) #hide
 	@test all(errors .<= 1e-12) #hide

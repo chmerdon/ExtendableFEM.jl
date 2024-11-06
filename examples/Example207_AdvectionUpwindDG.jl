@@ -171,7 +171,7 @@ function make_grid(nref = 4, radius = 0.5)
 	simplexgrid(builder, maxvolume = 1)
 end
 
-generateplots = default_generateplots(Example207_AdvectionUpwindDG, "example207.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example207_AdvectionUpwindDG, "example207.png") #hide
 function runtests() #hide
     ## test if P0-DG solution stays within bounds #hide
 	sol, ~ = main(; order = 0, nrefs = 2) #hide	

@@ -116,7 +116,7 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example330_HyperElasticity, "example330.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example330_HyperElasticity, "example330.png") #hide
 
 function tetrahedralization_of_cube(; maxvolume = 0.1)
     builder = SimplexGridBuilder(; Generator = TetGen)

@@ -137,7 +137,7 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example226_Thermoforming, "example226.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example226_Thermoforming, "example226.png") #hide
 function runtests() #hide
 	sol1, ~ =  Example226_Thermoforming.main(; sparse_jacobians=true, N = 20) #hide
 	sol2, ~ =  Example226_Thermoforming.main(; sparse_jacobians=false, N = 20) #hide

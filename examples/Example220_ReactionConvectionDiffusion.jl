@@ -136,7 +136,7 @@ function main(; Plotter = nothing, τ = 1e-2, nlevels = 5, order = 2, kwargs...)
 	return Results, plt
 end
 
-generateplots = default_generateplots(Example220_ReactionConvectionDiffusion, "example220.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example220_ReactionConvectionDiffusion, "example220.png") #hide
 function runtests() #hide
 	Results, plt = main(; nlevels = 2) #hide
 	@test Results[end, 1] ≈ 0.0001510021661291585 #hide

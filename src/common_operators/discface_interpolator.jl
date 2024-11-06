@@ -25,6 +25,25 @@ default_interp_kwargs() = Dict{Symbol, Tuple{Any, String}}(
 	:verbosity => (0, "verbosity level"),
 )
 
+"""
+````
+function FaceInterpolator(
+	[kernel,]
+	u_args,
+	ops_args;
+	Tv = Float64,
+	Ti = Int,
+	kwargs...)
+````
+
+Generates a FaceInterpolator that evaluates discontinuous function operator
+of its arguments, possibly further postprocessed via a kernel function of interface
+function kernel(result, input, qpinfo), into a FEVector of H1Pk living on the faces
+of the grid with the fitting order and number of components.
+
+Keyword arguments:
+$(_myprint(default_interp_kwargs()))
+"""
 function FaceInterpolator(kernel, u_args, ops_args; Tv = Float64, Ti = Int, kwargs...)
 	parameters = Dict{Symbol, Any}(k => v[1] for (k, v) in default_interp_kwargs())
 	_update_params!(parameters, kwargs)
@@ -256,6 +275,14 @@ function build_assembler!(O::FaceInterpolator{Tv}, FE_args::Array{<:FEVectorBloc
 end
 
 
+"""
+````
+function evaluate!(O::FaceInterpolator{Tv, Ti, UT}, sol; kwargs...)
+````
+
+Evaluates the FaceInterpolator using the blocks of sol as arguments and returns the FEVector
+with the results.
+"""
 function ExtendableFEMBase.evaluate!(O::FaceInterpolator{Tv, Ti, UT}, sol; kwargs...) where {Tv, Ti, UT}
 	if UT <: Integer
 		ind_args = O.u_args

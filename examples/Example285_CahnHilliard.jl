@@ -126,5 +126,5 @@ function main(;
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example285_CahnHilliard, "example285.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example285_CahnHilliard, "example285.png") #hide
 end

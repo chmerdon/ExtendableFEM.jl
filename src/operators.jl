@@ -1,3 +1,8 @@
+"""
+	AbstractOperator
+
+Root type for all operators
+"""
 abstract type AbstractOperator end
 
 # informs solver when operator needs reassembly

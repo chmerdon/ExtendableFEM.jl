@@ -1,3 +1,11 @@
+"""
+````
+get_unknown_id(SC::SolverConfiguration, u::Unknown)
+````
+
+returns the id of the unknown u in SC
+
+"""
 function get_unknown_id(SC::SolverConfiguration, u::Unknown)
 	return findfirst(==(u), SC.unknowns)
 end

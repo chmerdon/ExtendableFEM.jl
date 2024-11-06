@@ -103,7 +103,7 @@ function main(; Plotter = nothing, λ = 1e4, μ = 1.0, nrefs = 5, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example235_StokesIteratedPenalty, "example235.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example235_StokesIteratedPenalty, "example235.png") #hide
 function exact_error!(result, u, qpinfo) #hide
 	u!(result, qpinfo) #hide
 	p!(view(result, 3), qpinfo) #hide

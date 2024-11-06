@@ -67,3 +67,14 @@ of the entities can be made via the regions kwarg.
 
 !!! note
     (*) = only reasonable in 3D and still experimental, might have some issues
+
+
+### Function Operators
+
+The definition of operators often involves paris of an Unknown and a FunctionOperator (or an alias as listed above). FunctionOperators are something like Identity, Gradient etc. (see [here](https://wias-pdelib.github.io/ExtendableFEMBase.jl/dev/functionoperators/) for a complete list). Additional FunctionOperators for the evaluation of discontinuous operators on faces available (needed in particular for defining operators in  DG context or face terms in a posteriori error estimators):
+
+```@autodocs
+Modules = [ExtendableFEM]
+Pages = ["jump_operators.jl"]
+Order   = [:type, :function]
+```

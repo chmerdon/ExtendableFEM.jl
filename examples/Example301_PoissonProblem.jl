@@ -50,7 +50,7 @@ function main(; μ = 1.0, nrefs = 3, Plotter = nothing, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example301_PoissonProblem, "example301.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example301_PoissonProblem, "example301.png") #hide
 function runtests() #hide
 	sol, plt = main(;) #hide
 	@test sum(sol.entries) ≈ 21.874305144549524 #hide

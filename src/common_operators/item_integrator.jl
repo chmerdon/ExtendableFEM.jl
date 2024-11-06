@@ -74,6 +74,21 @@ function ItemIntegrator(oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1
 	ops_args = [oa[2] for oa in oa_args]
 	return ItemIntegrator(ExtendableFEMBase.standard_kernel, u_args, ops_args; kwargs...)
 end
+
+
+"""
+````
+function L2NormIntegrator(
+	oa_args::Array{<:Tuple{Union{Unknown,Int}, DataType},1};
+	kwargs...)
+````
+
+ItemIntegrator with a fixed kernel that computes the (componentwise)
+L2Norm of the arguments.
+
+Keyword arguments:
+$(_myprint(default_iiop_kwargs()))
+"""
 function L2NormIntegrator(oa_args::Array{<:Tuple{Union{Unknown, Int}, DataType}, 1}; kwargs...)
 	u_args = [oa[1] for oa in oa_args]
 	ops_args = [oa[2] for oa in oa_args]

@@ -1,3 +1,8 @@
+"""
+	ExtendableFEM
+
+$(read(joinpath(@__DIR__,"..","README.md"),String))
+"""
 module ExtendableFEM
 
 using CommonSolve: CommonSolve
@@ -111,12 +116,13 @@ export grid, dofgrid
 export id, grad, hessian, div, normalflux, tangentialflux, Δ, apply, curl1, curl2, curl3, laplace, tangentialgrad
 
 include("operators.jl")
-export AbstractOperator
+#export AbstractOperator
 export assemble!, apply_penalties!
 
 include("common_operators/reduction_operator.jl")
-export AbstractReductionOperator
-export FixbyInterpolation
+# wip
+#export AbstractReductionOperator
+#export FixbyInterpolation
 
 include("problemdescription.jl")
 export ProblemDescription
@@ -151,10 +157,10 @@ include("solvers_diffeq.jl")
 export generate_ODEProblem
 
 include("jump_operators.jl")
-export DiscontinuousFunctionOperator
+#export DiscontinuousFunctionOperator
 export Jump, Average, Left, Right
 export jump, average, this, other
-export is_discontinuous
+#export is_discontinuous
 
 include("common_operators/item_integrator.jl")
 export ItemIntegrator
@@ -194,7 +200,7 @@ export plot_convergencehistory!
 export scalarplot!
 export vectorplot!
 export plot, plot!
-export default_generateplots
+# export default_generateplots
 export plot_unicode
 
 include("diffeq_interface.jl")

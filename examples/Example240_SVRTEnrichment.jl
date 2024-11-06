@@ -451,7 +451,7 @@ function div_projector(V1, VR)
 	return F, DD_RR
 end
 
-generateplots = default_generateplots(Example240_SVRTEnrichment, "example240.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example240_SVRTEnrichment, "example240.png") #hide
 function runtests(;) #hide
 	Results, plt = main(; nrefs = 2) #hide
 	@test Results[end,1] ≈ 0.09600693353585522 #hide

@@ -67,7 +67,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 		authors = "Christian Merdon, Jan Philipp Thiele",
 		format = Documenter.HTML(; repolink = "https://github.com/WIAS-PDELib/ExtendableFEM.jl", mathengine = MathJax3()),
 		clean = false,
-		checkdocs = :all,
+		checkdocs = :exports,
 		warnonly = false,
 		doctest = true,
 		pages = [
@@ -84,6 +84,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 				"fixdofs.md",
 				"combinedofs.md",
 				"callbackoperator.md",
+				"allindex.md",
 			],
 			"Solving" => Any[
 				"pdesolvers.md",
@@ -93,6 +94,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 			"Postprocessing" => Any[
 				"postprocessing.md",
 				"itemintegrators.md",
+				"faceinterpolator.md",
 			],
 			#"Tutorial Notebooks" => notebooks,
 			"Examples" => module_examples,
@@ -104,7 +106,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 end
 
 #make_all(; with_examples = true, run_examples = true, run_notebooks = true)
-make_all(; with_examples = true, run_examples = true, run_notebooks = false)
+make_all(; with_examples = false, run_examples = false, run_notebooks = false)
 
 deploydocs(
 	repo = "github.com/WIAS-PDELib/ExtendableFEM.jl",

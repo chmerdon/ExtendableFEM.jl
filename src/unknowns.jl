@@ -63,28 +63,143 @@ end
 
 ## remapping of all function operators
 FO(u) = (u, FO)
+
+"""
+	jump(o:Tuple{Union{Unknown, Int}, StandardFunctionOperator})
+
+alias for (o[1], Jump{o[2]})
+"""
 jump(o::Tuple{Union{Unknown, Int}, DataType}) = (o[1], Jump{o[2]})
+
+"""
+	average(o:Tuple{Union{Unknown, Int}, StandardFunctionOperator})
+
+alias for (o[1], Average{o[2]})
+"""
 average(o::Tuple{Union{Unknown, Int}, DataType}) = (o[1], Average{o[2]})
+
+"""
+	this(o:Tuple{Union{Unknown, Int}, StandardFunctionOperator})
+
+alias for (o[1], Left{o[2]})
+"""
 this(o::Tuple{Union{Unknown, Int}, DataType}) = (o[1], Left{o[2]})
+
+"""
+	other(o:Tuple{Union{Unknown, Int}, StandardFunctionOperator})
+
+alias for (o[1], Right{o[2]})
+"""
 other(o::Tuple{Union{Unknown, Int}, DataType}) = (o[1], Right{o[2]})
 
 ## some aliases
+
+"""
+	id(u)
+
+alias for (u, Identity)
+"""
 id(u) = (u, Identity)
+
+"""
+	curl1(u)
+
+alias for (u, CurlScalar)
+"""
 curl1(u) = (u, CurlScalar)
+
+"""
+	curl2(u)
+
+alias for (u, Curl2D)
+"""
 curl2(u) = (u, Curl2D)
+
+
+"""
+	curl3(u)
+
+alias for (u, Curl3D)
+"""
 curl3(u) = (u, Curl3D)
+
+"""
+	grad(u)
+
+alias for (u, Gradient)
+"""
 grad(u) = (u, Gradient)
+
+"""
+	laplace(u)
+
+alias for (u, Laplacian)
+"""
 laplace(u) = (u, Laplacian)
+
+"""
+	Δ(u)
+
+alias for (u, Laplacian)
+"""
+Δ(u) = (u, Laplacian)
+
+"""
+	hessian(u)
+
+alias for (u, Hessian)
+"""
 hessian(u) = (u, Hessian)
+
+"""
+	div(u)
+
+alias for (u, Divergence)
+"""
 Base.div(u) = (u, Divergence)
+
+"""
+	normalflux(u)
+
+alias for (u, NormalFlux)
+"""
 normalflux(u) = (u, NormalFlux)
+
+"""
+	tangentialflux(u)
+
+alias for (u, TangentFlux)
+"""
 tangentialflux(u) = (u, TangentFlux)
+
+"""
+	tangentialgrad(u)
+
+alias for (u, TangentialGradient)
+"""
 tangentialgrad(u) = (u, TangentialGradient)
 
+
+"""
+	grid(u)
+
+alias for (u, "grid") (triggers gridplot in plot)
+"""
 grid(u) = (u, "grid")
+
+"""
+	dofgrid(u)
+
+alias for (u, "dofgrid") (triggers gridplot for the dofgrid in plot)
+"""
 dofgrid(u) = (u, "dofgrid")
 
-Δ(u) = (u, Laplacian)
+
+"""
+	apply(u, FO::Type{<:AbstractFunctionOperator})
+
+alias for (u, FO)
+"""
 apply(u, FO::Type{<:AbstractFunctionOperator}) = (u, FO)
 
 

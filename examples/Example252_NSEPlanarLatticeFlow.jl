@@ -122,7 +122,7 @@ function main(; μ = 0.001, nrefs = 5, reconstruct = true, Plotter = nothing, kw
 	return L2errorU, plt
 end
 
-generateplots = default_generateplots(Example252_NSEPlanarLatticeFlow, "example252.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example252_NSEPlanarLatticeFlow, "example252.png") #hide
 function runtests() #hide
 	L2errorU, plt = main(; nrefs = 3) #hide
 	@test L2errorU ≈ 0.11892169556349004 #hide

@@ -194,7 +194,7 @@ function get_spanning_edge_subset(xgrid)
 	return findall(==(true), markededges)
 end
 
-generateplots = default_generateplots(Example310_DivFreeBasis, "example310.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example310_DivFreeBasis, "example310.png") #hide
 function runtests() #hide
 	L2error, plt = main(; nrefs = 2) #hide
 	@test L2error[2] ≈ 0.06821145277709957 #hide

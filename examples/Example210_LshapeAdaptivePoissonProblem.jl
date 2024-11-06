@@ -176,7 +176,7 @@ function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotte
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example210_LshapeAdaptivePoissonProblem, "example210.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example210_LshapeAdaptivePoissonProblem, "example210.png") #hide
 function runtests() #hide
 	sol, plt = main(; maxdofs = 1000, order = 2) #hide	
 	@test length(sol.entries) == 1007 #hide

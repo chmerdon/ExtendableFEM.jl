@@ -127,7 +127,7 @@ function dg_kernel2_bnd(uDb! = nothing)
 	end
 end
 
-generateplots = default_generateplots(Example203_PoissonProblemDG, "example203.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example203_PoissonProblemDG, "example203.png") #hide
 function runtests(; kwargs...) #hide
 	L2error, ~ = main(; μ = 0.25, nrefs = 2, order = 2, kwargs...) #hide	
 	@test L2error ≈ 0.00020400470505497443 #hide

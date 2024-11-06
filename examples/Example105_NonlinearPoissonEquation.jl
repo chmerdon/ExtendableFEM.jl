@@ -70,7 +70,7 @@ function main(; Plotter = nothing, h = 1e-2, ϵ = 1e-3, order = 2, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example105_NonlinearPoissonEquation, "example105.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example105_NonlinearPoissonEquation, "example105.png") #hide
 function runtests() #hide
 	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide	
 	@test maximum(sol.entries) ≈ 0.4812118250102083 #hide

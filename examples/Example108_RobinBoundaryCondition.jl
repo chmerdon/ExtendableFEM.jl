@@ -78,7 +78,7 @@ function main(; Plotter = nothing, h = 1e-1, h_fine = 1e-3, order = 2, kwargs...
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example108_RobinBoundaryCondition, "example108.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example108_RobinBoundaryCondition, "example108.png") #hide
 function exact_error!(result, u, qpinfo) #hide
 	u!(result, qpinfo) #hide
 	result .= (result .- u).^ 2 #hide

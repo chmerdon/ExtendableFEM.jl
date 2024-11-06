@@ -357,7 +357,7 @@ function local_equilibration_estimator!(sol, FETypeDual)
 	end
 end
 
-generateplots = default_generateplots(Example211_LshapeAdaptiveEQPoissonProblem, "example211.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example211_LshapeAdaptiveEQPoissonProblem, "example211.png") #hide
 function runtests() #hide
 	sol, plt = main(; maxdofs = 1000, order = 2) #hide	
 	@test length(sol.entries) == 8641 #hide

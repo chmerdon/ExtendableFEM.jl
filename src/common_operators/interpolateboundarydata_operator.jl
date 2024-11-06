@@ -9,7 +9,22 @@ mutable struct InterpolateBoundaryData{UT, DFT} <: AbstractOperator
 	parameters::Dict{Symbol, Any}
 end
 
+"""
+````
+fixed_dofs(O::InterpolateBoundaryData)
+````
+
+returns the fixed degress of freedoms of O
+"""
 fixed_dofs(O::InterpolateBoundaryData) = O.bdofs
+
+"""
+````
+fixed_vals(O::InterpolateBoundaryData)
+````
+
+returns the currently assembled values for the fixed degrees of freedom of O
+"""
 fixed_vals(O::InterpolateBoundaryData) = view(O.bddata.entries, O.bdofs)
 
 default_bndop_kwargs() = Dict{Symbol, Tuple{Any, String}}(
@@ -62,6 +77,15 @@ function InterpolateBoundaryData(u, data = nothing; kwargs...)
 	return InterpolateBoundaryData{typeof(u), typeof(data)}(u, data, zeros(Int, 0), zeros(Int, 0), nothing, nothing, nothing, parameters)
 end
 
+
+"""
+````
+assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...)
+````
+
+assembles the correct boundary values for O by interpolating the boundary data with
+the current kwargs (where e.g. time and params might have changed).
+"""
 function assemble!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...) where UT
 	if UT <: Integer
 		ind = O.u
@@ -138,6 +162,15 @@ function assemble!(O::InterpolateBoundaryData, FES = O.FES; time = 0, offset = 0
 	end
 end
 
+
+"""
+````
+apply!(U::FEVectorBlock, O::InterpolateBoundaryData; offset = 0, kwargs...)
+````
+
+applies the boundary data of O to U, i.e., sets the boundary dofs to the correct values
+that have been computed during the last assemble! call.
+"""
 function apply!(U::FEVectorBlock, O::InterpolateBoundaryData; offset = 0, kwargs...)
 	bddata = O.bddata
 	bdofs = O.bdofs
@@ -146,6 +179,14 @@ function apply!(U::FEVectorBlock, O::InterpolateBoundaryData; offset = 0, kwargs
 	end
 end
 
+"""
+````
+apply_penalties!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...)
+````
+
+modifies the linear system A|b such that the boundary dofs are penalized and attain the
+correct values from the last assemble! call of O. Also applies the correct values to sol.
+"""
 function apply_penalties!(A, b, sol, O::InterpolateBoundaryData{UT}, SC::SolverConfiguration; kwargs...) where {UT}
 	time = @elapsed begin
 		if UT <: Integer

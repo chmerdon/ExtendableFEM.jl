@@ -23,6 +23,7 @@ If solve is applied to a PDEDescription and an array of FESpaces (that specify t
 
 ```@docs
 solve
+residual
 ```
 
 !!! note
@@ -42,6 +43,7 @@ A SolverConfiguration can be constructed with this constructor:
 
 ```@docs
 SolverConfiguration
+get_unknown_id
 ```
 
 If each subproblem has a SolverConfiguration the fixed-point iteration can be triggered

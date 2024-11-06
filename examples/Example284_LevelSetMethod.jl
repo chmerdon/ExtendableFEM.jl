@@ -108,5 +108,5 @@ function main(; Plotter = nothing, ϵ = 0.05, τ = 1e-2, T = 1.0, order = 2, nre
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example284_LevelSetMethod, "example284.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example284_LevelSetMethod, "example284.png") #hide
 end

@@ -37,6 +37,14 @@ function center_string(S::String, L::Int = 8)
 end
 
 
+"""
+````
+function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = "ndofs", latex_mode = false, seperator = latex_mode ? "&" : "|", order_seperator = latex_mode ? "&" : "")
+````
+
+Prints a convergence history based on arrays X vs. Y.
+
+"""
 function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = "ndofs", latex_mode = false, seperator = latex_mode ? "&" : "|", order_seperator = latex_mode ? "&" : "")
 	xlabel = center_string(xlabel, 12)
 	if latex_mode
@@ -90,6 +98,15 @@ function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = 
 	end
 end
 
+
+"""
+````
+function print_table(X, Y; ylabels = [], xlabel = "ndofs")
+````
+
+Prints a table with data X vs. Y
+
+"""
 function print_table(X, Y; ylabels = [], xlabel = "ndofs")
 	xlabel = center_string(xlabel, 12)
 	@printf("\n%s|", xlabel)

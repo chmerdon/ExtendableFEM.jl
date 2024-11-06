@@ -71,7 +71,7 @@ function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, parallel = f
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example225_ObstacleProblem, "example225.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example225_ObstacleProblem, "example225.png") #hide
 function runtests() #hide
 	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
 	@test maximum(sol.entries) ≈ 0.0033496680638875204 #hide

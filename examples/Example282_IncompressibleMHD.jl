@@ -112,5 +112,5 @@ function main(; Plotter = nothing, μ = 1e-3, η = 1e-1, nrefs = 5, kwargs...)
 	return sol, plt
 end
 
-generateplots = default_generateplots(Example282_IncompressibleMHD, "example282.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example282_IncompressibleMHD, "example282.png") #hide
 end

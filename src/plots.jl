@@ -11,6 +11,14 @@ function GridVisualize.vectorplot!(p, op::Tuple{Int, DataType}, sol; title = sol
 	GridVisualize.vectorplot!(p, sol[op[1]].FES.dofgrid, eval_func_bary(PointEvaluator([op], sol)); title = title, kwargs...)
 end
 
+"""
+````
+function plot!(p::GridVisualizer, ops, sol; kwargs...)
+````
+
+Plots the operator evaluations ops of blocks in sol into the GridVisualizer.
+
+"""
 function plot!(p::GridVisualizer, ops, sol; rasterpoints = 10, keep = [], ncols = size(p.subplots, 2), do_abs = true, do_vector_plots = true, title_add = "", kwargs...)
 	col, row, id = 0, 1, 0
 	for op in ops
@@ -63,6 +71,15 @@ function plot!(p::GridVisualizer, ops, sol; rasterpoints = 10, keep = [], ncols 
 	return p
 end
 
+
+"""
+````
+function plot!(p::GridVisualizer, ops, sol; Plotter = nothing, kwargs...)
+````
+
+Plots the operator evaluations ops of blocks in sol with the specified Plotter module that is supported by GridVisualize (e.g. GLMakie, PyPlot, Plots)
+
+"""
 function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) + add), do_abs = true, width = (length(ops) + add) == 1 ? 400 : 800, height = 0, kwargs...)
 	nplots = length(ops) + add
 	for op in ops
@@ -83,6 +100,15 @@ function plot(ops, sol; add = 0, Plotter = nothing, ncols = min(2, length(ops) +
 	plot!(p, ops, sol; do_abs = do_abs, kwargs...)
 end
 
+"""
+````
+function plot_unicode(sol; kwargs...)
+````
+
+Plots all blocks of sol into stdout
+(via plot_scalarplot from the UnicodePlots extension of ExtendableFEMBase)
+
+"""
 function plot_unicode(sol; kwargs...)
 	for u ∈ 1:length(sol)
 		println(stdout, unicode_scalarplot(sol[u]; title = sol[u].name, kwargs...))
@@ -94,6 +120,29 @@ function GridVisualize.vectorplot!(p, xgrid, op::Tuple{Union{Unknown, Int}, Data
 end
 
 
+"""
+````
+function plot_convergencehistory!(
+	p::GridVisualizer, 
+	X,
+	Y;
+	add_h_powers = [],
+	X_to_h = X -> X,
+	colors = [:blue, :green, :red, :magenta, :lightblue],
+	title = "convergence history",
+	legend = :best,
+	ylabel = "",
+	ylabels = [],
+	xlabel = "ndofs",
+	markershape = :circle,
+	markevery = 1,
+	clear = true,
+	args...,
+````
+
+Plots a convergence history based on arrays X vs. Y into the GridVisualizer.
+
+"""
 function plot_convergencehistory!(
 	target,
 	X,
@@ -149,6 +198,15 @@ function plot_convergencehistory!(
 	end
 end
 
+
+"""
+````
+function plot_convergencehistory(X, Y; Plotter = nothing, kwargs...)
+````
+
+Plots a convergence history based on arrays X vs. Y into the GridVisualizer with the specified Plotter module (that needs to be supported by GridVisualize).
+
+"""
 function plot_convergencehistory(X, Y; Plotter = nothing, size = (800, 600), add_h_powers = [], X_to_h = X -> X, colors = [:blue, :green, :red, :magenta, :lightblue], legend = :best, ylabel = "", ylabels = [], xlabel = "ndofs", clear = true, args...)
 	p = GridVisualizer(; Plotter = Plotter, layout = (1, 1), clear = true, size = size)
 	plot_convergencehistory!(p[1, 1], X, Y; add_h_powers = add_h_powers, X_to_h = X_to_h, colors = colors, legend = legend, ylabel = ylabel, ylabels = ylabels, xlabel = xlabel, clear = clear, args...)

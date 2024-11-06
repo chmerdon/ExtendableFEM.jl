@@ -69,13 +69,13 @@ function run_all_tests()
 	end
 
 	@testset "ExplicitImports" begin
-		@test ExplicitImports.check_no_implicit_imports(ExtendableFEMBase) === nothing
-		@test ExplicitImports.check_no_stale_explicit_imports(ExtendableFEMBase) === nothing
+		@test ExplicitImports.check_no_implicit_imports(ExtendableFEM) === nothing
+		@test ExplicitImports.check_no_stale_explicit_imports(ExtendableFEM) === nothing
 	end
 
 	if isdefined(Docs, :undocumented_names) # >=1.11
 		@testset "UndocumentedNames" begin
-			@test isempty(Docs.undocumented_names(ExtendableFEMBase))
+			@test isempty(Docs.undocumented_names(ExtendableFEM))
 		end
 	end
 

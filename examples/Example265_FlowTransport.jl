@@ -215,7 +215,7 @@ function kernel_inflow!(result, input, qpinfo)
     end
 end
 
-generateplots = default_generateplots(Example265_FlowTransport, "example265.png") #hide
+generateplots = ExtendableFEM.default_generateplots(Example265_FlowTransport, "example265.png") #hide
 function runtests() #hide
 	sol, plt = main(;) #hide
 	@test minimum(view(sol[3])) >= 0 #hide
