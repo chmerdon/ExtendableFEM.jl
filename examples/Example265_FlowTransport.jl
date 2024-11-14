@@ -39,6 +39,7 @@ The computed solution for the default parameters looks like this:
 module Example265_FlowTransport
 
 using ExtendableFEM
+using ExtendableFEMBase
 using ExtendableGrids
 using SimplexGridFactory
 using Triangulate

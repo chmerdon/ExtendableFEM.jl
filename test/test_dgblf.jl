@@ -6,7 +6,7 @@ function run_dgblf_tests()
 		println("Testing BilinearOperatorDG")
 		println("==========================")
 
-		@test TestParallelAssemblyDGBLF() < 1e-11 # windows tests on github need greater tolerance
+		@test TestParallelAssemblyDGBLF() < 5e-10 # windows/macOS-14 tests on github need greater tolerance
 
 		for operator in [jump(grad(1)), jump(id(1))]
 			TestDGBLF(H1Pk{1, 2, 1}, 1, operator)

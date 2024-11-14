@@ -96,10 +96,10 @@ export SegmentIntegrator, integrate_segment!, initialize!
 export integrate!, integrate, QuadratureRule
 export unicode_gridplot, unicode_scalarplot
 export CellDofs, BFaceDofs, FaceDofs, EdgeDofs, BEdgeDofs
-export get_polynomialorder
+# export get_polynomialorder
 export displace_mesh, displace_mesh!
 export Reconstruct, Identity, Divergence, Gradient
-export _addnz
+# export _addnz
 export addblock!, addblock_matmul!
 export unicode_gridplot, unicode_scalarplot
 
