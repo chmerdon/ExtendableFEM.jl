@@ -28,7 +28,7 @@ upwind discretisation ensures mass conservation.
 
 Note, that the transport equation is very convection-dominated and no stabilisation in the finite element discretisations was used here (but instead a nonzero ``\kappa``).
 Also note, that only the finite volume discretisation perfectly obeys the maximum principle for the concentration but the isolines do no stay
-parallel until the outlet is reached, possibly due to articifial diffusion.
+parallel until the outlet is reached, possibly due to artificial diffusion.
 
 The computed solution for the default parameters looks like this:
 
@@ -129,7 +129,7 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, FVtransport = 
     sol = solve(PD; init = sol, kwargs...)
     sol = solve(PDT; init = sol, maxiterations = 20, target_residual = 1e-12, constant_matrix = true, kwargs...)
 
-    ## print minimal and maximal concentration to check max principle (shoule be in [0,1])
+    ## print minimal and maximal concentration to check max principle (should be in [0,1])
     println("\n[min(c),max(c)] = [$(minimum(view(sol[T]))),$(maximum(view(sol[T])))]")
 
     ## plot

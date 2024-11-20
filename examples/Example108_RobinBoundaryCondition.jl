@@ -33,7 +33,7 @@ function u!(result, qpinfo)
 	result[1] = exp(qpinfo.x[1])
 end
 
-## kernel for the (nonlinear) reaction-convection-diffusion oeprator
+## kernel for the (nonlinear) reaction-convection-diffusion operator
 function nonlinear_kernel!(result, input, qpinfo)
 	u, ∇u = input[1], input[2]
 	result[1] = u * ∇u + u 	# convection + reaction (will be multiplied with v)

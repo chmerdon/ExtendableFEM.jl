@@ -152,8 +152,8 @@ end
 function apply!(U::FEVectorBlock, O::HomogeneousData; offset = 0, kwargs...)
 	bdofs = O.bdofs
 	value = O.parameters[:value]
-	UE = U.entries
-	UE[bdofs] .= value
+	Uentries = U.entries
+	Uentries[bdofs] .= value
 end
 
 

@@ -40,7 +40,7 @@ The three most important operator classes are:
 - BilinearOperator (e.g. the Laplacian in a Poisson problem)
 - LinearOperator (e.g. the right-hand side in a Poisson or Navier-Stokes problem)
 
-To assing boundary conditions or global constraints there are three possibilities:
+To assign boundary conditions or global constraints there are three possibilities:
 - InterpolateBoundaryData
 - HomogeneousData
 - FixDofs

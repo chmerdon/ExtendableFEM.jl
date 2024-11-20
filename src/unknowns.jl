@@ -3,7 +3,7 @@
 struct Unknown
 ````
 
-Structure holding information for an unknwon with the following fields:
+Structure holding information for an unknown with the following fields:
 
 $(TYPEDFIELDS)
 """

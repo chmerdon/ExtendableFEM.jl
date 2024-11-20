@@ -25,7 +25,7 @@ Given intermediate solutions ``\mathbf{u}_h`` and ``p_h`` the next approximation
 ```
 
 This is done consecutively until the residual of both equations is small enough.
-The discrete divergence is computed via a RT0 reconstruction operator that preserves the disrete divergence.
+The discrete divergence is computed via a RT0 reconstruction operator that preserves the discrete divergence.
 (another way would be to compute ``B M^{-1} B^T`` where ``M`` is the mass matrix of the pressure and ``B`` is the matrix for the div-pressure block).
 
 !!! reference

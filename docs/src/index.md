@@ -121,7 +121,7 @@ calculate quantities of interest or plot components.
 ## Gradient-robustness
 
 This package offers some ingredients to build gradient-robust schemes via reconstruction operators or divergence-free elements.
-Gradient-robustness is a feature of discretisations that exactly balance gradient forces in the momentum balance. In the case of the incompressible Navier--Stokes equations this means that the discrete velocity does not depend on the exact pressure. Divergence-free finite element methods have this property but are usually expensive and difficult to contruct. However, also non-divergence-free classical finite element methods can be made pressure-robust with the help of reconstruction operators applied to testfunctions in certain terms of the momentum balance, see e.g. references [1,2] below.
+Gradient-robustness is a feature of discretisations that exactly balances gradient forces in the momentum balance. In the case of the incompressible Navier--Stokes equations this means that the discrete velocity does not depend on the exact pressure. Divergence-free finite element methods have this property but are usually expensive and difficult to construct. However, also non-divergence-free classical finite element methods can be made pressure-robust with the help of reconstruction operators applied to testfunctions in certain terms of the momentum balance, see e.g. references [1,2] below.
 
 Recently gradient-robustness was also connected to the design of well-balanced schemes e.g. in the context of (nearly) compressible flows, see e.g. reference [3] below.
 

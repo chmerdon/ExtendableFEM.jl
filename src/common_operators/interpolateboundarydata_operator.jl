@@ -14,7 +14,7 @@ end
 fixed_dofs(O::InterpolateBoundaryData)
 ````
 
-returns the fixed degress of freedoms of O
+returns the fixed degrees of freedoms of O
 """
 fixed_dofs(O::InterpolateBoundaryData) = O.bdofs
 

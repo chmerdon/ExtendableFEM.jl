@@ -151,7 +151,7 @@ function main(;
         SC2 = SolverConfiguration(PDT; init = sol, maxiterations = 1, target_residual = target_residual, kwargs...)
         sol, nits = iterate_until_stationarity([SC1, SC2]; energy_integrator = EnergyIntegrator, maxsteps = maxsteps, init = sol, kwargs...)
 
-        ## caculate error
+        ## calculate error
         error = evaluate(ErrorIntegratorExact, sol)
         Results[lvl,1] = sqrt(sum(view(error,1,:)) + sum(view(error,2,:)))
         Results[lvl,2] = sqrt(sum(view(error,3,:)) + sum(view(error,4,:)) + sum(view(error,5,:)) + sum(view(error,6,:)))

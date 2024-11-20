@@ -15,7 +15,7 @@ The examples have been designed with the following issues in mind:
 
 ## Running the examples
 
-In order to run `ExampleXXX`, peform the following steps:
+In order to run `ExampleXXX`, perform the following steps:
 
 - Download the example file (e.g. via the source code link at the top)
 - Make sure all used packages are installed in your Julia environment

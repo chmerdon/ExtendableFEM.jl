@@ -36,7 +36,7 @@ components of ``u=(u_1,u_2)'`` and the four components of the gradient
 ``\nabla u = \begin{pmatrix} u_{11} & u_{12} \\ u_{21} & u_{22}\end{pmatrix}``
 in order, i.e. ``(u_1,u_2,u_{11},u_{12},u_{21},u_{22})``.
 As the convection term is tested with ``v``, 
-the ouptut vector ``o`` only has to contain what should be tested with each component
+the output vector ``o`` only has to contain what should be tested with each component
 of ``v``, i.e.
 ```math
 \begin{equation}

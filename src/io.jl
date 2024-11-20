@@ -39,13 +39,13 @@ end
 
 """
 ````
-function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = "ndofs", latex_mode = false, seperator = latex_mode ? "&" : "|", order_seperator = latex_mode ? "&" : "")
+function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = "ndofs", latex_mode = false, separator = latex_mode ? "&" : "|", order_seperator = latex_mode ? "&" : "")
 ````
 
 Prints a convergence history based on arrays X vs. Y.
 
 """
-function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = "ndofs", latex_mode = false, seperator = latex_mode ? "&" : "|", order_seperator = latex_mode ? "&" : "")
+function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = "ndofs", latex_mode = false, separator = latex_mode ? "&" : "|", order_seperator = latex_mode ? "&" : "")
 	xlabel = center_string(xlabel, 12)
 	if latex_mode
 		tabular_argument = "c"
@@ -54,15 +54,15 @@ function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = 
 		end
 		@printf("\\begin{tabular}{%s}", tabular_argument)
 	end
-	@printf("\n%s%s", xlabel, seperator)
+	@printf("\n%s%s", xlabel, separator)
 	for j ∈ 1:size(Y, 2)
 		if length(ylabels) < j
 			push!(ylabels, "DATA $j")
 		end
 		if j == size(Y, 2)
-			@printf("%s %s order %s", center_string(ylabels[j], 18), order_seperator, latex_mode ? "" : seperator)
+			@printf("%s %s order %s", center_string(ylabels[j], 18), order_seperator, latex_mode ? "" : separator)
 		else
-			@printf("%s %s order %s", center_string(ylabels[j], 18), order_seperator, seperator)
+			@printf("%s %s order %s", center_string(ylabels[j], 18), order_seperator, separator)
 		end
 	end
 	@printf("\n")
@@ -77,15 +77,15 @@ function print_convergencehistory(X, Y; X_to_h = X -> X, ylabels = [], xlabel = 
 	@printf("\n")
 	order = 0
 	for j ∈ 1:length(X)
-		@printf("   %7d  %s", X[j], seperator)
+		@printf("   %7d  %s", X[j], separator)
 		for k ∈ 1:size(Y, 2)
 			if j > 1
 				order = -log(Y[j-1, k] / Y[j, k]) / (log(X_to_h(X[j]) / X_to_h(X[j-1])))
 			end
 			if k == size(Y, 2)
-				@printf("     %.3e  %s    %.2f  %s", Y[j, k], order_seperator, order, latex_mode ? "" : seperator)
+				@printf("     %.3e  %s    %.2f  %s", Y[j, k], order_seperator, order, latex_mode ? "" : separator)
 			else
-				@printf("     %.3e  %s    %.2f  %s", Y[j, k], order_seperator, order, seperator)
+				@printf("     %.3e  %s    %.2f  %s", Y[j, k], order_seperator, order, separator)
 			end
 		end
 		if latex_mode

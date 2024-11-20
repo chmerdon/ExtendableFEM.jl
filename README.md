@@ -40,7 +40,7 @@ function f!(fval, qpinfo)
 end
 assign_operator!(PD, LinearOperator(f!, [id(u)]))
 
-# assing boundary data (here: u = 0)
+# assign boundary data (here: u = 0)
 assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
 
 # discretise = choose FESpace

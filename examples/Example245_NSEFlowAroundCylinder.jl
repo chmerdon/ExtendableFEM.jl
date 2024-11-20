@@ -157,7 +157,7 @@ function get_draglift(sol::FEVector, μ; parallel = false, kwargs...)
 		end
 	end
 
-	## drag lift calcuation by testfunctions
+	## drag lift calculation by testfunctions
 	function draglift_kernel(result, input, qpinfo)
 		## input = [ u, grad(u), p , v , grad(v)]
 		##         [1:2,  3:6,   7 ,8:9,  10:13 ]

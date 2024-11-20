@@ -30,7 +30,7 @@ residual
 
     The type of fixed-point algorithm depends on the discretisation of the nonlinearities. If all
     of them are assembled as a NonlinearOperator, this will result in a Newton scheme
-    (which can be somewhat costumized via the keywords arguments like damping). If all nonlinearities
+    (which can be somewhat customized via the keywords arguments like damping). If all nonlinearities
     are linearized by LinearOperator and BilinearOperator, this will result in other types of
     fixed-point iterations.
 

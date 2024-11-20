@@ -3,7 +3,7 @@
 # 282 : Incompressible MHD
 ([source code](@__SOURCE_URL__))
 
-This example yields a prototype for te stationary incompressible viscious MHD equations that seek
+This example yields a prototype for the stationary incompressible viscous MHD equations that seek
 a velocity field ``\mathbf{u}``, a pressure field ``p`` and a divergence-free magnetic field ``\mathbf{B}`` such that
 ```math
 \begin{aligned}

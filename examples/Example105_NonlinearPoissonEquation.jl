@@ -39,7 +39,7 @@ function boundary_data!(result, qpinfo)
 	result[1] = qpinfo.x[1]
 end
 
-## kernel for the (nonlinear) reaction-convection-diffusion oeprator
+## kernel for the (nonlinear) reaction-convection-diffusion operator
 function nonlinear_kernel!(result, input, qpinfo)
 	u, ∇u, ϵ = input[1], input[2], qpinfo.params[1]
 	result[1] = exp(u) - exp(-u)

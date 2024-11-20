@@ -11,7 +11,7 @@
 
 ## October 28, 2024
 
-Moved repositiory from https://github.com/chmerdon/ExtendableFEM.jl to https://github.com/WIAS-PDELib/ExtendableFEM.jl.
+Moved repository from https://github.com/chmerdon/ExtendableFEM.jl to https://github.com/WIAS-PDELib/ExtendableFEM.jl.
 [WIAS-PDELib](https://github.com/WIAS-PDELib/) is a github organization created to collectively manage the Julia packages developed under
 the lead of the [WIAS Numerical Mathematics and Scientific Computing](https://wias-berlin.de/research/rgs/fg3)  research group.
 According to the [github docs on repository transfer](https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository#whats-transferred-with-a-repository),

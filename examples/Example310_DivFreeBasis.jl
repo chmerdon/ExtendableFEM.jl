@@ -123,7 +123,7 @@ function main(;
 			sol = solve(PD, FES)
 		end
 
-		## evalute error
+		## evaluate error
 		error = evaluate(ErrorIntegratorExact, sol)
 		L2error[lvl] = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :)))
 		if divfree_basis

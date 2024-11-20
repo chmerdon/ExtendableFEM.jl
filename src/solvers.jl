@@ -447,7 +447,7 @@ function iterate_until_stationarity(
 ````
 
 Iterates consecutively over all SolverConfigurations
-(each contains the ProblemDescription of the corressponding subproblem)
+(each contains the ProblemDescription of the corresponding subproblem)
 until the residuals of all subproblems are below their tolerances
 and returns the solution of the combined unknowns of all subproblems.
 The additional argument maxsteps limits the number of these iterations

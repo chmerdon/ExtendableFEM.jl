@@ -22,7 +22,7 @@ As a test problem the first benchmark problem from the same reference is used.
 
 	"A study of two modes of locking in poroelasticity",\
 	S.-Y. Yi,\
-	SIAM J. Numer. Anal. 55(4) (2017),\
+	SIAM J. Num. Anal. 55(4) (2017),\
 	[>Journal-Link<](https://epubs.siam.org/doi/10.1137/16M1056109)
 
 The computed solution for the default parameters looks like this:
