@@ -143,5 +143,3 @@ Returns a view of `input[i:i+dim^4-1]` reshaped as `(dim,dim,dim,dim)` 4-tensor.
 function tensor_view(input, i::Int, ::TensorDescription{4, dim}) where dim
 	return reshape(view(input, i:(i+(dim^4)-1)), (dim, dim, dim, dim))
 end
-
-

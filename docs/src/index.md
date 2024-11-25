@@ -142,4 +142,3 @@ Recently gradient-robustness was also connected to the design of well-balanced s
         Computer Methods in Applied Mechanics and Engineering 367 (2020),\
         [>Journal-Link<](https://doi.org/10.1016/j.cma.2020.113069)
         [>Preprint-Link<](https://arxiv.org/abs/1911.01295)
-
