@@ -144,4 +144,3 @@ function runtests() #hide
 	@test norm(sol1.entries - sol2.entries) ≈ 0 #hide
 end #hide
 end # module
-

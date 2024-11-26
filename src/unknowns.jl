@@ -201,7 +201,3 @@ dofgrid(u) = (u, "dofgrid")
 alias for (u, FO)
 """
 apply(u, FO::Type{<:AbstractFunctionOperator}) = (u, FO)
-
-
-
-

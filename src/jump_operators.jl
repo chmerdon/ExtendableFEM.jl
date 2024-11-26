@@ -150,6 +150,3 @@ function generate_DG_operators(operator, FE, quadorder, EG; T = Float64)
 	end
 	return basisevaler4EG
 end
-
-
-
