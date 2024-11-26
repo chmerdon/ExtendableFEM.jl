@@ -36,36 +36,36 @@ using Test #
 
 
 function boundary_conditions!(result, qpinfo)
-    result[1] = 1 - qpinfo.x[1] - qpinfo.x[2] # used for both subsolutions
+    return result[1] = 1 - qpinfo.x[1] - qpinfo.x[2] # used for both subsolutions
 end
 
 function interface_condition!(result, u, qpinfo)
     result[1] = u[1] - u[2]
-    result[2] = -result[1]
+    return result[2] = -result[1]
 end
 
 function interface_condition_LM!(result, u, qpinfo)
-    result[1] = (u[1] - u[2])
+    return result[1] = (u[1] - u[2])
 end
 
 
-function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, use_LM = true, nref = 4, order = 2, Plotter = nothing, kwargs...)
+function main(; μ = [1.0, 1.0], f = [10, -10], τ = 1, use_LM = true, nref = 4, order = 2, Plotter = nothing, kwargs...)
 
-	## Finite element type
-	FEType = H1Pk{1, 2, order}
+    ## Finite element type
+    FEType = H1Pk{1, 2, order}
     FETypeLM = H1Pk{1, 1, order}
 
-	## generate mesh
-	xgrid = grid_unitsquare(Triangle2D)
+    ## generate mesh
+    xgrid = grid_unitsquare(Triangle2D)
 
     ## define regions
-    xgrid[CellRegions] = Int32[1,2,2,1]
+    xgrid[CellRegions] = Int32[1, 2, 2, 1]
 
     ## add an interface between region 1 and 2
     ## (one can use the BFace storages for that)
     xgrid[BFaceNodes] = Int32[xgrid[BFaceNodes] [2 5; 5 4]]
-    append!(xgrid[BFaceRegions], [5,5])
-    xgrid[FaceRegions][xgrid[BFaceFaces][end-1:end]] .= 5
+    append!(xgrid[BFaceRegions], [5, 5])
+    xgrid[FaceRegions][xgrid[BFaceFaces][(end - 1):end]] .= 5
     xgrid[BFaceGeometries] = VectorOfConstants{ElementGeometries, Int}(Edge1D, 6)
 
     ## refine
@@ -85,40 +85,40 @@ function main(; μ = [1.0,1.0], f = [10,-10], τ = 1, use_LM = true, nref = 4, o
     p = Unknown("p"; name = "LM for interface condition")
 
     ## problem description
-	PD = ProblemDescription()
-	assign_unknown!(PD, u1)
-	assign_unknown!(PD, u2)
-	assign_operator!(PD, BilinearOperator([grad(u1)]; regions = [1], factor = μ[1], kwargs...))
-	assign_operator!(PD, BilinearOperator([grad(u2)]; regions = [2], factor = μ[2], kwargs...))
+    PD = ProblemDescription()
+    assign_unknown!(PD, u1)
+    assign_unknown!(PD, u2)
+    assign_operator!(PD, BilinearOperator([grad(u1)]; regions = [1], factor = μ[1], kwargs...))
+    assign_operator!(PD, BilinearOperator([grad(u2)]; regions = [2], factor = μ[2], kwargs...))
     assign_operator!(PD, LinearOperator([id(u1)]; regions = [1], factor = f[1]))
     assign_operator!(PD, LinearOperator([id(u2)]; regions = [2], factor = f[2]))
     if use_LM
         assign_unknown!(PD, p)
         assign_operator!(PD, BilinearOperator(interface_condition_LM!, [id(p)], [id(u1), id(u2)]; regions = [5], transposed_copy = 1, entities = ON_FACES, kwargs...))
     else
-	    assign_operator!(PD, BilinearOperator(interface_condition!, [id(u1), id(u2)]; regions = [5], factor = τ, entities = ON_FACES, kwargs...))
+        assign_operator!(PD, BilinearOperator(interface_condition!, [id(u1), id(u2)]; regions = [5], factor = τ, entities = ON_FACES, kwargs...))
     end
-	assign_operator!(PD, InterpolateBoundaryData(u1, boundary_conditions!; regions = 1:4))
-	assign_operator!(PD, InterpolateBoundaryData(u2, boundary_conditions!; regions = 1:4))
+    assign_operator!(PD, InterpolateBoundaryData(u1, boundary_conditions!; regions = 1:4))
+    assign_operator!(PD, InterpolateBoundaryData(u2, boundary_conditions!; regions = 1:4))
 
     sol = solve(PD, use_LM ? [FES1, FES2, FES3] : [FES1, FES2])
 
     plt = plot([id(u1), id(u2), dofgrid(u1), dofgrid(u2), grid(u1)], sol; Plotter = Plotter)
 
-	return sol, plt
+    return sol, plt
 end
 
 generateplots = ExtendableFEM.default_generateplots(Example206_CoupledSubGridProblems, "example206.png") #hide
 
 function jump_l2norm!(result, u, qpinfo) #hide
-    result[1] = (u[1] - u[2])^2 #hide
+    return result[1] = (u[1] - u[2])^2 #hide
 end #hide
 function runtests() #hide
     ## test if jump at interface vanishes for large penalty #hide
-	sol, plt = main(; τ = 1e9, nrefs = 2, order = 2) #hide
+    sol, plt = main(; τ = 1.0e9, nrefs = 2, order = 2) #hide
     jump_integrator = ItemIntegrator(jump_l2norm!, [id(1), id(2)]; entities = ON_BFACES, regions = [5], resultdim = 1, quadorder = 4) #hide
     jump_error = sqrt(sum(evaluate(jump_integrator, sol))) #hide
     @info "||[u_1 - u_2]|| = $(jump_error)" #hide
-	@test jump_error < 1e-8 #hide
+    return @test jump_error < 1.0e-8 #hide
 end #hide
 end #module

@@ -24,35 +24,35 @@ using ExtendableGrids
 using Test #hide
 
 function f!(fval, qpinfo)
-	fval[1] = qpinfo.x[1] * qpinfo.x[2] * qpinfo.x[3] 
+    return fval[1] = qpinfo.x[1] * qpinfo.x[2] * qpinfo.x[3]
 end
 
 function main(; μ = 1.0, nrefs = 3, Plotter = nothing, kwargs...)
 
-	## problem description
-	PD = ProblemDescription()
-	u = Unknown("u"; name = "potential")
-	assign_unknown!(PD, u)
-	assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, kwargs...))
-	assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
-	assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
+    ## problem description
+    PD = ProblemDescription()
+    u = Unknown("u"; name = "potential")
+    assign_unknown!(PD, u)
+    assign_operator!(PD, BilinearOperator([grad(u)]; factor = μ, kwargs...))
+    assign_operator!(PD, LinearOperator(f!, [id(u)]; kwargs...))
+    assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4))
 
-	## discretize
-	xgrid = uniform_refine(grid_unitcube(Tetrahedron3D), nrefs)
-	FES = FESpace{H1P2{1, 3}}(xgrid)
+    ## discretize
+    xgrid = uniform_refine(grid_unitcube(Tetrahedron3D), nrefs)
+    FES = FESpace{H1P2{1, 3}}(xgrid)
 
-	## solve
-	sol = solve(PD, FES; kwargs...)
+    ## solve
+    sol = solve(PD, FES; kwargs...)
 
-	## plot
-	plt = plot([id(u)], sol; Plotter = Plotter)
+    ## plot
+    plt = plot([id(u)], sol; Plotter = Plotter)
 
-	return sol, plt
+    return sol, plt
 end
 
 generateplots = ExtendableFEM.default_generateplots(Example301_PoissonProblem, "example301.png") #hide
 function runtests() #hide
-	sol, plt = main(;) #hide
-	@test sum(sol.entries) ≈ 21.874305144549524 #hide
+    sol, plt = main() #hide
+    return @test sum(sol.entries) ≈ 21.874305144549524 #hide
 end #hide
 end # module

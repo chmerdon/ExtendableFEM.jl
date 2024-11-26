@@ -37,43 +37,43 @@ using Test #hide
 ## define obstacle and penalty kernel
 const χ! = (result, x) -> (result[1] = (cos(4 * x[1] * π) * cos(4 * x[2] * π) - 1) / 20)
 function obstacle_penalty_kernel!(result, input, qpinfo)
-	χ!(result, qpinfo.x) # eval obstacle
-	result[1] = min(0, input[1] - result[1])
-	return nothing
+    χ!(result, qpinfo.x) # eval obstacle
+    result[1] = min(0, input[1] - result[1])
+    return nothing
 end
 
-function main(; Plotter = nothing, ϵ = 1e-4, nrefs = 6, order = 1, parallel = false, npart = 8, kwargs...)
+function main(; Plotter = nothing, ϵ = 1.0e-4, nrefs = 6, order = 1, parallel = false, npart = 8, kwargs...)
 
-	## choose initial mesh
-	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
-	if parallel
-		xgrid = partition(xgrid, RecursiveMetisPartitioning(npart=npart))
-	end
+    ## choose initial mesh
+    xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
+    if parallel
+        xgrid = partition(xgrid, RecursiveMetisPartitioning(npart = npart))
+    end
 
-	## problem description
-	PD = ProblemDescription()
-	u = Unknown("u"; name = "potential")
-	assign_unknown!(PD, u)
-	assign_operator!(PD, NonlinearOperator(obstacle_penalty_kernel!, [id(u)]; factor = 1 / ϵ, parallel = parallel, kwargs...))
-	assign_operator!(PD, BilinearOperator([grad(u)]; store = true, parallel = parallel, kwargs...))
-	assign_operator!(PD, LinearOperator([id(u)]; store = true, parallel = parallel, factor = -1, kwargs...))
-	assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
+    ## problem description
+    PD = ProblemDescription()
+    u = Unknown("u"; name = "potential")
+    assign_unknown!(PD, u)
+    assign_operator!(PD, NonlinearOperator(obstacle_penalty_kernel!, [id(u)]; factor = 1 / ϵ, parallel = parallel, kwargs...))
+    assign_operator!(PD, BilinearOperator([grad(u)]; store = true, parallel = parallel, kwargs...))
+    assign_operator!(PD, LinearOperator([id(u)]; store = true, parallel = parallel, factor = -1, kwargs...))
+    assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
 
-	## create finite element space
-	FES = FESpace{H1Pk{1, 2, order}}(xgrid)
+    ## create finite element space
+    FES = FESpace{H1Pk{1, 2, order}}(xgrid)
 
-	## solve
-	sol = solve(PD, FES; kwargs...)
+    ## solve
+    sol = solve(PD, FES; kwargs...)
 
-	## plot
-	plt = plot([id(u), grad(u)], sol; Plotter = Plotter, ncols = 3)
+    ## plot
+    plt = plot([id(u), grad(u)], sol; Plotter = Plotter, ncols = 3)
 
-	return sol, plt
+    return sol, plt
 end
 
 generateplots = ExtendableFEM.default_generateplots(Example225_ObstacleProblem, "example225.png") #hide
 function runtests() #hide
-	sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
-	@test maximum(sol.entries) ≈ 0.0033496680638875204 #hide
+    sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
+    return @test maximum(sol.entries) ≈ 0.0033496680638875204 #hide
 end #hide
 end # module

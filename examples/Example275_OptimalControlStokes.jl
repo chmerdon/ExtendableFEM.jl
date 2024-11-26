@@ -53,43 +53,43 @@ using ExtendableGrids
 using Symbolics
 
 function prepare_data!(; ϵ = 0)
-	@variables x y
+    @variables x y
 
-	## stream function ξ
-	ξ = x^4*y^4*(x-1)^4*(y-1)^4
-	∇ξ = Symbolics.gradient(ξ, [x,y])
+    ## stream function ξ
+    ξ = x^4 * y^4 * (x - 1)^4 * (y - 1)^4
+    ∇ξ = Symbolics.gradient(ξ, [x, y])
 
     ## irrotational perturbation (to study pressure-robustness)
-    ϕ = cos(x)*sin(y)
-	∇ϕ = Symbolics.gradient(ϕ, [x,y])
+    ϕ = cos(x) * sin(y)
+    ∇ϕ = Symbolics.gradient(ϕ, [x, y])
 
     ## final data = curl ξ + ϵ ∇ϕ
-	d = [-∇ξ[2], ∇ξ[1]] + ϵ * ∇ϕ
-	d_eval = build_function(d, x, y, expression = Val{false})
+    d = [-∇ξ[2], ∇ξ[1]] + ϵ * ∇ϕ
+    d_eval = build_function(d, x, y, expression = Val{false})
 
     return d_eval[2]
 end
 
 ## standard Stokes kernel
 function kernel_stokes_standard!(result, u_ops, qpinfo)
-    ∇u, p = view(u_ops,1:4), view(u_ops, 5)
+    ∇u, p = view(u_ops, 1:4), view(u_ops, 5)
     μ = qpinfo.params[1]
-    result[1] = μ*∇u[1] + p[1]
-    result[2] = μ*∇u[2]
-    result[3] = μ*∇u[3]
-    result[4] = μ*∇u[4] + p[1]            
-    result[5] = (∇u[1] + ∇u[4])
+    result[1] = μ * ∇u[1] + p[1]
+    result[2] = μ * ∇u[2]
+    result[3] = μ * ∇u[3]
+    result[4] = μ * ∇u[4] + p[1]
+    return result[5] = (∇u[1] + ∇u[4])
 end
 
 ## everything is wrapped in a main function
-function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1e-6, ϵ = 0, kwargs...)
-    
+function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1.0e-6, ϵ = 0, kwargs...)
+
     ## prepare target data
     d_eval = prepare_data!(; ϵ = ϵ)
     data!(result, qpinfo) = (d_eval(result, qpinfo.x[1], qpinfo.x[2]);)
 
     ## load mesh and refine
-    xgrid = uniform_refine(grid_unitsquare(Triangle2D),nrefs)
+    xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
 
     ## define unknowns
     u = Unknown("u"; name = "velocity", dim = 2)
@@ -106,17 +106,17 @@ function main(; nrefs = 4, Plotter = nothing, reconstruct = true, μ = 1, α = 1
     assign_unknown!(PD, z)
     assign_unknown!(PD, p)
     assign_unknown!(PD, λ)
-    assign_operator!(PD, BilinearOperator(kernel_stokes_standard!, [grad(u), id(p)]; params = [μ], kwargs...)) 
+    assign_operator!(PD, BilinearOperator(kernel_stokes_standard!, [grad(u), id(p)]; params = [μ], kwargs...))
     assign_operator!(PD, BilinearOperator(kernel_stokes_standard!, [grad(z), id(λ)]; params = [μ], kwargs...))
-    assign_operator!(PD, BilinearOperator([idR(z)], [idR(u)]; factor = -1/sqrt(α), transposed_copy = -1, kwargs...))
-    assign_operator!(PD, LinearOperator(data!, [idR(z)]; factor = -1/sqrt(α), bonus_quadorder = 5, kwargs...))  
+    assign_operator!(PD, BilinearOperator([idR(z)], [idR(u)]; factor = -1 / sqrt(α), transposed_copy = -1, kwargs...))
+    assign_operator!(PD, LinearOperator(data!, [idR(z)]; factor = -1 / sqrt(α), bonus_quadorder = 5, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(u; regions = 1:4, kwargs...))
     assign_operator!(PD, HomogeneousBoundaryData(z; regions = 1:4, kwargs...))
 
     ## solve with Bernardi--Raugel method
     FETypes = [H1BR{2}, L2P0{1}]
-    FES = [FESpace{FETypes[j]}(xgrid) for j = 1 : 2]
-    sol = solve(PD, [FES[1],FES[1],FES[2],FES[2]]; kwargs...)
+    FES = [FESpace{FETypes[j]}(xgrid) for j in 1:2]
+    sol = solve(PD, [FES[1], FES[1], FES[2], FES[2]]; kwargs...)
 
     ## plot solution
     plt = plot([id(u), id(p), id(z), id(λ)], sol; add = 1, Plotter = Plotter)

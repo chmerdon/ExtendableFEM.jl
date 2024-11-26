@@ -1,4 +1,3 @@
-
 """
 	DiscontinuousFunctionOperator
 
@@ -72,44 +71,46 @@ ExtendableFEMBase.DefaultName4Operator(::Type{Right{O}}) where {O} = DefaultName
 #Base.size(SCV::DuplicateCValView,i) = (i == 2) ? 2 * size(SCV.cvals,i) : size(SCV.cvals,i)
 
 struct FEEvaluatorDisc{T, TvG, TiG, FEType, FEBType, O <: DiscontinuousFunctionOperator} <: FEEvaluator{T, TvG, TiG}
-	citem::Base.RefValue{Int}                   # current item
-	FE::FESpace{TvG, TiG, FEType}       # link to full FE (e.g. for coefficients)
-	FEB::FEBType                     # first FEBasisEvaluator
-	coeffs::Array{T, 1}
-	cvals::Array{T, 3}
+    citem::Base.RefValue{Int}                   # current item
+    FE::FESpace{TvG, TiG, FEType}       # link to full FE (e.g. for coefficients)
+    FEB::FEBType                     # first FEBasisEvaluator
+    coeffs::Array{T, 1}
+    cvals::Array{T, 3}
 end
 
 function FEEvaluator(
-	FE::FESpace{TvG, TiG, FEType, FEAPT},
-	operator::Type{<:DiscontinuousFunctionOperator},
-	qrule::QuadratureRule{TvR, EG};
-	T = Float64,
-	kwargs...) where {TvG, TiG, TvR, FEType <: AbstractFiniteElement, EG <: AbstractElementGeometry, FEAPT <: AssemblyType}
+        FE::FESpace{TvG, TiG, FEType, FEAPT},
+        operator::Type{<:DiscontinuousFunctionOperator},
+        qrule::QuadratureRule{TvR, EG};
+        T = Float64,
+        kwargs...
+    ) where {TvG, TiG, TvR, FEType <: AbstractFiniteElement, EG <: AbstractElementGeometry, FEAPT <: AssemblyType}
 
-	FEB = FEEvaluator(FE, StandardFunctionOperator(operator), qrule; T = T, kwargs...)
-	ndofs = size(FEB.cvals, 2)
-	cvals = reshape(repeat(FEB.cvals, 2), (size(FEB.cvals, 1), 2 * ndofs, size(FEB.cvals, 3)))
-	return FEEvaluatorDisc{T, TvG, TiG, FEType, typeof(FEB), operator}(FEB.citem, FE, FEB, coeffs(operator), cvals)
+    FEB = FEEvaluator(FE, StandardFunctionOperator(operator), qrule; T = T, kwargs...)
+    ndofs = size(FEB.cvals, 2)
+    cvals = reshape(repeat(FEB.cvals, 2), (size(FEB.cvals, 1), 2 * ndofs, size(FEB.cvals, 3)))
+    return FEEvaluatorDisc{T, TvG, TiG, FEType, typeof(FEB), operator}(FEB.citem, FE, FEB, coeffs(operator), cvals)
 end
 
 
 function ExtendableFEMBase.update_basis!(FEBE::FEEvaluatorDisc)
-	ExtendableFEMBase.update_basis!(FEBE.FEB)
-	cvals_std = FEBE.FEB.cvals
-	cvals = FEBE.cvals
-	coeffs = FEBE.coeffs
-	for d ∈ 1:size(cvals_std, 1), j ∈ size(cvals_std, 2), qp ∈ size(cvals_std, 3)
-		cvals[d, j, qp] = coeffs[1] * cvals_std[d, j, qp]
-		cvals[d, j+size(cvals_std, 2), qp] = coeffs[2] * cvals_std[d, j, qp]
-	end
+    ExtendableFEMBase.update_basis!(FEBE.FEB)
+    cvals_std = FEBE.FEB.cvals
+    cvals = FEBE.cvals
+    coeffs = FEBE.coeffs
+    for d in 1:size(cvals_std, 1), j in size(cvals_std, 2), qp in size(cvals_std, 3)
+        cvals[d, j, qp] = coeffs[1] * cvals_std[d, j, qp]
+        cvals[d, j + size(cvals_std, 2), qp] = coeffs[2] * cvals_std[d, j, qp]
+    end
+    return
 end
 
 function ExtendableFEMBase.update_basis!(FEBE::FEEvaluatorDisc, item)
-	if FEBE.citem[] == item
-	else
-		FEBE.citem[] = item
-		update_basis!(FEBE.FEB, item)
-	end
+    return if FEBE.citem[] == item
+    else
+        FEBE.citem[] = item
+        update_basis!(FEBE.FEB, item)
+    end
 end
 
 
@@ -117,36 +118,36 @@ end
 
 
 function generate_DG_master_quadrule(quadorder, EG; T = Float64)
-	EGface = facetype_of_cellface(EG, 1)
-	nfaces4cell = num_faces(EG)
-	for j ∈ 1:nfaces4cell
-		@assert facetype_of_cellface(EG, j) == EGface "all faces of cell must have the same face geometry!"
-	end
+    EGface = facetype_of_cellface(EG, 1)
+    nfaces4cell = num_faces(EG)
+    for j in 1:nfaces4cell
+        @assert facetype_of_cellface(EG, j) == EGface "all faces of cell must have the same face geometry!"
+    end
 
-	return QuadratureRule{T, EGface}(quadorder)
+    return QuadratureRule{T, EGface}(quadorder)
 end
 
 function generate_DG_operators(operator, FE, quadorder, EG; T = Float64)
-	## prototype quadrature rule on face geometry
-	qf4face = generate_DG_master_quadrule(quadorder, EG; T = T)
+    ## prototype quadrature rule on face geometry
+    qf4face = generate_DG_master_quadrule(quadorder, EG; T = T)
 
-	EGface = facetype_of_cellface(EG, 1)
-	nfaces4cell = num_faces(EG)
+    EGface = facetype_of_cellface(EG, 1)
+    nfaces4cell = num_faces(EG)
 
-	# generate new quadrature rules on cell
-	# where quadrature points of face are mapped to quadrature points of cells
-	xrefFACE2CELL = xrefFACE2xrefCELL(EG)
-	xrefFACE2OFACE = xrefFACE2xrefOFACE(EGface)
-	norientations = length(xrefFACE2OFACE)
-	basisevaler4EG = Array{FEEvaluator, 2}(undef, nfaces4cell, norientations)
-	xrefdim = length(qf4face.xref)
-	qf4cell = ExtendableFEMBase.SQuadratureRule{T, EG, xrefdim, length(qf4face.xref)}(qf4face.name * " (shape faces)", Array{Array{T, 1}, 1}(undef, length(qf4face.xref)), qf4face.w)
-	for f ∈ 1:nfaces4cell, orientation ∈ 1:norientations
-		## modify quadrature rule for this local face and local orientation
-		for i ∈ 1:length(qf4face.xref)
-			qf4cell.xref[i] = xrefFACE2CELL[f](xrefFACE2OFACE[orientation](qf4face.xref[i]))
-		end
-		basisevaler4EG[f, orientation] = FEEvaluator(FE, operator, deepcopy(qf4cell); T = T, AT = ON_CELLS)
-	end
-	return basisevaler4EG
+    # generate new quadrature rules on cell
+    # where quadrature points of face are mapped to quadrature points of cells
+    xrefFACE2CELL = xrefFACE2xrefCELL(EG)
+    xrefFACE2OFACE = xrefFACE2xrefOFACE(EGface)
+    norientations = length(xrefFACE2OFACE)
+    basisevaler4EG = Array{FEEvaluator, 2}(undef, nfaces4cell, norientations)
+    xrefdim = length(qf4face.xref)
+    qf4cell = ExtendableFEMBase.SQuadratureRule{T, EG, xrefdim, length(qf4face.xref)}(qf4face.name * " (shape faces)", Array{Array{T, 1}, 1}(undef, length(qf4face.xref)), qf4face.w)
+    for f in 1:nfaces4cell, orientation in 1:norientations
+        ## modify quadrature rule for this local face and local orientation
+        for i in 1:length(qf4face.xref)
+            qf4cell.xref[i] = xrefFACE2CELL[f](xrefFACE2OFACE[orientation](qf4face.xref[i]))
+        end
+        basisevaler4EG[f, orientation] = FEEvaluator(FE, operator, deepcopy(qf4cell); T = T, AT = ON_CELLS)
+    end
+    return basisevaler4EG
 end

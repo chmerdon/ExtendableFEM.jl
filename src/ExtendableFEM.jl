@@ -1,7 +1,7 @@
 """
 	ExtendableFEM
 
-$(read(joinpath(@__DIR__,"..","README.md"),String))
+$(read(joinpath(@__DIR__, "..", "README.md"), String))
 """
 module ExtendableFEM
 
@@ -9,73 +9,73 @@ using CommonSolve: CommonSolve
 using DiffResults: DiffResults
 using DocStringExtensions: DocStringExtensions, TYPEDFIELDS
 using ExtendableFEMBase: ExtendableFEMBase, AbstractFiniteElement,
-	AbstractFunctionOperator, AbstractH1FiniteElement,
-	AbstractHdivFiniteElement, BEdgeDofs, BFaceDofs,
-	CellDofs, Curl2D, Curl3D, CurlScalar,
-	DefaultName4Operator, Divergence, Dofmap4AssemblyType,
-	EdgeDofs, EffAT4AssemblyType, FEEvaluator, FEMatrix,
-	FEMatrixBlock, FESpace, FEVector, FEVectorBlock,
-	FaceDofs, Gradient, H1BR, H1BUBBLE, H1CR, H1MINI,
-	H1P1, H1P1TEB, H1P2, H1P2B, H1P3, H1Pk, H1Q1, H1Q2,
-	HCURLN0, HCURLN1, HDIVBDM1, HDIVBDM2, HDIVRT0,
-	HDIVRT1, HDIVRTk, HDIVRTkENRICH, Hessian, Identity,
-	L2P0, L2P1, Laplacian, Length4Operator,
-	NeededDerivative4Operator, NormalFlux,
-	ParentDofmap4Dofmap, PointEvaluator, QPInfos,
-	QuadratureRule, Reconstruct, SegmentIntegrator,
-	StandardFunctionOperator, TangentFlux,
-	TangentialGradient, VertexRule, _addnz, add!,
-	addblock!, addblock_matmul!, displace_mesh,
-	displace_mesh!, eval_func, eval_func_bary, evaluate!,
-	evaluate_bary!, fill!, get_AT, get_FEType,
-	get_ncomponents, get_ndofs, get_polynomialorder,
-	initialize!, integrate, integrate!,
-	integrate_segment!, lazy_interpolate!, nodevalues,
-	nodevalues!, nodevalues_subset!, nodevalues_view,
-	norms, unicode_gridplot, unicode_scalarplot,
-	update_basis!
+    AbstractFunctionOperator, AbstractH1FiniteElement,
+    AbstractHdivFiniteElement, BEdgeDofs, BFaceDofs,
+    CellDofs, Curl2D, Curl3D, CurlScalar,
+    DefaultName4Operator, Divergence, Dofmap4AssemblyType,
+    EdgeDofs, EffAT4AssemblyType, FEEvaluator, FEMatrix,
+    FEMatrixBlock, FESpace, FEVector, FEVectorBlock,
+    FaceDofs, Gradient, H1BR, H1BUBBLE, H1CR, H1MINI,
+    H1P1, H1P1TEB, H1P2, H1P2B, H1P3, H1Pk, H1Q1, H1Q2,
+    HCURLN0, HCURLN1, HDIVBDM1, HDIVBDM2, HDIVRT0,
+    HDIVRT1, HDIVRTk, HDIVRTkENRICH, Hessian, Identity,
+    L2P0, L2P1, Laplacian, Length4Operator,
+    NeededDerivative4Operator, NormalFlux,
+    ParentDofmap4Dofmap, PointEvaluator, QPInfos,
+    QuadratureRule, Reconstruct, SegmentIntegrator,
+    StandardFunctionOperator, TangentFlux,
+    TangentialGradient, VertexRule, _addnz, add!,
+    addblock!, addblock_matmul!, displace_mesh,
+    displace_mesh!, eval_func, eval_func_bary, evaluate!,
+    evaluate_bary!, fill!, get_AT, get_FEType,
+    get_ncomponents, get_ndofs, get_polynomialorder,
+    initialize!, integrate, integrate!,
+    integrate_segment!, lazy_interpolate!, nodevalues,
+    nodevalues!, nodevalues_subset!, nodevalues_view,
+    norms, unicode_gridplot, unicode_scalarplot,
+    update_basis!
 using ExtendableGrids: ExtendableGrids, AT_NODES, AbstractElementGeometry,
-	Adjacency, AssemblyType, BEdgeNodes, BFaceFaces,
-	BFaceNodes, BFaceRegions, CellAssemblyGroups,
-	CellFaceOrientations, CellFaces, CellGeometries,
-	CellNodes, CellRegions, Coordinates, EdgeNodes,
-	ElementGeometries, ExtendableGrid, FaceCells, FaceEdges,
-	FaceNodes, FaceNormals, FaceRegions, FaceVolumes,
-	PColorPartitions, PartitionCells, PartitionEdges,
-	GridComponentAssemblyGroups4AssemblyType,
-	GridComponentGeometries4AssemblyType,
-	GridComponentRegions4AssemblyType,
-	GridComponentVolumes4AssemblyType, L2GTransformer,
-	ON_BEDGES, ON_BFACES, ON_CELLS, ON_EDGES, ON_FACES,
-	ON_IFACES, SerialVariableTargetAdjacency,
-	UniqueBFaceGeometries, UniqueCellGeometries,
-	UniqueFaceGeometries, append!, dim_element, eval_trafo!,
-	facetype_of_cellface, interpolate!,
-	max_num_targets_per_source, num_cells, num_faces,
-	num_nodes, num_sources, num_targets, simplexgrid,
-	num_pcolors, num_partitions, num_partitions_per_color,
-	unique, update_trafo!, xrefFACE2xrefCELL,
-	xrefFACE2xrefOFACE
+    Adjacency, AssemblyType, BEdgeNodes, BFaceFaces,
+    BFaceNodes, BFaceRegions, CellAssemblyGroups,
+    CellFaceOrientations, CellFaces, CellGeometries,
+    CellNodes, CellRegions, Coordinates, EdgeNodes,
+    ElementGeometries, ExtendableGrid, FaceCells, FaceEdges,
+    FaceNodes, FaceNormals, FaceRegions, FaceVolumes,
+    PColorPartitions, PartitionCells, PartitionEdges,
+    GridComponentAssemblyGroups4AssemblyType,
+    GridComponentGeometries4AssemblyType,
+    GridComponentRegions4AssemblyType,
+    GridComponentVolumes4AssemblyType, L2GTransformer,
+    ON_BEDGES, ON_BFACES, ON_CELLS, ON_EDGES, ON_FACES,
+    ON_IFACES, SerialVariableTargetAdjacency,
+    UniqueBFaceGeometries, UniqueCellGeometries,
+    UniqueFaceGeometries, append!, dim_element, eval_trafo!,
+    facetype_of_cellface, interpolate!,
+    max_num_targets_per_source, num_cells, num_faces,
+    num_nodes, num_sources, num_targets, simplexgrid,
+    num_pcolors, num_partitions, num_partitions_per_color,
+    unique, update_trafo!, xrefFACE2xrefCELL,
+    xrefFACE2xrefOFACE
 using ExtendableSparse: ExtendableSparse, ExtendableSparseMatrix, flush!,
-	MTExtendableSparseMatrixCSC,
-	rawupdateindex!
+    MTExtendableSparseMatrixCSC,
+    rawupdateindex!
 using ForwardDiff: ForwardDiff
 using GridVisualize: GridVisualize, GridVisualizer, gridplot!, reveal, save,
-	scalarplot!, vectorplot!
+    scalarplot!, vectorplot!
 using LinearAlgebra: LinearAlgebra, copyto!, isposdef, mul!, norm
 using LinearSolve: LinearSolve, LinearProblem, UMFPACKFactorization, deleteat!,
-	init, solve
+    init, solve
 using Printf: Printf, @printf
 using SparseArrays: SparseArrays, AbstractSparseArray, SparseMatrixCSC, nnz,
-	nzrange, rowvals, sparse
+    nzrange, rowvals, sparse
 using SparseDiffTools: SparseDiffTools, ForwardColorJacCache,
-	forwarddiff_color_jacobian!, matrix_colors
+    forwarddiff_color_jacobian!, matrix_colors
 using Symbolics: Symbolics
 using SciMLBase: SciMLBase
 using UnicodePlots: UnicodePlots
 
 if !isdefined(Base, :get_extension)
-	using Requires
+    using Requires
 end
 
 ## reexport stuff from ExtendableFEMBase and ExtendableGrids
