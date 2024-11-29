@@ -73,7 +73,7 @@ function main(; Plotter = nothing, h = 1.0e-1, h_fine = 1.0e-3, order = 2, kwarg
     plt = GridVisualizer(Plotter = Plotter, layout = (1, 1))
     scalarplot!(plt[1, 1], id(u), sol; color = :black, label = "u_h", markershape = :circle, markersize = 10, markevery = 1)
     xgrid_fine = simplexgrid(0:h_fine:1)
-    scalarplot!(plt[1, 1], xgrid_fine, view(nodevalues(xgrid_fine, u!), 1, :), clear = false, color = (1, 0, 0), label = "u", legend = :rb, markershape = :none)
+    scalarplot!(plt[1, 1], xgrid_fine, view(nodevalues(xgrid_fine, u!), 1, :), clear = false, color = :red, label = "u", legend = :rb, markershape = :none)
 
     return sol, plt
 end
