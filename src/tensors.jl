@@ -1,4 +1,3 @@
-
 """
 	TensorDescription{R,D}
 
@@ -30,8 +29,8 @@ that will likely produce allocations and slow assembly
 times if used in a kernel function.
 """
 function tensor_view(input, i::Int, ::TensorDescription{rank, dim}) where {rank, dim}
-	@warn "tensor_view for rank > 4 is a general implementation that needs allocations!"
-	return reshape(view(input, i:(i+(dim^rank)-1)), ntuple(i -> dim, rank))
+    @warn "tensor_view for rank > 4 is a general implementation that needs allocations!"
+    return reshape(view(input, i:(i + (dim^rank) - 1)), ntuple(i -> dim, rank))
 end
 
 
@@ -95,8 +94,8 @@ function tensor_view(input,i::Int,::TensorDescription{0,dim})
 
 Returns a view of `input[i]` reshaped as a vector of length 1.
 """
-function tensor_view(input, i::Int, ::TensorDescription{0, dim}) where dim
-	return view(input, i:i)
+function tensor_view(input, i::Int, ::TensorDescription{0, dim}) where {dim}
+    return view(input, i:i)
 end
 
 
@@ -107,8 +106,8 @@ function tensor_view(input,i::Int,::TensorDescription{1,dim})
 
 Returns a view of `input[i:i+dim-1]` reshaped as a vector of length dim.
 """
-function tensor_view(input, i::Int, ::TensorDescription{1, dim}) where dim
-	return view(input, i:i+dim-1)
+function tensor_view(input, i::Int, ::TensorDescription{1, dim}) where {dim}
+    return view(input, i:(i + dim - 1))
 end
 
 """
@@ -118,8 +117,8 @@ function tensor_view(input,i::Int,::TensorDescription{2,dim})
 
 Returns a view of `input[i:i+dim^2-1]` reshaped as a `(dim,dim)` matrix.
 """
-function tensor_view(input, i::Int, ::TensorDescription{2, dim}) where dim
-	return reshape(view(input, i:(i+(dim*dim)-1)), (dim, dim))
+function tensor_view(input, i::Int, ::TensorDescription{2, dim}) where {dim}
+    return reshape(view(input, i:(i + (dim * dim) - 1)), (dim, dim))
 end
 
 """
@@ -129,8 +128,8 @@ function tensor_view(input,i::Int,::TensorDescription{3,dim})
 
 Returns a view of `input[i:i+dim^3-1]` reshaped as a `(dim,dim,dim)` 3-tensor.
 """
-function tensor_view(input, i::Int, ::TensorDescription{3, dim}) where dim
-	return reshape(view(input, i:(i+(dim^3)-1)), (dim, dim, dim))
+function tensor_view(input, i::Int, ::TensorDescription{3, dim}) where {dim}
+    return reshape(view(input, i:(i + (dim^3) - 1)), (dim, dim, dim))
 end
 
 """
@@ -140,6 +139,6 @@ function tensor_view(input,i::Int,::TensorDescription{4,dim})
 
 Returns a view of `input[i:i+dim^4-1]` reshaped as `(dim,dim,dim,dim)` 4-tensor.
 """
-function tensor_view(input, i::Int, ::TensorDescription{4, dim}) where dim
-	return reshape(view(input, i:(i+(dim^4)-1)), (dim, dim, dim, dim))
+function tensor_view(input, i::Int, ::TensorDescription{4, dim}) where {dim}
+    return reshape(view(input, i:(i + (dim^4) - 1)), (dim, dim, dim, dim))
 end

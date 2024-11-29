@@ -32,47 +32,47 @@ using Test #hide
 
 ## rigt-hand side data
 function f!(result, qpinfo)
-	result[1] = qpinfo.x[1] < 0.5 ? -1 : 1
+    return result[1] = qpinfo.x[1] < 0.5 ? -1 : 1
 end
 ## boundary data
 function boundary_data!(result, qpinfo)
-	result[1] = qpinfo.x[1]
+    return result[1] = qpinfo.x[1]
 end
 
 ## kernel for the (nonlinear) reaction-convection-diffusion operator
 function nonlinear_kernel!(result, input, qpinfo)
-	u, ∇u, ϵ = input[1], input[2], qpinfo.params[1]
-	result[1] = exp(u) - exp(-u)
-	result[2] = ϵ * ∇u
+    u, ∇u, ϵ = input[1], input[2], qpinfo.params[1]
+    result[1] = exp(u) - exp(-u)
+    return result[2] = ϵ * ∇u
 end
 
 ## everything is wrapped in a main function
-function main(; Plotter = nothing, h = 1e-2, ϵ = 1e-3, order = 2, kwargs...)
+function main(; Plotter = nothing, h = 1.0e-2, ϵ = 1.0e-3, order = 2, kwargs...)
 
-	## problem description
-	PD = ProblemDescription("Nonlinear Poisson Equation")
-	u = Unknown("u"; name = "u")
-	assign_unknown!(PD, u)
-	assign_operator!(PD, NonlinearOperator(nonlinear_kernel!, [id(u), grad(u)]; params = [ϵ], kwargs...))
-	assign_operator!(PD, LinearOperator(f!, [id(u)]; store = true, kwargs...))
-	assign_operator!(PD, InterpolateBoundaryData(u, boundary_data!; kwargs...))
+    ## problem description
+    PD = ProblemDescription("Nonlinear Poisson Equation")
+    u = Unknown("u"; name = "u")
+    assign_unknown!(PD, u)
+    assign_operator!(PD, NonlinearOperator(nonlinear_kernel!, [id(u), grad(u)]; params = [ϵ], kwargs...))
+    assign_operator!(PD, LinearOperator(f!, [id(u)]; store = true, kwargs...))
+    assign_operator!(PD, InterpolateBoundaryData(u, boundary_data!; kwargs...))
 
-	## discretize: grid + FE space
-	xgrid = simplexgrid(0:h:1)
-	FES = FESpace{H1Pk{1, 1, order}}(xgrid)
+    ## discretize: grid + FE space
+    xgrid = simplexgrid(0:h:1)
+    FES = FESpace{H1Pk{1, 1, order}}(xgrid)
 
-	## generate a solution vector and solve
-	sol = solve(PD, FES; kwargs...)
+    ## generate a solution vector and solve
+    sol = solve(PD, FES; kwargs...)
 
-	## plot discrete and exact solution (on finer grid)
-	plt = plot([id(u)], sol; Plotter = Plotter)
+    ## plot discrete and exact solution (on finer grid)
+    plt = plot([id(u)], sol; Plotter = Plotter)
 
-	return sol, plt
+    return sol, plt
 end
 
 generateplots = ExtendableFEM.default_generateplots(Example105_NonlinearPoissonEquation, "example105.png") #hide
 function runtests() #hide
-	sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide	
-	@test maximum(sol.entries) ≈ 0.4812118250102083 #hide
+    sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide
+    return @test maximum(sol.entries) ≈ 0.4812118250102083 #hide
 end #hide
 end

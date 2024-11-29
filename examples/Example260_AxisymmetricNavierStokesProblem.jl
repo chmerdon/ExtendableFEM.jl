@@ -61,35 +61,35 @@ using Test #hide
 function kernel_convection!(result, input, qpinfo)
     u, ∇u = view(input, 1:2), view(input, 3:6)
     r = qpinfo.x[1]
-    result[1] = r*(∇u[1]*u[1] + ∇u[2]*u[2])
-    result[2] = r*(∇u[3]*u[1] + ∇u[4]*u[2])
+    result[1] = r * (∇u[1] * u[1] + ∇u[2] * u[2])
+    result[2] = r * (∇u[3] * u[1] + ∇u[4] * u[2])
     return nothing
 end
 
 function kernel_stokes_axisymmetric!(result, u_ops, qpinfo)
-    u, ∇u, p = view(u_ops,1:2), view(u_ops,3:6), view(u_ops, 7)
+    u, ∇u, p = view(u_ops, 1:2), view(u_ops, 3:6), view(u_ops, 7)
     r = qpinfo.x[1]
     μ = qpinfo.params[1]
     ## add Laplacian
-    result[1] = μ/r * u[1] - p[1]
+    result[1] = μ / r * u[1] - p[1]
     result[2] = 0
-    result[3] = μ*r * ∇u[1] - r*p[1]
-    result[4] = μ*r * ∇u[2]
-    result[5] = μ*r * ∇u[3]
-    result[6] = μ*r * ∇u[4] - r*p[1]
-    result[7] = -(r*(∇u[1]+∇u[4]) + u[1])
+    result[3] = μ * r * ∇u[1] - r * p[1]
+    result[4] = μ * r * ∇u[2]
+    result[5] = μ * r * ∇u[3]
+    result[6] = μ * r * ∇u[4] - r * p[1]
+    result[7] = -(r * (∇u[1] + ∇u[4]) + u[1])
     return nothing
 end
 
 function u!(result, qpinfo)
     x = qpinfo.x
     result[1] = x[1]
-    result[2] = -2*x[2]
+    return result[2] = -2 * x[2]
 end
 
 function kernel_l2div(result, u_ops, qpinfo)
-    u, divu = view(u_ops,1:2), view(u_ops,3)
-    result[1] = (qpinfo.x[1]*divu[1] + u[1])^2
+    u, divu = view(u_ops, 1:2), view(u_ops, 3)
+    return result[1] = (qpinfo.x[1] * divu[1] + u[1])^2
 end
 
 
@@ -101,29 +101,31 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     p = Unknown("p"; name = "pressure")
     assign_unknown!(PD, u)
     assign_unknown!(PD, p)
-    assign_operator!(PD, BilinearOperator(kernel_stokes_axisymmetric!, [id(u),grad(u),id(p)]; params = [μ], kwargs...))#; jacobian = kernel_jacobian!)) 
+    assign_operator!(PD, BilinearOperator(kernel_stokes_axisymmetric!, [id(u), grad(u), id(p)]; params = [μ], kwargs...)) #; jacobian = kernel_jacobian!))
     if nonlinear
-        assign_operator!(PD, NonlinearOperator(kernel_convection!, [id(u)], [id(u),grad(u)]; bonus_quadorder = 1, kwargs...))#; jacobian = kernel_jacobian!)) 
+        assign_operator!(PD, NonlinearOperator(kernel_convection!, [id(u)], [id(u), grad(u)]; bonus_quadorder = 1, kwargs...)) #; jacobian = kernel_jacobian!))
     end
     assign_operator!(PD, InterpolateBoundaryData(u, u!; regions = [3]))
-    assign_operator!(PD, HomogeneousBoundaryData(u; regions = [4], mask = (1,0,1)))
-    assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1], mask = (0,1,1)))
+    assign_operator!(PD, HomogeneousBoundaryData(u; regions = [4], mask = (1, 0, 1)))
+    assign_operator!(PD, HomogeneousBoundaryData(u; regions = [1], mask = (0, 1, 1)))
 
     ## grid
     if uniform
         xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
     else
-        xgrid = simplexgrid(Triangulate;
-        points=[0 0 ; 5 0 ; 5 1 ; 0 1]',
-        bfaces=[1 2 ; 2 3 ; 3 4 ; 4 1 ]',
-        bfaceregions=[1, 2, 3, 4],
-        regionpoints=[0.5 0.5;]',
-        regionnumbers=[1],
-        regionvolumes=[4.0^(-nrefs-1)])
+        xgrid = simplexgrid(
+            Triangulate;
+            points = [0 0 ; 5 0 ; 5 1 ; 0 1]',
+            bfaces = [1 2 ; 2 3 ; 3 4 ; 4 1 ]',
+            bfaceregions = [1, 2, 3, 4],
+            regionpoints = [0.5 0.5;]',
+            regionnumbers = [1],
+            regionvolumes = [4.0^(-nrefs - 1)]
+        )
     end
 
     ## solve
-    FES = [FESpace{H1P2B{2,2}}(xgrid), FESpace{L2P1{1}}(xgrid)]
+    FES = [FESpace{H1P2B{2, 2}}(xgrid), FESpace{L2P1{1}}(xgrid)]
     sol = ExtendableFEM.solve(PD, FES; kwargs...)
 
     ## compute divergence in cylindrical coordinates by volume integrals
@@ -134,13 +136,13 @@ function main(; μ = 0.1, nrefs = 4, nonlinear = false, uniform = false, Plotter
     ## compute L2error
     function kernel_l2error(result, u_ops, qpinfo)
         u!(result, qpinfo)
-        result .= (result - u_ops).^2
+        return result .= (result - u_ops) .^ 2
     end
     ErrorIntegratorExact = ItemIntegrator(kernel_l2error, [id(1)]; entities = ON_BFACES, regions = [3], quadorder = 4, kwargs...)
     error = evaluate(ErrorIntegratorExact, sol)
-    L2error = sqrt(sum(view(error,1,:)) + sum(view(error,2,:)))
+    L2error = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :)))
     @info "||u - u_h|| = $L2error"
-    
+
     ## plot
     plt = plot([id(u)], sol; Plotter = Plotter)
 
@@ -149,7 +151,7 @@ end
 
 generateplots = ExtendableFEM.default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.png") #hide
 function runtests() #hide
-	errors, plt = main(; nrefs = 1) #hide
-	@test all(errors .<= 1e-12) #hide
+    errors, plt = main(; nrefs = 1) #hide
+    return @test all(errors .<= 1.0e-12) #hide
 end #hide
 end # module

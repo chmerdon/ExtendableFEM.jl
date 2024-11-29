@@ -49,73 +49,73 @@ using Test #hide
 
 ## data for Hagen-Poiseuille flow
 function p!(result, qpinfo)
-	x = qpinfo.x
-	μ = qpinfo.params[1]
-	result[1] = μ * (-2 * x[1] + 1.0)
+    x = qpinfo.x
+    μ = qpinfo.params[1]
+    return result[1] = μ * (-2 * x[1] + 1.0)
 end
 function u!(result, qpinfo)
-	x = qpinfo.x
-	result[1] = x[2] * (1.0 - x[2])
-	result[2] = 0.0
+    x = qpinfo.x
+    result[1] = x[2] * (1.0 - x[2])
+    return result[2] = 0.0
 end
 ## kernel for div projection
 function div_projection!(result, input, qpinfo)
-	result[1] = input[1] - qpinfo.params[1] * input[2]
+    return result[1] = input[1] - qpinfo.params[1] * input[2]
 end
 
 ## everything is wrapped in a main function
-function main(; Plotter = nothing, λ = 1e4, μ = 1.0, nrefs = 5, kwargs...)
+function main(; Plotter = nothing, λ = 1.0e4, μ = 1.0, nrefs = 5, kwargs...)
 
-	## initial grid
-	xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
+    ## initial grid
+    xgrid = uniform_refine(grid_unitsquare(Triangle2D), nrefs)
 
-	## Bernardi--Raugel element with reconstruction operator
-	FETypes = (H1BR{2}, L2P0{1})
-	PenaltyDivergence = Reconstruct{HDIVRT0{2}, Divergence}
+    ## Bernardi--Raugel element with reconstruction operator
+    FETypes = (H1BR{2}, L2P0{1})
+    PenaltyDivergence = Reconstruct{HDIVRT0{2}, Divergence}
 
-	## generate two problems
-	## one for velocity, one for pressure
-	u = Unknown("u"; name = "velocity")
-	p = Unknown("p"; name = "pressure")
-	PDu = ProblemDescription("Stokes IPM - velocity update")
-	assign_unknown!(PDu, u)
-	assign_operator!(PDu, BilinearOperator([grad(u)]; factor = μ, store = true, kwargs...))
-	assign_operator!(PDu, BilinearOperator([apply(u, PenaltyDivergence)]; store = true, factor = λ, kwargs...))
-	assign_operator!(PDu, LinearOperator([div(u)], [id(p)]; factor = 1, kwargs...))
-	assign_operator!(PDu, InterpolateBoundaryData(u, u!; regions = 1:4, params = [μ], bonus_quadorder = 4, kwargs...))
+    ## generate two problems
+    ## one for velocity, one for pressure
+    u = Unknown("u"; name = "velocity")
+    p = Unknown("p"; name = "pressure")
+    PDu = ProblemDescription("Stokes IPM - velocity update")
+    assign_unknown!(PDu, u)
+    assign_operator!(PDu, BilinearOperator([grad(u)]; factor = μ, store = true, kwargs...))
+    assign_operator!(PDu, BilinearOperator([apply(u, PenaltyDivergence)]; store = true, factor = λ, kwargs...))
+    assign_operator!(PDu, LinearOperator([div(u)], [id(p)]; factor = 1, kwargs...))
+    assign_operator!(PDu, InterpolateBoundaryData(u, u!; regions = 1:4, params = [μ], bonus_quadorder = 4, kwargs...))
 
-	PDp = ProblemDescription("Stokes IPM - pressure update")
-	assign_unknown!(PDp, p)
-	assign_operator!(PDp, BilinearOperator([id(p)]; store = true, kwargs...))
-	assign_operator!(PDp, LinearOperator(div_projection!, [id(p)], [id(p), div(u)]; params = [λ], factor = 1, kwargs...))
+    PDp = ProblemDescription("Stokes IPM - pressure update")
+    assign_unknown!(PDp, p)
+    assign_operator!(PDp, BilinearOperator([id(p)]; store = true, kwargs...))
+    assign_operator!(PDp, LinearOperator(div_projection!, [id(p)], [id(p), div(u)]; params = [λ], factor = 1, kwargs...))
 
-	## show and solve problem
-	FES = [FESpace{FETypes[1]}(xgrid), FESpace{FETypes[2]}(xgrid)]
-	sol = FEVector([FES[1], FES[2]]; tags = [u, p])
-	SC1 = SolverConfiguration(PDu; init = sol, maxiterations = 1, target_residual = 1e-8, constant_matrix = true, kwargs...)
-	SC2 = SolverConfiguration(PDp; init = sol, maxiterations = 1, target_residual = 1e-8, constant_matrix = true, kwargs...)
-	sol, nits = iterate_until_stationarity([SC1, SC2]; init = sol, kwargs...)
-	@info "converged after $nits iterations"
+    ## show and solve problem
+    FES = [FESpace{FETypes[1]}(xgrid), FESpace{FETypes[2]}(xgrid)]
+    sol = FEVector([FES[1], FES[2]]; tags = [u, p])
+    SC1 = SolverConfiguration(PDu; init = sol, maxiterations = 1, target_residual = 1.0e-8, constant_matrix = true, kwargs...)
+    SC2 = SolverConfiguration(PDp; init = sol, maxiterations = 1, target_residual = 1.0e-8, constant_matrix = true, kwargs...)
+    sol, nits = iterate_until_stationarity([SC1, SC2]; init = sol, kwargs...)
+    @info "converged after $nits iterations"
 
-	## plot
-	plt = plot([id(u), id(p)], sol; Plotter = Plotter)
+    ## plot
+    plt = plot([id(u), id(p)], sol; Plotter = Plotter)
 
-	return sol, plt
+    return sol, plt
 end
 
 generateplots = ExtendableFEM.default_generateplots(Example235_StokesIteratedPenalty, "example235.png") #hide
 function exact_error!(result, u, qpinfo) #hide
-	u!(result, qpinfo) #hide
-	p!(view(result, 3), qpinfo) #hide
-	result .= (result .- u).^ 2 #hide
+    u!(result, qpinfo) #hide
+    p!(view(result, 3), qpinfo) #hide
+    return result .= (result .- u) .^ 2 #hide
 end #hide
 function runtests(; μ = 1.0) #hide
-	sol, plt = main(; μ = μ) #hide
-	ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(1), id(2)]; quadorder = 4, params = [μ]) #hide
-	error = evaluate(ErrorIntegratorExact, sol) #hide
-	error_u = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :))) #hide
-	error_p = sqrt(sum(view(error, 3, :))) #hide
-	@test error_u ≈ 3.990987355891888e-5 #hide
-	@test error_p ≈ 0.010437891104305222 #hide
+    sol, plt = main(; μ = μ) #hide
+    ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(1), id(2)]; quadorder = 4, params = [μ]) #hide
+    error = evaluate(ErrorIntegratorExact, sol) #hide
+    error_u = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :))) #hide
+    error_p = sqrt(sum(view(error, 3, :))) #hide
+    @test error_u ≈ 3.990987355891888e-5 #hide
+    return @test error_p ≈ 0.010437891104305222 #hide
 end #hide
 end
