@@ -179,6 +179,23 @@ alias for (u, TangentialGradient)
 """
 tangentialgrad(u) = (u, TangentialGradient)
 
+"""
+	symgrad_voigt(u, factor)
+
+alias for (u, SymmetricGradient{factor}) in Voigt notation.
+
+The `factor` is a real number applied to the (summed) off-diagonal entries.
+In the current implementation in ExtendableFEMBase, factor = 0.5 represents the Voigt strain mapping [σ₁₁ σ₂₂ σ₃₃ σ₁₃ σ₂₃ σ₁₂],
+while factor = 1.0 represents the Voigt strain mapping [ε₁₁ ε₂₂ ε₃₃ 2ε₁₃ 2ε₂₃ 2ε₁₂].
+"""
+symgrad_voigt(u, factor) = (u, SymmetricGradient{factor})
+
+"""
+	εV(u, factor)
+
+unicode alias for [`symgrad_voigt(u, factor)`](@ref).
+"""
+εV(u, factor) = symgrad_voigt(u, factor)
 
 """
 	grid(u)

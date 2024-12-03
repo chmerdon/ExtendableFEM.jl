@@ -33,7 +33,7 @@ using ExtendableFEMBase: ExtendableFEMBase, AbstractFiniteElement,
     integrate_segment!, lazy_interpolate!, nodevalues,
     nodevalues!, nodevalues_subset!, nodevalues_view,
     norms, unicode_gridplot, unicode_scalarplot,
-    update_basis!
+    update_basis!, SymmetricGradient
 using ExtendableGrids: ExtendableGrids, AT_NODES, AbstractElementGeometry,
     Adjacency, AssemblyType, BEdgeNodes, BFaceFaces,
     BFaceNodes, BFaceRegions, CellAssemblyGroups,
@@ -113,7 +113,7 @@ export print_table
 include("unknowns.jl")
 export Unknown
 export grid, dofgrid
-export id, grad, hessian, div, normalflux, tangentialflux, Δ, apply, curl1, curl2, curl3, laplace, tangentialgrad
+export id, grad, hessian, div, normalflux, tangentialflux, Δ, apply, curl1, curl2, curl3, laplace, tangentialgrad, symgrad_voigt, εV
 
 include("operators.jl")
 #export AbstractOperator
