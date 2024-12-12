@@ -26,7 +26,7 @@ using ExtendableFEM
 using ExtendableGrids
 using GridVisualize
 using LinearAlgebra
-using DifferentialEquations
+using OrdinaryDiffEqSDIRK
 
 function ϕ_init!(result, qpinfo)
     x = qpinfo.x

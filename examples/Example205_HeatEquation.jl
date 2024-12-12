@@ -22,7 +22,7 @@ module Example205_HeatEquation
 
 using ExtendableFEM
 using ExtendableGrids
-using DifferentialEquations
+using OrdinaryDiffEqSDIRK
 using Test #hide
 
 ## initial state u at time t0

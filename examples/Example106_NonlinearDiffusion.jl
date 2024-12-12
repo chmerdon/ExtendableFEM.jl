@@ -22,7 +22,7 @@ module Example106_NonlinearDiffusion
 
 using ExtendableFEM
 using ExtendableGrids
-using DifferentialEquations
+using OrdinaryDiffEqSDIRK
 using GridVisualize
 using Test #hide
 

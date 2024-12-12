@@ -35,7 +35,6 @@ module Example290_PoroElasticity
 
 using ExtendableFEM
 using ExtendableGrids
-using DifferentialEquations
 using GridVisualize
 using Symbolics
 using Test #hide

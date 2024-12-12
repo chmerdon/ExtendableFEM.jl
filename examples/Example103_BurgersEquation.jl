@@ -23,7 +23,7 @@ module Example103_BurgersEquation
 
 using ExtendableFEM
 using ExtendableGrids
-using DifferentialEquations
+using OrdinaryDiffEqRosenbrock
 using Test #hide
 
 ## nonlinear kernel, i.e. f(u)
