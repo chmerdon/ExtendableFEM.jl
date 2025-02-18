@@ -74,9 +74,6 @@ using Symbolics: Symbolics
 using SciMLBase: SciMLBase
 using UnicodePlots: UnicodePlots
 
-if !isdefined(Base, :get_extension)
-    using Requires
-end
 
 ## reexport stuff from ExtendableFEMBase and ExtendableGrids
 export FESpace, FEMatrix, FEVector
