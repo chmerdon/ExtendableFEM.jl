@@ -6,6 +6,8 @@ using ExampleJuggler
 using ExplicitImports
 using Metis
 using Aqua
+using Triangulate
+using SimplexGridFactory
 
 
 include("test_dgblf.jl")
@@ -13,6 +15,7 @@ include("test_boundary_operator.jl")
 include("test_itemintegrator.jl")
 include("test_timedependence.jl")
 include("test_nonlinear_operator.jl")
+include("test_helper_functions.jl")
 
 function run_examples()
     ExampleJuggler.verbose!(true)

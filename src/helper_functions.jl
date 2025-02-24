@@ -157,6 +157,184 @@ function get_periodic_coupling_info(
     return dofsX, dofsY, factors
 end
 
+
+"""
+    get_periodic_coupling_matrix(
+        FES::FESpace,
+        xgrid::ExtendableGrid,
+        b_from,
+        b_to,
+        give_opposite!::Function;
+        mask = :auto,
+        sparsity_tol = 1.0e-12
+    )
+
+Compute a coupling information for each dof on one boundary as a linear combination of dofs on another boundary
+
+Input:
+ - FES: FE space to be coupled
+ - xgrid: the grid
+ - b_from: boundary region of the grid which dofs should be replaced in terms of dofs on b_to
+ - b_to: boundary region of the grid with dofs to replace the dofs in b_from
+ - give_opposite! Function in (y,x)
+ - mask: (optional) vector of masking components
+ . sparsity_tol: threshold for treating an interpolated value as zero
+
+give_opposite!(y,x) has to be defined in a way that for each x ∈ b_from the resulting y is in the opposite boundary.
+For each x in the grid, the resulting y has to be in the grid, too: incorporate some mirroring of the coordinates.
+Example: If b_from is at x[1] = 0 and the opposite boundary is at y[1] = 1, then give_opposite!(y,x) = y .= [ 1-x[1], x[2] ]
+
+The return value is a (𝑛 × 𝑛) sparse matrix 𝐴 (𝑛 is the total number of dofs) containing the periodic coupling information.
+The relation ship between the degrees of freedome is  dofᵢ = ∑ⱼ Aⱼᵢ ⋅ dofⱼ.
+It is guaranteed that
+    i)  Aⱼᵢ=0 if dofᵢ is 𝑛𝑜𝑡 on the boundary b_from.
+    ii) Aⱼᵢ=0 if the opposite of dofᵢ is not in the same grid cell as dofⱼ.
+Note that A is transposed for efficient col-wise storage.
+
+"""
+function get_periodic_coupling_matrix(
+        FES::FESpace,
+        xgrid::ExtendableGrid,
+        b_from,
+        b_to,
+        give_opposite!::Function;
+        mask = :auto,
+        sparsity_tol = 1.0e-12
+    )
+
+    @info "Computing periodic coupling matrix. This may take a while."
+
+    # compact variant of lazy_interpolate! specialized on ON_FACES interpolations
+    function interpolate_on_boundaryfaces(
+            target::FEVectorBlock{T1, Tv, Ti},
+            source,
+            give_opposite,
+            boundary_faces,
+            start_cell = 1, # TODO we interpolate on the "b_from" side: a proper start cell should be given
+            eps = 1.0e-13,
+            kwargs...
+        ) where {T1, Tv, Ti}
+
+        # wrap point evaluation into function that is put into normal interpolate!
+        xgrid = source[1].FES.xgrid
+        xdim::Int = size(xgrid[Coordinates], 1)
+        PE = PointEvaluator([(1, Identity)], source)
+        xref = zeros(Tv, xdim)
+        x_source = zeros(Tv, xdim)
+        CF::ExtendableGrids.CellFinder{Tv, Ti} = ExtendableGrids.CellFinder(xgrid)
+        last_cell = start_cell
+
+        function eval_point(result, qpinfo)
+            x = qpinfo.x
+            give_opposite(x_source, x)
+
+            cell = ExtendableGrids.gFindLocal!(xref, CF, x_source; icellstart = last_cell, eps)
+            if cell == 0
+                @error "boundary coordinate $x opposite to $x_source could not be found in the grid"
+            else
+                evaluate_bary!(result, PE, xref, cell)
+                last_cell = cell
+            end
+            return nothing
+        end
+
+        return interpolate!(target, ON_FACES, eval_point, items = boundary_faces, kwargs...)
+    end
+
+    # total number of grid boundary faces
+    boundary_nodes = xgrid[BFaceNodes]
+    n_boundary_faces = size(boundary_nodes, 2)
+
+    # corresponding boundary regions
+    boundary_regions = xgrid[BFaceRegions]
+
+    # FE basis dofs on each boundary face
+    dofs_on_boundary = FES[BFaceDofs]
+
+    # fe vector used for interpolation
+    fe_vector = FEVector(FES)
+    # to be sure
+    fill!(fe_vector.entries, 0.0)
+
+    # FE vector for interpolation
+    fe_vector_target = FEVector(FES)
+
+    # resulting sparse matrix
+    n = length(fe_vector.entries)
+    result = ExtendableSparseMatrix(n, n)
+
+    # face numbers of the boundary faces
+    face_numbers_of_bfaces = xgrid[BFaceFaces]
+
+    # find all faces in b_to
+    faces_in_b_to = Int[]
+    for (i, region) in enumerate(boundary_regions)
+        if region == b_to
+            push!(faces_in_b_to, face_numbers_of_bfaces[i])
+        end
+    end
+
+    # offset of the individual components of the FES
+    ncomponents = get_ncomponents(get_FEType(FES))
+    coffset = FES.coffset
+
+    # fill component mask if not done before
+    if mask == :auto
+        mask = ones(ncomponents)
+    else
+        @assert length(mask) == ncomponents "component mask has to match number of components"
+    end
+
+    for i_boundary_face in 1:n_boundary_faces
+
+        # for each boundary face: check if in b_from
+        if boundary_regions[i_boundary_face] == b_from
+
+            local_dofs = @views dofs_on_boundary[:, i_boundary_face]
+            for local_dof in local_dofs
+                # compute number of component
+                if mask[1 + ((local_dof - 1) ÷ coffset)] == 0.0
+                    continue
+                end
+
+                # reset
+                fill!(fe_vector_target.entries, 0.0)
+
+                # activate one entry
+                fe_vector.entries[local_dof] = 1.0
+
+                # interpolate on the opposite boundary using x_trafo = give_opposite
+                interpolate_on_boundaryfaces(
+                    fe_vector_target[1],
+                    fe_vector,
+                    give_opposite!,
+                    faces_in_b_to
+                )
+
+                # deactivate entry
+                fe_vector.entries[local_dof] = 0.0
+
+                # set entries
+                for (i, target_entry) in enumerate(fe_vector_target.entries)
+                    if abs(target_entry) > sparsity_tol
+                        result[i, local_dof] = target_entry
+                    end
+                end
+            end
+        end
+    end
+
+    sp_result = sparse(result)
+
+    # strange if nothing is coupled
+    if nnz(sp_result) == 0
+        @warn "no coupling found. Are the grid boundary regions and the give_opposite! method correct?"
+    end
+
+    return sparse(result)
+end
+
+
 ## determines a common assembly grid for the given arrays of finite element spaces
 function determine_assembly_grid(FES_test, FES_ansatz = [], FES_args = [])
     xgrid = FES_test[1].xgrid

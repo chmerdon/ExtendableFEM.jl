@@ -7,6 +7,8 @@
   - tests for explicit imports and undocumented names
   - Runic.jl code formatting
   - new operators `symgrad_Voigt` and `εV` for symmetric gradients in Voigt notation
+  - new periodic boundary matrix assembler `get_periodic_coupling_matrix`
+  - new `CombineDofs` operator accepting a periodic`coupling_matrix`
 
 ## v0.8 November 1, 2024
   - started changelog

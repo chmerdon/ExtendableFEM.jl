@@ -108,8 +108,14 @@ function main(;
     if periodic
         ## periodic boundary conditions
         ## 1) couple dofs left (bregion 1) and right (bregion 3) in y-direction
-        dofsX, dofsY, factors = get_periodic_coupling_info(FES, xgrid, 1, 3, (f1, f2) -> abs(f1[2] - f2[2]) < 1.0e-14; factor_components = [0, 1])
-        assign_operator!(PD, CombineDofs(u, u, dofsX, dofsY, factors; kwargs...))
+        function give_opposite!(y, x)
+            y .= x
+            y[1] = -x[1]
+            return nothing
+        end
+        coupling_matrix = get_periodic_coupling_matrix(FES, xgrid, 1, 3, give_opposite!; mask = [0, 1])
+        assign_operator!(PD, CombineDofs(u, u, coupling_matrix; kwargs...))
+
         ## 2) find and fix point at [0, scale[1]]
         xCoordinates = xgrid[Coordinates]
         closest::Int = 0
@@ -166,7 +172,12 @@ end
 
 generateplots = ExtendableFEM.default_generateplots(Example230_NonlinearElasticity, "example230.png") #hide
 function runtests() #hide
-    strain, plt = main() #hide
-    return @test maximum(strain) ≈ 0.17289633483008537 #hide
+    strain, plt = main(periodic = false) #hide
+    @test maximum(strain) ≈ 0.17289633483008537 #hide
+
+    strain, plt = main(periodic = true) #hide
+    @test maximum(strain) ≈ 0.17307543557837013 #hide
+
+    return nothing #hide
 end #hide
 end
