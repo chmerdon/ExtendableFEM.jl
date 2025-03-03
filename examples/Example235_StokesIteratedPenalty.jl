@@ -51,16 +51,19 @@ using Test #hide
 function p!(result, qpinfo)
     x = qpinfo.x
     μ = qpinfo.params[1]
-    return result[1] = μ * (-2 * x[1] + 1.0)
+    result[1] = μ * (-2 * x[1] + 1.0)
+    return nothing
 end
 function u!(result, qpinfo)
     x = qpinfo.x
     result[1] = x[2] * (1.0 - x[2])
-    return result[2] = 0.0
+    result[2] = 0.0
+    return nothing
 end
 ## kernel for div projection
 function div_projection!(result, input, qpinfo)
-    return result[1] = input[1] - qpinfo.params[1] * input[2]
+    result[1] = input[1] - qpinfo.params[1] * input[2]
+    return nothing
 end
 
 ## everything is wrapped in a main function
@@ -116,6 +119,7 @@ function runtests(; μ = 1.0) #hide
     error_u = sqrt(sum(view(error, 1, :)) + sum(view(error, 2, :))) #hide
     error_p = sqrt(sum(view(error, 3, :))) #hide
     @test error_u ≈ 3.990987355891888e-5 #hide
-    return @test error_p ≈ 0.010437891104305222 #hide
+    @test error_p ≈ 0.010437891104305222 #hide
+    return nothing #hide
 end #hide
 end

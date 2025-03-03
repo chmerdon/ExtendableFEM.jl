@@ -28,7 +28,8 @@ using Test #hide
 ## initial state u at time t0
 function initial_data!(result, qpinfo)
     x = qpinfo.x
-    return result[1] = exp(-5 * x[1]^2 - 5 * x[2]^2)
+    result[1] = exp(-5 * x[1]^2 - 5 * x[2]^2)
+    return nothing
 end
 
 function main(;
@@ -91,6 +92,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example205_HeatEquation, "example205.png") #hide
 function runtests(; verbosity = -1, kwargs...) #hide
     sol, plt = main(; nrefs = 2, T = 1, use_diffeq = false, kwargs...) #hide
-    return @test maximum(sol.entries) ≈ 0.041490419236077006 #hide
+    @test maximum(sol.entries) ≈ 0.041490419236077006 #hide
+    return nothing #hide
 end #hide
 end # module

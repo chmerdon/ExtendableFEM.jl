@@ -39,13 +39,15 @@ function u_exact!(result, qpinfo)
     if xx < 0.0
         xx = 0.0
     end
-    return result[1] = tx * xx^(1.0 / (m - 1.0))
+    result[1] = tx * xx^(1.0 / (m - 1.0))
+    return nothing
 end
 
 function kernel_nonlinear!(result, input, qpinfo)
     u, ∇u = input[1], input[2]
     m = qpinfo.params[1]
-    return result[1] = m * u^(m - 1) * ∇u
+    result[1] = m * u^(m - 1) * ∇u
+    return nothing
 end
 
 ## everything is wrapped in a main function
@@ -125,6 +127,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example106_NonlinearDiffusion, "example106.png") #hide
 function runtests(; T = 0.01, m = 2, kwargs...) #hide
     sol, plt = main(; T = T, m = m, use_diffeq = false, kwargs...) #hide
-    return @test maximum(sol.entries) ≈ 4.641588833612778 #hide
+    @test maximum(sol.entries) ≈ 4.641588833612778 #hide
+    return nothing #hide
 end #hide
 end

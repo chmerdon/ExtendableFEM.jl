@@ -31,14 +31,16 @@ using OrdinaryDiffEqSDIRK
 function ϕ_init!(result, qpinfo)
     x = qpinfo.x
     ϵ = qpinfo.params[1]
-    return result[1] = 1 / 2 * (tanh((sqrt((x[1] - 0.5)^2 + (x[2] - 0.75)^2) - 0.15) / (2 * ϵ)) + 1)
+    result[1] = 1 / 2 * (tanh((sqrt((x[1] - 0.5)^2 + (x[2] - 0.75)^2) - 0.15) / (2 * ϵ)) + 1)
+    return nothing
 end
 
 function velocity!(result, qpinfo)
     result[1] = 0.5
     result[2] = 1.0
     result[1] = -2 * cos(π * qpinfo.x[2]) * sin(π * qpinfo.x[2]) * sin(π * qpinfo.x[1])^2
-    return result[2] = 2 * cos(π * qpinfo.x[1]) * sin(π * qpinfo.x[1]) * sin(π * qpinfo.x[2])^2
+    result[2] = 2 * cos(π * qpinfo.x[1]) * sin(π * qpinfo.x[1]) * sin(π * qpinfo.x[2])^2
+    return nothing
 end
 
 
@@ -46,7 +48,8 @@ function kernel_convection!()
     u = zeros(Float64, 2)
     return function closure(result, input, qpinfo)
         velocity!(u, qpinfo)
-        return result[1] = dot(u, input)
+        result[1] = dot(u, input)
+        return nothing
     end
 end
 

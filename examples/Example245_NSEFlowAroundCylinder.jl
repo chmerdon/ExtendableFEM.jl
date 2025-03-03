@@ -40,7 +40,8 @@ const L, W, H = 0.1, 2.2, 0.41
 function inflow!(result, qpinfo)
     x = qpinfo.x
     result[1] = 4 * umax * x[2] * (H - x[2]) / (H * H)
-    return result[2] = 0.0
+    result[2] = 0.0
+    return nothing
 end
 
 ## hand constructed identity matrix for kernel to avoid allocations
@@ -233,6 +234,7 @@ function runtests() #hide
     dragliftpdiff, plt = main(; maxvol = 5.0e-3) #hide
     @test dragliftpdiff[1] ≈ 5.484046680249255 #hide
     @test dragliftpdiff[2] ≈ 0.006508486071976145 #hide
-    return @test dragliftpdiff[3] ≈ 0.1203441600631075 #hide
+    @test dragliftpdiff[3] ≈ 0.1203441600631075 #hide
+    return nothing #hide
 end #hide
 end

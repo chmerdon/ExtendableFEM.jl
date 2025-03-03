@@ -24,7 +24,8 @@ using ExtendableGrids
 using Test #hide
 
 function f!(fval, qpinfo)
-    return fval[1] = qpinfo.x[1] * qpinfo.x[2] * qpinfo.x[3]
+    fval[1] = qpinfo.x[1] * qpinfo.x[2] * qpinfo.x[3]
+    return nothing
 end
 
 function main(; μ = 1.0, nrefs = 3, Plotter = nothing, kwargs...)
@@ -53,6 +54,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example301_PoissonProblem, "example301.png") #hide
 function runtests() #hide
     sol, plt = main() #hide
-    return @test sum(sol.entries) ≈ 21.874305144549524 #hide
+    @test sum(sol.entries) ≈ 21.874305144549524 #hide
+    return nothing #hide
 end #hide
 end # module

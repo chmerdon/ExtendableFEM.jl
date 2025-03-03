@@ -41,7 +41,8 @@ end
 
 function boundarydata!(result, qpinfo)
     result[1] = 1
-    return result[2] = 0
+    result[2] = 0
+    return nothing
 end
 
 function initialgrid_cone()
@@ -117,6 +118,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example250_NSELidDrivenCavity, "example250.png") #hide
 function runtests() #hide
     sol, plt = main(; nrefs = 3, μ_final = 0.005) #hide
-    return @test sum(view(sol[1])) ≈ 9.501630403050289 #hide
+    @test sum(view(sol[1])) ≈ 9.501630403050289 #hide
+    return nothing #hide
 end #hide
 end # module

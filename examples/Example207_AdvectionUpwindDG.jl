@@ -50,20 +50,23 @@ using Test #hide
 function β!(result, qpinfo)
     x = qpinfo.x
     result[1] = - x[2]
-    return result[2] = x[1]
+    result[2] = x[1]
+    return nothing
 end
 
 ## exact solution
 function exact_u!(result, qpinfo)
     x = qpinfo.x
     r = qpinfo.params[1]
-    return result[1] = sqrt(x[1]^2 + x[2]^2) <= r ? 1 : 0
+    result[1] = sqrt(x[1]^2 + x[2]^2) <= r ? 1 : 0
+    return nothing
 end
 
 ## integrand of the advection bilinearform
 function advection_kernel!(result, input, qpinfo)
     β!(result, qpinfo)  # evaluate wind β
-    return result .*= input[1] # multiply with u_h
+    result .*= input[1] # multiply with u_h
+    return nothing
 end
 
 function outflow_kernel!(xgrid)
@@ -71,7 +74,8 @@ function outflow_kernel!(xgrid)
     return function closure(result, input, qpinfo)
         face = qpinfo.item
         β!(beta, qpinfo)
-        return result[1] = dot(beta, qpinfo.normal) * input[1]
+        result[1] = dot(beta, qpinfo.normal) * input[1]
+        return nothing
     end
 end
 
@@ -92,7 +96,8 @@ end
 ## prepare error calculation
 function exact_error!(result, u, qpinfo)
     exact_u!(result, qpinfo)
-    return result[1] = (result[1] - u[1])^2
+    result[1] = (result[1] - u[1])^2
+    return nothing
 end
 
 function main(; nref = 4, order = 0, r = 0.5, dg = true, Plotter = nothing, kwargs...)
@@ -175,6 +180,7 @@ generateplots = ExtendableFEM.default_generateplots(Example207_AdvectionUpwindDG
 function runtests() #hide
     ## test if P0-DG solution stays within bounds #hide
     sol, ~ = main(; order = 0, nrefs = 2) #hide
-    return @test norm(extrema(sol.entries) .- (0, 1)) < 1.0e-12  #hide
+    @test norm(extrema(sol.entries) .- (0, 1)) < 1.0e-12  #hide
+    return nothing #hide
 end #hide
 end # module

@@ -93,7 +93,8 @@ function linear_kernel!(result, input, qpinfo)
     result[6] = divw[1]
     result[7] = w[1] / K
     result[8] = w[2] / K
-    return result[9] = -p[1]
+    result[9] = -p[1]
+    return nothing
 end
 
 ## kernel for exact error calculation
@@ -214,6 +215,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example290_PoroElasticity, "example290.png") #hide
 function runtests() #hide
     L2errorU, plt = main(; nrefs = 4) #hide
-    return @test L2errorU ≈ 0.18232484430836826 #hide
+    @test L2errorU ≈ 0.18232484430836826 #hide
+    return nothing #hide
 end #hide
 end # module

@@ -52,7 +52,8 @@ function W!(result, F, qpinfo)
     F[9] += 1
     μ, λ = qpinfo.params[1], qpinfo.params[2]
     detF = -(F[3] * (F[5] * F[7] - F[4] * F[8]) + F[2] * ((-F[6]) * F[7] + F[4] * F[9]) + F[1] * (F[6] * F[8] - F[5] * F[9]))
-    return result[1] = μ / 2 * (dot(F, F) - 3 - 2 * log(detF)) + λ / 2 * (log(detF))^2
+    result[1] = μ / 2 * (dot(F, F) - 3 - 2 * log(detF)) + λ / 2 * (log(detF))^2
+    return nothing
 end
 
 ## derivative of energy functional (by ForwardDiff)

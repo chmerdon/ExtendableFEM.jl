@@ -49,7 +49,8 @@ function u!(result, qpinfo)
     if φ < 0
         φ += 2 * pi
     end
-    return result[1] = r2^(1 / 3) * sin(2 * φ / 3)
+    result[1] = r2^(1 / 3) * sin(2 * φ / 3)
+    return nothing
 end
 
 ## gradient of exact solution
@@ -63,7 +64,8 @@ function ∇u!(result, qpinfo)
     ∂r = 2 / 3 * r2^(-1 / 6) * sin(2 * φ / 3)
     ∂φ = 2 / 3 * r2^(-1 / 6) * cos(2 * φ / 3)
     result[1] = cos(φ) * ∂r - sin(φ) * ∂φ
-    return result[2] = sin(φ) * ∂r + cos(φ) * ∂φ
+    result[2] = sin(φ) * ∂r + cos(φ) * ∂φ
+    return nothing
 end
 
 ## kernel for exact error calculation
@@ -71,7 +73,8 @@ function exact_error!(result, u, qpinfo)
     u!(result, qpinfo)
     ∇u!(view(result, 2:3), qpinfo)
     result .-= u
-    return result .= result .^ 2
+    result .= result .^ 2
+    return nothing
 end
 
 ## kernel for equilibration error estimator
@@ -361,6 +364,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example211_LshapeAdaptiveEQPoissonProblem, "example211.png") #hide
 function runtests() #hide
     sol, plt = main(; maxdofs = 1000, order = 2) #hide
-    return @test length(sol.entries) == 8641 #hide
+    @test length(sol.entries) == 8641 #hide
+    return nothing #hide
 end #hide
 end

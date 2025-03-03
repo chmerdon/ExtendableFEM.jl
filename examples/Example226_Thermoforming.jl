@@ -80,7 +80,8 @@ function nonlinear_kernel!(result, input, qpinfo)
     result[2:3] = ∇u                                                                      # pattern: 2 / 3
     result[4] = k * T[1] - g(y[1] - u[1], κ, s)                                               # pattern: 1 4 7
     result[5:6] = ∇T                                                                      # pattern: 5 / 6
-    return result[7] = y[1] - Φ0(qpinfo.x) - β * bumpInUnitSquare(qpinfo.x) * T[1]           # pattern: 4 7
+    result[7] = y[1] - Φ0(qpinfo.x) - β * bumpInUnitSquare(qpinfo.x) * T[1]           # pattern: 4 7
+    return nothing
 end
 
 ## custom sparsity pattern for the jacobians of the nonlinear_kernel (Symbolcs cannot handle conditional jumps)
@@ -142,6 +143,7 @@ generateplots = ExtendableFEM.default_generateplots(Example226_Thermoforming, "e
 function runtests() #hide
     sol1, ~ = Example226_Thermoforming.main(; sparse_jacobians = true, N = 20) #hide
     sol2, ~ = Example226_Thermoforming.main(; sparse_jacobians = false, N = 20) #hide
-    return @test norm(sol1.entries - sol2.entries) ≈ 0 #hide
+    @test norm(sol1.entries - sol2.entries) ≈ 0 #hide
+    return nothing #hide
 end #hide
 end # module

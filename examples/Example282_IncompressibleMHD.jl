@@ -33,7 +33,8 @@ end
 function g!(result, qpinfo)
     x = qpinfo.x
     result[1] = sin(2 * pi * x[2]) * cos(pi * x[1])
-    return result[2] = 0
+    result[2] = 0
+    return nothing
 end
 
 function kernel_nonlinear!(result, u_ops, qpinfo)

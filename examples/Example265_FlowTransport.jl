@@ -49,10 +49,12 @@ using Test #hide
 function u_inlet!(result, qpinfo)
     x = qpinfo.x
     result[1] = 4 * x[2] * (1 - x[2])
-    return result[2] = 0
+    result[2] = 0
+    return nothing
 end
 function c_inlet!(result, qpinfo)
-    return result[1] = (1 - qpinfo.x[2]) * qpinfo.x[2]
+    result[1] = (1 - qpinfo.x[2]) * qpinfo.x[2]
+    return nothing
 end
 
 function kernel_stokes_standard!(result, u_ops, qpinfo)
@@ -62,16 +64,19 @@ function kernel_stokes_standard!(result, u_ops, qpinfo)
     result[2] = μ * ∇u[2]
     result[3] = μ * ∇u[3]
     result[4] = μ * ∇u[4] - p[1]
-    return result[5] = -(∇u[1] + ∇u[4])
+    result[5] = -(∇u[1] + ∇u[4])
+    return nothing
 end
 
 function kernel_convection!(result, ∇T, u, qpinfo)
-    return result[1] = ∇T[1] * u[1] + ∇T[2] * u[2]
+    result[1] = ∇T[1] * u[1] + ∇T[2] * u[2]
+    return nothing
 end
 
 function kernel_inlet!(result, input, qpinfo)
     c_inlet!(result, qpinfo)
-    return result[1] *= -input[1]
+    result[1] *= -input[1]
+    return nothing
 end
 
 
@@ -224,6 +229,7 @@ generateplots = ExtendableFEM.default_generateplots(Example265_FlowTransport, "e
 function runtests() #hide
     sol, plt = main() #hide
     @test minimum(view(sol[3])) >= 0 #hide
-    return @test maximum(view(sol[3])) <= 0.25 #hide
+    @test maximum(view(sol[3])) <= 0.25 #hide
+    return nothing #hide
 end #hide
 end # module

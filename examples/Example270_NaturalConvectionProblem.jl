@@ -74,7 +74,8 @@ end
 
 function T_bottom!(result, qpinfo)
     x = qpinfo.x
-    return result[1] = 2 * (1 - cos(2 * π * x[1]))
+    result[1] = 2 * (1 - cos(2 * π * x[1]))
+    return nothing
 end
 
 function main(;
@@ -153,6 +154,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example270_NaturalConvectionProblem, "example270.png") #hide
 function runtests() #hide
     Nu, plt = main(; nrefs = 4) #hide
-    return @test Nu ≈ 17.641450080135293 #hide
+    @test Nu ≈ 17.641450080135293 #hide
+    return nothing #hide
 end #hide
 end # module

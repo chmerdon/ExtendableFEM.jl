@@ -41,7 +41,8 @@ using Test #hide
 function u!(result, qpinfo)
     x = qpinfo.x
     result[1] = sin(2 * pi * x[1]) * sin(2 * pi * x[2])
-    return result[2] = cos(2 * pi * x[1]) * cos(2 * pi * x[2])
+    result[2] = cos(2 * pi * x[1]) * cos(2 * pi * x[2])
+    return nothing
 end
 
 ## right-hand side f := -μ Δu + (u⋅∇)u + ∇p
@@ -50,14 +51,16 @@ function f!(μ)
     return function closure(result, qpinfo)
         x = qpinfo.x
         result[1] = (μ * 8 * pi^2 + α[1]) * sin(2 * pi * x[1]) * sin(2 * pi * x[2])
-        return result[2] = (μ * 8 * pi^2 + α[2]) * cos(2 * pi * x[1]) * cos(2 * pi * x[2])
+        result[2] = (μ * 8 * pi^2 + α[2]) * cos(2 * pi * x[1]) * cos(2 * pi * x[2])
+        return nothing
     end
 end
 
 ## exact pressure
 function p!(result, qpinfo)
     x = qpinfo.x
-    return result[1] = (cos(4 * pi * x[1]) - cos(4 * pi * x[2])) / 4
+    result[1] = (cos(4 * pi * x[1]) - cos(4 * pi * x[2])) / 4
+    return nothing
 end
 
 function kernel_nonlinear!(result, u_ops, qpinfo)
@@ -125,6 +128,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example252_NSEPlanarLatticeFlow, "example252.png") #hide
 function runtests() #hide
     L2errorU, plt = main(; nrefs = 3) #hide
-    return @test L2errorU ≈ 0.11892169556349004 #hide
+    @test L2errorU ≈ 0.11892169556349004 #hide
+    return nothing #hide
 end #hide
 end # module

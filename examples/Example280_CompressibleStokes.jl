@@ -177,13 +177,15 @@ function main(;
 end
 
 function stab_kernel!(result, p, u, qpinfo)
-    return result[1] = p[1] #*abs(u[1] + u[2])
+    result[1] = p[1] #*abs(u[1] + u[2])
+    return nothing
 end
 
 ## kernel for (uϱ, ∇λ) ON_CELLS in continuity equation
 function kernel_continuity!(result, ϱ, u, qpinfo)
     result[1] = ϱ[1] * u[1]
-    return result[2] = ϱ[1] * u[2]
+    result[2] = ϱ[1] * u[2]
+    return nothing
 end
 
 ## kernel for (u⋅n ϱ^upw, λ) ON_IFACES in continuity equation
@@ -214,11 +216,13 @@ end
 ## kernel for gravity term in testcase 1
 function standard_gravity!(result, ϱ, qpinfo)
     result[1] = 0
-    return result[2] = -ϱ[1]
+    result[2] = -ϱ[1]
+    return nothing
 end
 
 function energy_kernel!(result, u, qpinfo)
-    return result[1] = dot(u, u) / 2
+    result[1] = dot(u, u) / 2
+    return nothing
 end
 
 function load_testcase_data(testcase::Int = 1; laplacian_in_rhs = true, M = 1, c = 1, μ = 1, ufac = 100)
@@ -324,6 +328,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example280_CompressibleStokes, "example280.png") #hide
 function runtests() #hide
     Results, plt = main(; nrefs = 2) #hide
-    return @test Results[end, 1] ≈ 6.732891488265023e-7 #hide
+    @test Results[end, 1] ≈ 6.732891488265023e-7 #hide
+    return nothing #hide
 end #hide
 end

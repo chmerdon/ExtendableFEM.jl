@@ -34,16 +34,19 @@ const ν = 1.0e-5
 
 function u!(result, qpinfo)
     x = qpinfo.x
-    return result[1] = x[1] * x[2] * (x[1] - 1) * (x[2] - 1) + x[1]
+    result[1] = x[1] * x[2] * (x[1] - 1) * (x[2] - 1) + x[1]
+    return nothing
 end
 function ∇u!(result, qpinfo)
     x = qpinfo.x
     result[1] = x[2] * (2 * x[1] - 1) * (x[2] - 1) + 1
-    return result[2] = x[1] * (2 * x[2] - 1) * (x[1] - 1)
+    result[2] = x[1] * (2 * x[2] - 1) * (x[1] - 1)
+    return nothing
 end
 function Δu!(result, qpinfo)
     x = qpinfo.x
-    return result[1] = 2 * (x[2] * (x[2] - 1) + x[1] * (x[1] - 1))
+    result[1] = 2 * (x[2] * (x[2] - 1) + x[1] * (x[1] - 1))
+    return nothing
 end
 
 function rhs()
@@ -54,7 +57,8 @@ function rhs()
         ∇u!(∇u, qpinfo)
         u!(u, qpinfo)
         Δu!(Δu, qpinfo)
-        return result[1] = -ν * Δu[1] + α * u[1] + dot(β, ∇u)
+        result[1] = -ν * Δu[1] + α * u[1] + dot(β, ∇u)
+        return nothing
     end
 end
 
@@ -71,12 +75,14 @@ function exact_error!(result, u, qpinfo)
     u!(result, qpinfo)
     ∇u!(view(result, 2:3), qpinfo)
     result .-= u
-    return result .= result .^ 2
+    result .= result .^ 2
+    return nothing
 end
 
 ## stab_kernel!
 function stab_kernel!(result, ∇u, qpinfo)
-    return result .= ∇u .* qpinfo.volume^2
+    result .= ∇u .* qpinfo.volume^2
+    return nothing
 end
 
 
@@ -139,6 +145,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example220_ReactionConvectionDiffusion, "example220.png") #hide
 function runtests() #hide
     Results, plt = main(; nlevels = 2) #hide
-    return @test Results[end, 1] ≈ 0.0001510021661291585 #hide
+    @test Results[end, 1] ≈ 0.0001510021661291585 #hide
+    return nothing #hide
 end #hide
 end # module
