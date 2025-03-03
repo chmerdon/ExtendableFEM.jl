@@ -85,10 +85,12 @@ function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quad
         exact_u!(result, qpinfo)
         exact_∇u!(view(result, 2:3), qpinfo)
         result .-= u
-        return result .= result .^ 2
+        result .= result .^ 2
+        return nothing
     end
     function dgjumps!(result, u, qpinfo)
-        return result .= u[1]^2 / qpinfo.volume
+        result .= u[1]^2 / qpinfo.volume
+        return nothing
     end
     ErrorIntegratorExact = ItemIntegrator(exact_error!, [id(u), grad(u)]; quadorder = 2 * (order + 1), params = [μ], kwargs...)
     DGJumpsIntegrator = ItemIntegratorDG(dgjumps!, [jump(id(u))]; entities = ON_IFACES, kwargs...)
@@ -109,27 +111,32 @@ function main(; dg = true, μ = 1.0, τ = 10.0, nrefs = 4, order = 2, bonus_quad
 end
 
 function dg_kernel(result, input, qpinfo)
-    return result[1] = dot(input, qpinfo.normal)
+    result[1] = dot(input, qpinfo.normal)
+    return nothing
 end
 function dg_kernel_bnd(uDb! = nothing)
     return function closure(result, qpinfo)
         uDb!(result, qpinfo)
-        return result[1:2] = result[1] .* qpinfo.normal
+        result[1:2] = result[1] .* qpinfo.normal
+        return nothing
     end
 end
 function dg_kernel2(result, input, qpinfo)
-    return result .= input / qpinfo.volume
+    result .= input / qpinfo.volume
+    return nothing
 end
 function dg_kernel2_bnd(uDb! = nothing)
     return function closure(result, qpinfo)
         uDb!(result, qpinfo)
-        return result /= qpinfo.volume
+        result /= qpinfo.volume
+        return nothing
     end
 end
 
 generateplots = ExtendableFEM.default_generateplots(Example203_PoissonProblemDG, "example203.png") #hide
 function runtests(; kwargs...) #hide
     L2error, ~ = main(; μ = 0.25, nrefs = 2, order = 2, kwargs...) #hide
-    return @test L2error ≈ 0.00020400470505497443 #hide
+    @test L2error ≈ 0.00020400470505497443 #hide
+    return nothing
 end #hide
 end # module

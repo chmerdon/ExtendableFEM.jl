@@ -93,7 +93,8 @@ function linear_kernel!(result, input, qpinfo)
     result[6] = divw[1]
     result[7] = w[1] / K
     result[8] = w[2] / K
-    return result[9] = -p[1]
+    result[9] = -p[1]
+    return nothing
 end
 
 ## kernel for exact error calculation

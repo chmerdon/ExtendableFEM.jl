@@ -41,7 +41,8 @@ end
 
 function boundarydata!(result, qpinfo)
     result[1] = 1
-    return result[2] = 0
+    result[2] = 0
+    return nothing
 end
 
 function initialgrid_cone()

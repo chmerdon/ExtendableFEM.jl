@@ -78,7 +78,8 @@ function kernel_stokes_standard!(result, u_ops, qpinfo)
     result[2] = μ * ∇u[2]
     result[3] = μ * ∇u[3]
     result[4] = μ * ∇u[4] + p[1]
-    return result[5] = (∇u[1] + ∇u[4])
+    result[5] = (∇u[1] + ∇u[4])
+    return nothing
 end
 
 ## everything is wrapped in a main function

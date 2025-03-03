@@ -40,7 +40,8 @@ const L, W, H = 0.1, 2.2, 0.41
 function inflow!(result, qpinfo)
     x = qpinfo.x
     result[1] = 4 * umax * x[2] * (H - x[2]) / (H * H)
-    return result[2] = 0.0
+    result[2] = 0.0
+    return nothing
 end
 
 ## hand constructed identity matrix for kernel to avoid allocations

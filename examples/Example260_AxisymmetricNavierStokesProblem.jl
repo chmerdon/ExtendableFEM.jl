@@ -84,12 +84,14 @@ end
 function u!(result, qpinfo)
     x = qpinfo.x
     result[1] = x[1]
-    return result[2] = -2 * x[2]
+    result[2] = -2 * x[2]
+    return nothing
 end
 
 function kernel_l2div(result, u_ops, qpinfo)
     u, divu = view(u_ops, 1:2), view(u_ops, 3)
-    return result[1] = (qpinfo.x[1] * divu[1] + u[1])^2
+    result[1] = (qpinfo.x[1] * divu[1] + u[1])^2
+    return nothing
 end
 
 

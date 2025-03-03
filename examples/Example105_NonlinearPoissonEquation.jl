@@ -32,18 +32,21 @@ using Test #hide
 
 ## rigt-hand side data
 function f!(result, qpinfo)
-    return result[1] = qpinfo.x[1] < 0.5 ? -1 : 1
+    result[1] = qpinfo.x[1] < 0.5 ? -1 : 1
+    return nothing
 end
 ## boundary data
 function boundary_data!(result, qpinfo)
-    return result[1] = qpinfo.x[1]
+    result[1] = qpinfo.x[1]
+    return nothing
 end
 
 ## kernel for the (nonlinear) reaction-convection-diffusion operator
 function nonlinear_kernel!(result, input, qpinfo)
     u, ∇u, ϵ = input[1], input[2], qpinfo.params[1]
     result[1] = exp(u) - exp(-u)
-    return result[2] = ϵ * ∇u
+    result[2] = ϵ * ∇u
+    return nothing
 end
 
 ## everything is wrapped in a main function
@@ -73,6 +76,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example105_NonlinearPoissonEquation, "example105.png") #hide
 function runtests() #hide
     sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide
-    return @test maximum(sol.entries) ≈ 0.4812118250102083 #hide
+    @test maximum(sol.entries) ≈ 0.4812118250102083 #hide
+    return nothing
 end #hide
 end

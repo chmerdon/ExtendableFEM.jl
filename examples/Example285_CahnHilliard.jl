@@ -36,7 +36,8 @@ const f = (c) -> 100 * c^2 * (1 - c)^2
 const dfdc = (c) -> ForwardDiff.derivative(f, c)
 
 function c0!(result, qpinfo)
-    return result[1] = 0.63 + 0.02 * (0.5 - rand())
+    result[1] = 0.63 + 0.02 * (0.5 - rand())
+    return nothing
 end
 
 ## everything is wrapped in a main function

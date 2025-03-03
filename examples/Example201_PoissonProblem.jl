@@ -31,7 +31,8 @@ u = Unknown("u"; name = "potential")
 
 ## define data functions
 function f!(fval, qpinfo)
-    return fval[1] = qpinfo.x[1] * qpinfo.x[2]
+    fval[1] = qpinfo.x[1] * qpinfo.x[2]
+    return nothing
 end
 
 function main(; μ = 1.0, nrefs = 4, order = 2, Plotter = nothing, parallel = false, npart = parallel ? 8 : 1, kwargs...)
@@ -63,6 +64,7 @@ function runtests() #hide
     sol, plt = main(; μ = 1.0, nrefs = 2, parallel = false, order = 2, npart = 2) #hide
     @test sum(sol.entries) ≈ 1.1140313632246377 #hide
     sol_parallel, plt = main(; μ = 1.0, nrefs = 2, order = 2, parallel = true, npart = 2) #hide
-    return @assert sum((sol_parallel.entries .- sol.entries) .^ 2) ≈ 0.0
+    @assert sum((sol_parallel.entries .- sol.entries) .^ 2) ≈ 0.0
+    return nothing
 end #hide
 end # module

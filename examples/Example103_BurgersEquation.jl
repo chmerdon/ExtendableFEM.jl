@@ -28,12 +28,14 @@ using Test #hide
 
 ## nonlinear kernel, i.e. f(u)
 function f!(result, input, qpinfo)
-    return result[1] = input[1]^2 / 2
+    result[1] = input[1]^2 / 2
+    return nothing
 end
 
 ## initial condition
 function uinit!(result, qpinfo)
-    return result[1] = abs(qpinfo.x[1]) < 0.5 ? 1 : 0
+    result[1] = abs(qpinfo.x[1]) < 0.5 ? 1 : 0
+    return nothing
 end
 
 ## everything is wrapped in a main function
@@ -107,6 +109,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example103_BurgersEquation, "example103.png") #hide
 function runtests() #hide
     sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide
-    return @test maximum(sol.entries) ≈ 0.9380540612507218 #hide
+    @test maximum(sol.entries) ≈ 0.9380540612507218 #hide
+    return nothing
 end #hide
 end

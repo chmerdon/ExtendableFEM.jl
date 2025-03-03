@@ -33,7 +33,8 @@ function u!(result, qpinfo)
     if φ < 0
         φ += 2 * pi
     end
-    return result[1] = r2^(1 / 3) * sin(2 * φ / 3)
+    result[1] = r2^(1 / 3) * sin(2 * φ / 3)
+    return nothing
 end
 
 ## gradient of exact solution
@@ -47,7 +48,8 @@ function ∇u!(result, qpinfo)
     ∂r = 2 / 3 * r2^(-1 / 6) * sin(2 * φ / 3)
     ∂φ = 2 / 3 * r2^(-1 / 6) * cos(2 * φ / 3)
     result[1] = cos(φ) * ∂r - sin(φ) * ∂φ
-    return result[2] = sin(φ) * ∂r + cos(φ) * ∂φ
+    result[2] = sin(φ) * ∂r + cos(φ) * ∂φ
+    return nothing
 end
 
 ## kernel for exact error calculation
@@ -55,22 +57,26 @@ function exact_error!(result, u, qpinfo)
     u!(result, qpinfo)
     ∇u!(view(result, 2:3), qpinfo)
     result .-= u
-    return result .= result .^ 2
+    result .= result .^ 2
+    return nothing
 end
 
 ## kernel for face interpolation of normal jumps of gradient
 function gradnormalflux!(result, ∇u, qpinfo)
-    return result[1] = dot(∇u, qpinfo.normal)
+    result[1] = dot(∇u, qpinfo.normal)
+    return nothing
 end
 
 ## kernel for face refinement indicator
 function η_face!(result, gradjump, qpinfo)
-    return result .= qpinfo.volume * gradjump .^ 2
+    result .= qpinfo.volume * gradjump .^ 2
+    return nothing
 end
 
 ## kernel for cell refinement indicator
 function η_cell!(result, Δu, qpinfo)
-    return result .= qpinfo.volume * Δu .^ 2
+    result .= qpinfo.volume * Δu .^ 2
+    return nothing
 end
 
 function main(; maxdofs = 4000, θ = 0.5, μ = 1.0, nrefs = 1, order = 2, Plotter = nothing, kwargs...)
@@ -179,6 +185,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example210_LshapeAdaptivePoissonProblem, "example210.png") #hide
 function runtests() #hide
     sol, plt = main(; maxdofs = 1000, order = 2) #hide
-    return @test length(sol.entries) == 1007 #hide
+    @test length(sol.entries) == 1007 #hide
+    return nothing
 end #hide
 end # module

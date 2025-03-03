@@ -36,16 +36,19 @@ using Test #
 
 
 function boundary_conditions!(result, qpinfo)
-    return result[1] = 1 - qpinfo.x[1] - qpinfo.x[2] # used for both subsolutions
+    result[1] = 1 - qpinfo.x[1] - qpinfo.x[2] # used for both subsolutions
+    return nothing
 end
 
 function interface_condition!(result, u, qpinfo)
     result[1] = u[1] - u[2]
-    return result[2] = -result[1]
+    result[2] = -result[1]
+    return nothing
 end
 
 function interface_condition_LM!(result, u, qpinfo)
-    return result[1] = (u[1] - u[2])
+    result[1] = (u[1] - u[2])
+    return nothing
 end
 
 
@@ -111,7 +114,8 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example206_CoupledSubGridProblems, "example206.png") #hide
 
 function jump_l2norm!(result, u, qpinfo) #hide
-    return result[1] = (u[1] - u[2])^2 #hide
+    result[1] = (u[1] - u[2])^2 #hide
+    return nothing
 end #hide
 function runtests() #hide
     ## test if jump at interface vanishes for large penalty #hide
@@ -119,6 +123,7 @@ function runtests() #hide
     jump_integrator = ItemIntegrator(jump_l2norm!, [id(1), id(2)]; entities = ON_BFACES, regions = [5], resultdim = 1, quadorder = 4) #hide
     jump_error = sqrt(sum(evaluate(jump_integrator, sol))) #hide
     @info "||[u_1 - u_2]|| = $(jump_error)" #hide
-    return @test jump_error < 1.0e-8 #hide
+    @test jump_error < 1.0e-8 #hide
+    return nothing
 end #hide
 end #module

@@ -74,7 +74,8 @@ end
 
 function T_bottom!(result, qpinfo)
     x = qpinfo.x
-    return result[1] = 2 * (1 - cos(2 * π * x[1]))
+    result[1] = 2 * (1 - cos(2 * π * x[1]))
+    return nothing
 end
 
 function main(;

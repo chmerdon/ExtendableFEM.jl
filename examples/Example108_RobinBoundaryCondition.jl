@@ -27,10 +27,12 @@ using Test #hide
 
 ## data and exact solution
 function f!(result, qpinfo)
-    return result[1] = exp(2 * qpinfo.x[1])
+    result[1] = exp(2 * qpinfo.x[1])
+    return nothing
 end
 function u!(result, qpinfo)
-    return result[1] = exp(qpinfo.x[1])
+    result[1] = exp(qpinfo.x[1])
+    return nothing
 end
 
 ## kernel for the (nonlinear) reaction-convection-diffusion operator
@@ -81,12 +83,14 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example108_RobinBoundaryCondition, "example108.png") #hide
 function exact_error!(result, u, qpinfo) #hide
     u!(result, qpinfo) #hide
-    return result .= (result .- u) .^ 2 #hide
+    result .= (result .- u) .^ 2 #hide
+    return nothing
 end #hide
 function runtests(; kwargs...) #hide
     sol, plt = main(; order = 2, kwargs...) #hide
     L2error = ItemIntegrator(exact_error!, [id(1)]; quadorder = 4, kwargs...) #hide
     error = sqrt(sum(evaluate(L2error, sol))) #hide
-    return @test error ≈ 9.062544216508815e-6 #hide
+    @test error ≈ 9.062544216508815e-6 #hide
+    return nothing
 end #hide
 end
