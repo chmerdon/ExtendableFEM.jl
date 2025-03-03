@@ -84,13 +84,13 @@ generateplots = ExtendableFEM.default_generateplots(Example108_RobinBoundaryCond
 function exact_error!(result, u, qpinfo) #hide
     u!(result, qpinfo) #hide
     result .= (result .- u) .^ 2 #hide
-    return nothing
+    return nothing #hide
 end #hide
 function runtests(; kwargs...) #hide
     sol, plt = main(; order = 2, kwargs...) #hide
     L2error = ItemIntegrator(exact_error!, [id(1)]; quadorder = 4, kwargs...) #hide
     error = sqrt(sum(evaluate(L2error, sol))) #hide
     @test error ≈ 9.062544216508815e-6 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end

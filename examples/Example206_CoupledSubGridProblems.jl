@@ -115,7 +115,7 @@ generateplots = ExtendableFEM.default_generateplots(Example206_CoupledSubGridPro
 
 function jump_l2norm!(result, u, qpinfo) #hide
     result[1] = (u[1] - u[2])^2 #hide
-    return nothing
+    return nothing #hide
 end #hide
 function runtests() #hide
     ## test if jump at interface vanishes for large penalty #hide
@@ -124,6 +124,6 @@ function runtests() #hide
     jump_error = sqrt(sum(evaluate(jump_integrator, sol))) #hide
     @info "||[u_1 - u_2]|| = $(jump_error)" #hide
     @test jump_error < 1.0e-8 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end #module

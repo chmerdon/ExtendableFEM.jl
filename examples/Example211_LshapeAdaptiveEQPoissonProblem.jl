@@ -365,6 +365,6 @@ generateplots = ExtendableFEM.default_generateplots(Example211_LshapeAdaptiveEQP
 function runtests() #hide
     sol, plt = main(; maxdofs = 1000, order = 2) #hide
     @test length(sol.entries) == 8641 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end

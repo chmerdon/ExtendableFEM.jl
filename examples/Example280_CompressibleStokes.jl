@@ -328,6 +328,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example280_CompressibleStokes, "example280.png") #hide
 function runtests() #hide
     Results, plt = main(; nrefs = 2) #hide
-    return @test Results[end, 1] ≈ 6.732891488265023e-7 #hide
+    @test Results[end, 1] ≈ 6.732891488265023e-7 #hide
+    return nothing #hide
 end #hide
 end

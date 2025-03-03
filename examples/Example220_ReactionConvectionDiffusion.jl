@@ -146,6 +146,6 @@ generateplots = ExtendableFEM.default_generateplots(Example220_ReactionConvectio
 function runtests() #hide
     Results, plt = main(; nlevels = 2) #hide
     @test Results[end, 1] ≈ 0.0001510021661291585 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end # module

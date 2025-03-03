@@ -75,6 +75,6 @@ generateplots = ExtendableFEM.default_generateplots(Example225_ObstacleProblem, 
 function runtests() #hide
     sol, plt = main(; μ = 1.0, nrefs = 2, order = 2) #hide
     @test maximum(sol.entries) ≈ 0.0033496680638875204 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end # module

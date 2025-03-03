@@ -154,6 +154,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example260_AxisymmetricNavierStokesProblem, "example260.png") #hide
 function runtests() #hide
     errors, plt = main(; nrefs = 1) #hide
-    return @test all(errors .<= 1.0e-12) #hide
+    @test all(errors .<= 1.0e-12) #hide
+    return nothing #hide
 end #hide
 end # module

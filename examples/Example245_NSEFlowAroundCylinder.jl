@@ -234,6 +234,7 @@ function runtests() #hide
     dragliftpdiff, plt = main(; maxvol = 5.0e-3) #hide
     @test dragliftpdiff[1] ≈ 5.484046680249255 #hide
     @test dragliftpdiff[2] ≈ 0.006508486071976145 #hide
-    return @test dragliftpdiff[3] ≈ 0.1203441600631075 #hide
+    @test dragliftpdiff[3] ≈ 0.1203441600631075 #hide
+    return nothing #hide
 end #hide
 end

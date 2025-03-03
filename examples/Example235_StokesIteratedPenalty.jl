@@ -120,6 +120,6 @@ function runtests(; μ = 1.0) #hide
     error_p = sqrt(sum(view(error, 3, :))) #hide
     @test error_u ≈ 3.990987355891888e-5 #hide
     @test error_p ≈ 0.010437891104305222 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end

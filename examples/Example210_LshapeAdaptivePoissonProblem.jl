@@ -186,6 +186,6 @@ generateplots = ExtendableFEM.default_generateplots(Example210_LshapeAdaptivePoi
 function runtests() #hide
     sol, plt = main(; maxdofs = 1000, order = 2) #hide
     @test length(sol.entries) == 1007 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end # module

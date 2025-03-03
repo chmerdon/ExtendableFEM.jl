@@ -54,6 +54,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example301_PoissonProblem, "example301.png") #hide
 function runtests() #hide
     sol, plt = main() #hide
-    return @test sum(sol.entries) ≈ 21.874305144549524 #hide
+    @test sum(sol.entries) ≈ 21.874305144549524 #hide
+    return nothing #hide
 end #hide
 end # module

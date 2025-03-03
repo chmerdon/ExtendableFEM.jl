@@ -181,6 +181,6 @@ function runtests() #hide
     ## test if P0-DG solution stays within bounds #hide
     sol, ~ = main(; order = 0, nrefs = 2) #hide
     @test norm(extrema(sol.entries) .- (0, 1)) < 1.0e-12  #hide
-    return nothing
+    return nothing #hide
 end #hide
 end # module

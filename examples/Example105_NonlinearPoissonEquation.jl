@@ -77,6 +77,6 @@ generateplots = ExtendableFEM.default_generateplots(Example105_NonlinearPoissonE
 function runtests() #hide
     sol, plt = main(; h = 0.01, τ = 0.1, T = 1, use_diffeq = false) #hide
     @test maximum(sol.entries) ≈ 0.4812118250102083 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end

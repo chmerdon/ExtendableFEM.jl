@@ -229,6 +229,7 @@ generateplots = ExtendableFEM.default_generateplots(Example265_FlowTransport, "e
 function runtests() #hide
     sol, plt = main() #hide
     @test minimum(view(sol[3])) >= 0 #hide
-    return @test maximum(view(sol[3])) <= 0.25 #hide
+    @test maximum(view(sol[3])) <= 0.25 #hide
+    return nothing #hide
 end #hide
 end # module

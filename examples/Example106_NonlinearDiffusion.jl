@@ -128,6 +128,6 @@ generateplots = ExtendableFEM.default_generateplots(Example106_NonlinearDiffusio
 function runtests(; T = 0.01, m = 2, kwargs...) #hide
     sol, plt = main(; T = T, m = m, use_diffeq = false, kwargs...) #hide
     @test maximum(sol.entries) ≈ 4.641588833612778 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end

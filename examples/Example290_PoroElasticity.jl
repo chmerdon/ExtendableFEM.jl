@@ -215,6 +215,7 @@ end
 generateplots = ExtendableFEM.default_generateplots(Example290_PoroElasticity, "example290.png") #hide
 function runtests() #hide
     L2errorU, plt = main(; nrefs = 4) #hide
-    return @test L2errorU ≈ 0.18232484430836826 #hide
+    @test L2errorU ≈ 0.18232484430836826 #hide
+    return nothing #hide
 end #hide
 end # module

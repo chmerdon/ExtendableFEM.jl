@@ -81,6 +81,6 @@ generateplots = ExtendableFEM.default_generateplots(Example202_MixedPoissonProbl
 function runtests() #hide
     sol, plt = main(; μ = 0.25, order = 0, nrefs = 2) #hide
     @test maximum(view(sol[1])) ≈ 0.08463539106946043 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end # module

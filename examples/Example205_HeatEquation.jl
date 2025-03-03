@@ -93,6 +93,6 @@ generateplots = ExtendableFEM.default_generateplots(Example205_HeatEquation, "ex
 function runtests(; verbosity = -1, kwargs...) #hide
     sol, plt = main(; nrefs = 2, T = 1, use_diffeq = false, kwargs...) #hide
     @test maximum(sol.entries) ≈ 0.041490419236077006 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end # module

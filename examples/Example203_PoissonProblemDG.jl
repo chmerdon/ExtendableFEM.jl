@@ -137,6 +137,6 @@ generateplots = ExtendableFEM.default_generateplots(Example203_PoissonProblemDG,
 function runtests(; kwargs...) #hide
     L2error, ~ = main(; μ = 0.25, nrefs = 2, order = 2, kwargs...) #hide
     @test L2error ≈ 0.00020400470505497443 #hide
-    return nothing
+    return nothing #hide
 end #hide
 end # module

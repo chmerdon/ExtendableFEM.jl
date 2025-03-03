@@ -459,6 +459,7 @@ generateplots = ExtendableFEM.default_generateplots(Example240_SVRTEnrichment, "
 function runtests() #hide
     Results, plt = main(; nrefs = 2) #hide
     @test Results[end, 1] ≈ 0.09600693353585522 #hide
-    return @test Results[end, 5] < 1.0e-9 #hide
+    @test Results[end, 5] < 1.0e-9 #hide
+    return nothing #hide
 end #hide
 end # module
