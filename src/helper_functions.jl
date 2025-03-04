@@ -178,7 +178,8 @@ Input:
  - b_to: boundary region of the grid with dofs to replace the dofs in b_from
  - give_opposite! Function in (y,x)
  - mask: (optional) vector of masking components
- . sparsity_tol: threshold for treating an interpolated value as zero
+ - sparsity_tol: threshold for treating an interpolated value as zero
+ - heuristic_search: determine suitable interpolation faces on b_to for each face in b_from
 
 give_opposite!(y,x) has to be defined in a way that for each x ∈ b_from the resulting y is in the opposite boundary.
 For each x in the grid, the resulting y has to be in the grid, too: incorporate some mirroring of the coordinates.
@@ -199,7 +200,8 @@ function get_periodic_coupling_matrix(
         b_to,
         give_opposite!::Function;
         mask = :auto,
-        sparsity_tol = 1.0e-12
+        sparsity_tol = 1.0e-12,
+        heuristic_search = true
     )
 
     @info "Computing periodic coupling matrix. This may take a while."
@@ -266,11 +268,17 @@ function get_periodic_coupling_matrix(
     # face numbers of the boundary faces
     face_numbers_of_bfaces = xgrid[BFaceFaces]
 
+    # type of indices
+    Ti = ExtendableGrids.index_type(xgrid)
+
     # find all faces in b_to
-    faces_in_b_to = Int[]
+    faces_in_b_to = Ti[]
+    faces_in_b_from = Ti[]
     for (i, region) in enumerate(boundary_regions)
         if region == b_to
             push!(faces_in_b_to, face_numbers_of_bfaces[i])
+        elseif region == b_from
+            push!(faces_in_b_from, face_numbers_of_bfaces[i])
         end
     end
 
@@ -285,6 +293,64 @@ function get_periodic_coupling_matrix(
         @assert length(mask) == ncomponents "component mask has to match number of components"
     end
 
+    # do the intervals a=[a1,a2] and b=[b1,b2] overlap?
+    safety = 1.0e-12 # we would be sad if we miss an overlap due to rounding errors
+    do_intervals_overlap(a, b) = a[1] ≤ b[2] + safety && b[1] ≤ a[2] + safety
+
+    # do the boxes 𝑓 and 𝑔 overlap?
+    # we provide the Vector of the coordinate intervals
+    function do_boxes_overlap(box_f::AbstractVector, box_g::AbstractVector)
+        for i in eachindex(box_f)
+            if !do_intervals_overlap(box_f[i], box_g[i])
+                return false
+            end
+        end
+
+        # all coordinates overlap
+        return true
+    end
+
+    dummy = zeros(size(xgrid[Coordinates], 1))
+
+    # flip a face to the other side using the give_opposite! function
+    # Warning: this overwrites the face
+    function transfer_face!(face::AbstractMatrix)
+        for i in axes(face, 2)
+            @views coord = face[:, i]
+            give_opposite!(dummy, coord)
+            @views face[:, i] .= dummy
+        end
+        return
+    end
+
+    # precompute approximate search region for each boundary face in b_from
+    search_areas = Dict{Ti, Vector{Ti}}()
+    if heuristic_search
+        for face_from in faces_in_b_from
+            # get from_face coords (explicit copy)
+            coords_from = xgrid[Coordinates][:, xgrid[FaceNodes][:, face_from]]
+
+            # transfer the coords_from to the other side
+            transfer_face!(coords_from)
+
+            # get the extrama in each component ( = bounding box of the face)
+            @views box_from = extrema(coords_from, dims = (2))[:]
+
+            for face_to in faces_in_b_to
+                @views coords_to = xgrid[Coordinates][:, xgrid[FaceNodes][:, face_to]]
+                @views box_to = extrema(coords_to, dims = (2))[:]
+
+                if do_boxes_overlap(box_from, box_to)
+                    if !haskey(search_areas, face_from)
+                        search_areas[face_from] = []
+                    end
+                    push!(search_areas[face_from], face_to)
+                end
+            end
+        end
+    end
+
+    # loop over boundary face indices: we need this index for dofs_on_boundary
     for i_boundary_face in 1:n_boundary_faces
 
         # for each boundary face: check if in b_from
@@ -308,7 +374,7 @@ function get_periodic_coupling_matrix(
                     fe_vector_target[1],
                     fe_vector,
                     give_opposite!,
-                    faces_in_b_to
+                    heuristic_search ? search_areas[face_numbers_of_bfaces[i_boundary_face]] : faces_in_b_to
                 )
 
                 # deactivate entry
