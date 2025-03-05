@@ -16,7 +16,7 @@ function get_periodic_coupling_info(
         b2,
         is_opposite::Function;
         factor_vectordofs = "auto",
-        factor_components = "auto"
+        factor_components = "auto",
     )
 
     FEType = eltype(FES)
@@ -159,15 +159,15 @@ end
 
 
 """
-    get_periodic_coupling_matrix(
-        FES::FESpace,
-        xgrid::ExtendableGrid,
-        b_from,
-        b_to,
-        give_opposite!::Function;
-        mask = :auto,
-        sparsity_tol = 1.0e-12
-    )
+	get_periodic_coupling_matrix(
+		FES::FESpace,
+		xgrid::ExtendableGrid,
+		b_from,
+		b_to,
+		give_opposite!::Function;
+		mask = :auto,
+		sparsity_tol = 1.0e-12
+	)
 
 Compute a coupling information for each dof on one boundary as a linear combination of dofs on another boundary
 
@@ -188,8 +188,8 @@ Example: If b_from is at x[1] = 0 and the opposite boundary is at y[1] = 1, then
 The return value is a (𝑛 × 𝑛) sparse matrix 𝐴 (𝑛 is the total number of dofs) containing the periodic coupling information.
 The relation ship between the degrees of freedome is  dofᵢ = ∑ⱼ Aⱼᵢ ⋅ dofⱼ.
 It is guaranteed that
-    i)  Aⱼᵢ=0 if dofᵢ is 𝑛𝑜𝑡 on the boundary b_from.
-    ii) Aⱼᵢ=0 if the opposite of dofᵢ is not in the same grid cell as dofⱼ.
+	i)  Aⱼᵢ=0 if dofᵢ is 𝑛𝑜𝑡 on the boundary b_from.
+	ii) Aⱼᵢ=0 if the opposite of dofᵢ is not in the same grid cell as dofⱼ.
 Note that A is transposed for efficient col-wise storage.
 
 """
@@ -201,21 +201,20 @@ function get_periodic_coupling_matrix(
         give_opposite!::Function;
         mask = :auto,
         sparsity_tol = 1.0e-12,
-        heuristic_search = true
+        heuristic_search = true,
     )
 
     @info "Computing periodic coupling matrix. This may take a while."
 
     # compact variant of lazy_interpolate! specialized on ON_FACES interpolations
     function interpolate_on_boundaryfaces(
-            target::FEVectorBlock{T1, Tv, Ti},
             source,
             give_opposite,
-            boundary_faces,
+            Tv = Float64,
             start_cell = 1, # TODO we interpolate on the "b_from" side: a proper start cell should be given
             eps = 1.0e-13,
-            kwargs...
-        ) where {T1, Tv, Ti}
+            kwargs...,
+        )
 
         # wrap point evaluation into function that is put into normal interpolate!
         xgrid = source[1].FES.xgrid
@@ -226,7 +225,7 @@ function get_periodic_coupling_matrix(
         CF::ExtendableGrids.CellFinder{Tv, Ti} = ExtendableGrids.CellFinder(xgrid)
         last_cell = start_cell
 
-        function eval_point(result, qpinfo)
+        function __eval_point(result, qpinfo)
             x = qpinfo.x
             give_opposite(x_source, x)
 
@@ -240,7 +239,7 @@ function get_periodic_coupling_matrix(
             return nothing
         end
 
-        return interpolate!(target, ON_FACES, eval_point, items = boundary_faces, kwargs...)
+        return __eval_point
     end
 
     # total number of grid boundary faces
@@ -323,6 +322,9 @@ function get_periodic_coupling_matrix(
         return
     end
 
+
+    eval_point = interpolate_on_boundaryfaces(fe_vector, give_opposite!)
+
     # precompute approximate search region for each boundary face in b_from
     search_areas = Dict{Ti, Vector{Ti}}()
     if heuristic_search
@@ -370,11 +372,9 @@ function get_periodic_coupling_matrix(
                 fe_vector.entries[local_dof] = 1.0
 
                 # interpolate on the opposite boundary using x_trafo = give_opposite
-                interpolate_on_boundaryfaces(
-                    fe_vector_target[1],
-                    fe_vector,
-                    give_opposite!,
-                    heuristic_search ? search_areas[face_numbers_of_bfaces[i_boundary_face]] : faces_in_b_to
+                interpolate!(
+                    fe_vector_target[1], ON_FACES, eval_point, items =
+                        heuristic_search ? search_areas[face_numbers_of_bfaces[i_boundary_face]] : faces_in_b_to,
                 )
 
                 # deactivate entry
@@ -516,7 +516,7 @@ function tmul!(
         A::AbstractMatrix{T},
         x::AbstractVector{T},
         α = 1.0,
-        β = 0.0
+        β = 0.0,
     ) where {T <: AbstractFloat}
     return LinearAlgebra.BLAS.gemv!('T', α, A, x, β, y)
 end
