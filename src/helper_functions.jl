@@ -218,7 +218,6 @@ Input:
  - give_opposite! Function in (y,x)
  - mask: (optional) vector of masking components
  - sparsity_tol: threshold for treating an interpolated value as zero
- - heuristic_search: determine suitable interpolation faces on b_to for each face in b_from
 
 give_opposite!(y,x) has to be defined in a way that for each x ∈ b_from the resulting y is in the opposite boundary.
 For each x in the grid, the resulting y has to be in the grid, too: incorporate some mirroring of the coordinates.
@@ -239,8 +238,7 @@ function get_periodic_coupling_matrix(
         b_to,
         give_opposite!::Function;
         mask = :auto,
-        sparsity_tol = 1.0e-12,
-        heuristic_search = true,
+        sparsity_tol = 1.0e-12
     ) where {Tv, TvG, TiG}
 
     @info "Computing periodic coupling matrix. This may take a while."
@@ -329,26 +327,24 @@ function get_periodic_coupling_matrix(
     coords = xgrid[Coordinates]
     facenodes = xgrid[FaceNodes]
     box_from = zeros(TvG, 2)
-    if heuristic_search
-        for face_from in faces_in_b_from
-            coords_from = coords[:, facenodes[:, face_from]]
+    for face_from in faces_in_b_from
+        coords_from = coords[:, facenodes[:, face_from]]
 
-            # transfer the coords_from to the other side
-            transfer_face!(coords_from)
+        # transfer the coords_from to the other side
+        transfer_face!(coords_from)
 
-            # get the extrama in each component ( = bounding box of the face)
-            @views box_from = extrema(coords_from, dims = (2))[:]
+        # get the extrama in each component ( = bounding box of the face)
+        @views box_from = extrema(coords_from, dims = (2))[:]
 
-            for face_to in faces_in_b_to
-                @views coords_to = coords[:, facenodes[:, face_to]]
-                @views box_to = extrema(coords_to, dims = (2))[:]
+        for face_to in faces_in_b_to
+            @views coords_to = coords[:, facenodes[:, face_to]]
+            @views box_to = extrema(coords_to, dims = (2))[:]
 
-                if do_boxes_overlap(box_from, box_to)
-                    if !haskey(search_areas, face_from)
-                        search_areas[face_from] = []
-                    end
-                    push!(search_areas[face_from], face_to)
+            if do_boxes_overlap(box_from, box_to)
+                if !haskey(search_areas, face_from)
+                    search_areas[face_from] = []
                 end
+                push!(search_areas[face_from], face_to)
             end
         end
     end
@@ -360,9 +356,6 @@ function get_periodic_coupling_matrix(
         if boundary_regions[i_boundary_face] == b_from
 
             local_dofs = @views dofs_on_boundary[:, i_boundary_face]
-            if heuristic_search
-                # set_start(1)
-            end
             for local_dof in local_dofs
                 # compute number of component
                 if mask[1 + ((local_dof - 1) ÷ coffset)] == 0.0
@@ -377,8 +370,7 @@ function get_periodic_coupling_matrix(
 
                 # interpolate on the opposite boundary using x_trafo = give_opposite
                 interpolate!(
-                    fe_vector_target[1], ON_FACES, eval_point, items =
-                        heuristic_search ? search_areas[face_numbers_of_bfaces[i_boundary_face]] : faces_in_b_to,
+                    fe_vector_target[1], ON_FACES, eval_point, items = search_areas[face_numbers_of_bfaces[i_boundary_face]],
                 )
 
                 # deactivate entry
