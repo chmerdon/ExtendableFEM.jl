@@ -158,6 +158,45 @@ function get_periodic_coupling_info(
 end
 
 
+# compact variant of lazy_interpolate! specialized on ON_FACES interpolations
+function interpolate_on_boundaryfaces(
+        source::FEVector{Tv, TvG, TiG},
+        give_opposite,
+        start_cell::Int = 1, # TODO we interpolate on the "b_from" side: a proper start cell should be given
+        eps = 1.0e-13,
+        kwargs...,
+    ) where {Tv, TvG, TiG}
+
+    # wrap point evaluation into function that is put into normal interpolate!
+    xgrid = source[1].FES.xgrid
+    xdim::Int = size(xgrid[Coordinates], 1)
+    PE = PointEvaluator([(1, Identity)], source)
+    xref = zeros(TvG, xdim)
+    x_source = zeros(TvG, xdim)
+    CF::ExtendableGrids.CellFinder{TvG, TiG} = ExtendableGrids.CellFinder(xgrid)
+    last_cell = zeros(Int, 1)
+    last_cell[1] = start_cell
+
+    function __setstartcell(new)
+        return last_cell[1] = Int(new)
+    end
+
+    function __eval_point(result, qpinfo)
+        give_opposite(x_source, qpinfo.x)
+
+        cell = ExtendableGrids.gFindLocal!(xref, CF, x_source; icellstart = last_cell[1], eps)
+        if cell == 0
+            @error "boundary coordinate $(qpinfo.x) opposite to $x_source could not be found in the grid"
+        else
+            evaluate_bary!(result, PE, xref, cell)
+            last_cell[1] = cell
+        end
+        return nothing
+    end
+
+    return __eval_point, __setstartcell
+end
+
 """
 	get_periodic_coupling_matrix(
 		FES::FESpace,
@@ -194,53 +233,17 @@ Note that A is transposed for efficient col-wise storage.
 
 """
 function get_periodic_coupling_matrix(
-        FES::FESpace,
-        xgrid::ExtendableGrid,
+        FES::FESpace{Tv},
+        xgrid::ExtendableGrid{TvG, TiG},
         b_from,
         b_to,
         give_opposite!::Function;
         mask = :auto,
         sparsity_tol = 1.0e-12,
         heuristic_search = true,
-    )
+    ) where {Tv, TvG, TiG}
 
     @info "Computing periodic coupling matrix. This may take a while."
-
-    # compact variant of lazy_interpolate! specialized on ON_FACES interpolations
-    function interpolate_on_boundaryfaces(
-            source,
-            give_opposite,
-            Tv = Float64,
-            start_cell = 1, # TODO we interpolate on the "b_from" side: a proper start cell should be given
-            eps = 1.0e-13,
-            kwargs...,
-        )
-
-        # wrap point evaluation into function that is put into normal interpolate!
-        xgrid = source[1].FES.xgrid
-        xdim::Int = size(xgrid[Coordinates], 1)
-        PE = PointEvaluator([(1, Identity)], source)
-        xref = zeros(Tv, xdim)
-        x_source = zeros(Tv, xdim)
-        CF::ExtendableGrids.CellFinder{Tv, Ti} = ExtendableGrids.CellFinder(xgrid)
-        last_cell = start_cell
-
-        function __eval_point(result, qpinfo)
-            x = qpinfo.x
-            give_opposite(x_source, x)
-
-            cell = ExtendableGrids.gFindLocal!(xref, CF, x_source; icellstart = last_cell, eps)
-            if cell == 0
-                @error "boundary coordinate $x opposite to $x_source could not be found in the grid"
-            else
-                evaluate_bary!(result, PE, xref, cell)
-                last_cell = cell
-            end
-            return nothing
-        end
-
-        return __eval_point
-    end
 
     # total number of grid boundary faces
     boundary_nodes = xgrid[BFaceNodes]
@@ -267,12 +270,9 @@ function get_periodic_coupling_matrix(
     # face numbers of the boundary faces
     face_numbers_of_bfaces = xgrid[BFaceFaces]
 
-    # type of indices
-    Ti = ExtendableGrids.index_type(xgrid)
-
     # find all faces in b_to
-    faces_in_b_to = Ti[]
-    faces_in_b_from = Ti[]
+    faces_in_b_to = TiG[]
+    faces_in_b_from = TiG[]
     for (i, region) in enumerate(boundary_regions)
         if region == b_to
             push!(faces_in_b_to, face_numbers_of_bfaces[i])
@@ -309,7 +309,7 @@ function get_periodic_coupling_matrix(
         return true
     end
 
-    dummy = zeros(size(xgrid[Coordinates], 1))
+    dummy = zeros(TvG, size(xgrid[Coordinates], 1))
 
     # flip a face to the other side using the give_opposite! function
     # Warning: this overwrites the face
@@ -322,15 +322,16 @@ function get_periodic_coupling_matrix(
         return
     end
 
-
-    eval_point = interpolate_on_boundaryfaces(fe_vector, give_opposite!)
+    eval_point, set_start = interpolate_on_boundaryfaces(fe_vector, give_opposite!)
 
     # precompute approximate search region for each boundary face in b_from
-    search_areas = Dict{Ti, Vector{Ti}}()
+    search_areas = Dict{TiG, Vector{TiG}}()
+    coords = xgrid[Coordinates]
+    facenodes = xgrid[FaceNodes]
+    box_from = zeros(TvG, 2)
     if heuristic_search
         for face_from in faces_in_b_from
-            # get from_face coords (explicit copy)
-            coords_from = xgrid[Coordinates][:, xgrid[FaceNodes][:, face_from]]
+            coords_from = coords[:, facenodes[:, face_from]]
 
             # transfer the coords_from to the other side
             transfer_face!(coords_from)
@@ -339,7 +340,7 @@ function get_periodic_coupling_matrix(
             @views box_from = extrema(coords_from, dims = (2))[:]
 
             for face_to in faces_in_b_to
-                @views coords_to = xgrid[Coordinates][:, xgrid[FaceNodes][:, face_to]]
+                @views coords_to = coords[:, facenodes[:, face_to]]
                 @views box_to = extrema(coords_to, dims = (2))[:]
 
                 if do_boxes_overlap(box_from, box_to)
@@ -359,6 +360,9 @@ function get_periodic_coupling_matrix(
         if boundary_regions[i_boundary_face] == b_from
 
             local_dofs = @views dofs_on_boundary[:, i_boundary_face]
+            if heuristic_search
+                # set_start(1)
+            end
             for local_dof in local_dofs
                 # compute number of component
                 if mask[1 + ((local_dof - 1) ÷ coffset)] == 0.0
