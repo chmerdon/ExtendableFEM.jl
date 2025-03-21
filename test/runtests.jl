@@ -89,7 +89,10 @@ function run_all_tests()
     run_dgblf_tests()
     run_nonlinear_operator_tests()
     run_itemintegrator_tests()
-    return run_dt_tests()
+    run_dt_tests()
+    run_test_helper_functions()
+
+    return nothing
 end
 
 run_all_tests()
