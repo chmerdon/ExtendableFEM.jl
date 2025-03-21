@@ -35,6 +35,7 @@ function run_examples()
         "Example207_AdvectionUpwindDG.jl",
         "Example210_LshapeAdaptivePoissonProblem.jl",
         "Example211_LshapeAdaptiveEQPoissonProblem.jl",
+        "Example212_PeriodicBoundary2D.jl",
         "Example220_ReactionConvectionDiffusion.jl",
         "Example225_ObstacleProblem.jl",
         "Example226_Thermoforming.jl",
@@ -54,6 +55,7 @@ function run_examples()
         "Example290_PoroElasticity.jl",
         "Example301_PoissonProblem.jl",
         "Example310_DivFreeBasis.jl",
+        "Example312_PeriodicBoundary3D.jl",
     ]
 
     return @testset "module examples" begin
@@ -87,7 +89,10 @@ function run_all_tests()
     run_dgblf_tests()
     run_nonlinear_operator_tests()
     run_itemintegrator_tests()
-    return run_dt_tests()
+    run_dt_tests()
+    run_test_helper_functions()
+
+    return nothing
 end
 
 run_all_tests()

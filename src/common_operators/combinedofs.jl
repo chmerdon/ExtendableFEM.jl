@@ -84,8 +84,83 @@ function build_assembler!(CD::CombineDofs{UT, CT}, FE::Array{<:FEVectorBlock, 1}
         if CD.parameters[:verbosity] > 0
             @info ".... coupling $(length(coupling_matrix.nzval)) dofs"
         end
-        function assemble(A::AbstractSparseArray{T}, b::AbstractVector{T}, assemble_matrix::Bool, assemble_rhs::Bool, kwargs...) where {T}
+        function assemble!(A::AbstractSparseArray{T}, b::AbstractVector{T}, assemble_matrix::Bool, assemble_rhs::Bool, kwargs...) where {T}
             if assemble_matrix
+
+                # transpose the matrix once for efficient row access
+                transposed_coupling_matrix = sparse(transpose(coupling_matrix))
+
+                # go through each coupled dof and update the FE adjacency info
+                # from the constrained dofs here
+
+                for dof_i in 1:size(coupling_matrix, 2)
+                    # this col-view is efficient
+                    coupling_i = @views coupling_matrix[:, dof_i]
+                    # do nothing if dof_k is not coupled to any constrained dof
+                    if nnz(coupling_i) == 0
+                        continue
+                    end
+
+                    # write the FE adjacency of the constrained dofs into this row
+                    targetrow = dof_i + offsetX
+
+                    # extract the constrained dofs and the weights
+                    coupled_dofs_i, weights_i = findnz(coupling_i)
+
+                    # parse through all cols and update the entries
+                    for dof_j in 1:size(coupling_matrix, 2)
+                        # this col-view is efficient
+                        coupling_j = @views coupling_matrix[:, dof_j]
+
+                        # if both dof_i and dof_j are coupled to a constrained dof, then
+                        # the FE adjacency A_ij is not updated: this is covered by the linear combinations
+                        # expressed in the rows of the constrained dofs_on_boundary
+                        # Hence, check that dof_j is not coupled to anything
+                        if nnz(coupling_j) == 0
+                            targetcol = dof_j + offsetY
+                            for (dof_k, weight_ik) in zip(coupled_dofs_i, weights_i)
+                                sourcerow = dof_k + offsetX
+                                sourcecol = targetcol
+                                val = A[sourcerow, sourcecol]
+                                _addnz(A, targetrow, targetcol, val, weight_ik)
+                            end
+                        end
+                    end
+                end
+
+                # replace the geometric coupling rows based
+                # on the original coupling matrix
+                for dof_i in 1:size(transposed_coupling_matrix, 2)
+
+                    coupling_i = transposed_coupling_matrix[:, dof_i]
+                    # do nothing if no coupling for dof_i
+                    if nnz(coupling_i) == 0
+                        continue
+                    end
+
+                    # get the coupled dofs of dof_i and the corresponding weights
+                    coupled_dofs_i, weights_i = findnz(coupling_i)
+
+                    sourcerow = dof_i + offsetX
+
+                    # eliminate the sourcerow
+                    for col in 1:size(A, 2)
+                        A[sourcerow, col] = 0
+                    end
+
+                    # replace sourcerow with coupling linear combination
+                    _addnz(A, sourcerow, sourcerow, -1.0, 1)
+                    for (dof_j, weight_ij) in zip(coupled_dofs_i, weights_i)
+                        # weights for ∑ⱼ wⱼdofⱼ - dofᵢ = 0
+                        _addnz(A, sourcerow, dof_j + offsetY, weight_ij, 1)
+                    end
+
+                end
+                flush!(A)
+            end
+
+            if assemble_rhs
+
                 for dof_i in 1:size(coupling_matrix, 2)
                     # this col-view is efficient
                     coupling_i = @views coupling_matrix[:, dof_i]
@@ -97,57 +172,32 @@ function build_assembler!(CD::CombineDofs{UT, CT}, FE::Array{<:FEVectorBlock, 1}
                     # get the coupled dofs of dof_i and the corresponding weights
                     coupled_dofs, weights = findnz(coupling_i)
 
-                    # transfer all assembly information of dof_i to the
-                    # coupled dofs: add the corresponding matrix row
-                    sourcerow = dof_i + offsetY
-                    for sourcecol in 1:size(A, 2)
-                        val = A[sourcerow, sourcecol]
-                        for dof_j in coupled_dofs
-                            targetrow = dof_j + offsetX
-                            targetcol = sourcecol
-                            _addnz(A, targetrow, targetcol, val, 1)
-                        end
-                        # eliminate the sourcerow
-                        A[sourcerow, sourcecol] = 0
-                    end
-
-
-                    # replace sourcerow with coupling linear combination
-                    _addnz(A, sourcerow, sourcerow, -1.0, 1)
+                    # transfer all assembly information to dof_i
+                    targetrow = dof_i + offsetY
                     for (dof_j, weight) in zip(coupled_dofs, weights)
-                        # set negative weight for dofᵢ - ∑ⱼ wⱼdofⱼ = 0
-                        _addnz(A, sourcerow, dof_j + offsetY, weight, 1)
+                        sourcerow = dof_j + offsetY
+                        b[targetrow] += weight * b[sourcerow]
                     end
-
-                    flush!(A)
                 end
-            end
 
-            if assemble_rhs
-                for dof_i in 1:size(coupling_matrix, 2)
-                    # this col-view is efficient
-                    coupling_i = @views coupling_matrix[:, dof_i]
+
+                # now set the rows of the constrained dofs to zero to enforce the linear combination
+                for dof_i in 1:size(transposed_coupling_matrix, 2)
+                    coupling_i = transposed_coupling_matrix[:, dof_i]
                     # do nothing if no coupling for dof_i
                     if nnz(coupling_i) == 0
                         continue
                     end
 
-                    coupled_dofs, weights = findnz(coupling_i)
-                    sourcerow = dof_i + offsetY
+                    b[dof_i + offsetX] = 0.0
 
-                    for dof_j in coupled_dofs
-                        targetrow = dof_j + offsetX
-                        b[targetrow] += b[sourcerow]
-                    end
-
-                    b[sourcerow] = 0.0
                 end
             end
 
             return nothing
         end
 
-        CD.assembler = assemble
+        CD.assembler = assemble!
         CD.FESX = FESX
         CD.FESY = FESY
     end
