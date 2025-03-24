@@ -105,8 +105,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
 
 end
 
-#make_all(; with_examples = true, run_examples = true, run_notebooks = true)
-make_all(; with_examples = false, run_examples = false, run_notebooks = false)
+make_all(; with_examples = true, run_examples = true, run_notebooks = false)
 
 deploydocs(
     repo = "github.com/WIAS-PDELib/ExtendableFEM.jl",
