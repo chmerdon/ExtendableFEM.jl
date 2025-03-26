@@ -79,7 +79,7 @@ function main(;
         prob = ExtendableFEM.generate_ODEProblem(PD, FES, (0.0, T); init = sol, mass_matrix = M)
 
         ## solve ODE problem
-        de_sol = DifferentialEquations.solve(prob, solver, abstol = 1.0e-6, reltol = 1.0e-3, dt = τ, dtmin = 1.0e-6, adaptive = true)
+        de_sol = solve(prob, solver, abstol = 1.0e-6, reltol = 1.0e-3, dt = τ, dtmin = 1.0e-6, adaptive = true)
         @info "#tsteps = $(length(de_sol))"
 
         ## extract final solution
