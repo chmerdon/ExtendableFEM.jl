@@ -176,11 +176,8 @@ function main(;
     ## solve
     sol = solve(PD, FES; kwargs...)
 
-    plt = GridVisualizer(; Plotter, size = (1200, 800))
-    magnification = 1
-    displaced_grid = deepcopy(xgrid)
-    displace_mesh!(displaced_grid, sol[1], magnify = magnification)
-    gridplot!(plt, displaced_grid, linewidth = 1, title = "displaced mesh, $(magnification)x magnified")
+    displace_mesh!(xgrid, sol[u])
+    plt = plot([grid(u)], sol; Plotter, do_vector_plots = false, width = 1200, height = 800, title = "displaced mesh", scene3d = :LScene)
 
     return sol, plt
 
