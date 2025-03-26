@@ -27,6 +27,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
                 "Example207_AdvectionUpwindDG.jl",
                 "Example210_LshapeAdaptivePoissonProblem.jl",
                 "Example211_LshapeAdaptiveEQPoissonProblem.jl",
+                "Example212_PeriodicBoundary2D.jl",
                 "Example220_ReactionConvectionDiffusion.jl",
                 "Example225_ObstacleProblem.jl",
                 "Example226_Thermoforming.jl",
@@ -47,6 +48,7 @@ function make_all(; with_examples::Bool = true, modules = :all, run_examples::Bo
                 "Example290_PoroElasticity.jl",
                 "Example301_PoissonProblem.jl",
                 "Example310_DivFreeBasis.jl",
+                "Example312_PeriodicBoundary3D.jl",
                 "Example330_HyperElasticity.jl",
             ]
         end
